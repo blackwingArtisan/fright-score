@@ -31,10 +31,12 @@ chip yourself, in real time.
   AudioWorklet on the audio thread. Pick any of the ten patches and watch its operators and envelopes
   respond as you play. It runs the same operator code as the renderer, sample for sample.
 - **Levels that fit the mood:** every cue is measured for integrated loudness (ITU-R BS.1770) and trimmed to
-  its mood's ceiling, from -14 LUFS for a chase to -18 LUFS for a lullaby, under a -1 dBTP true peak.
-- **Download WAV** (44.1 kHz, 16-bit, stereo, -1 dBTP true-peak ceiling, clean fades) or the score as JSON.
+  its mood's ceiling, from -14 LUFS for a chase to -18 LUFS for a lullaby, under a -3 dBTP true peak.
+- **Download WAV** (44.1 kHz, 16-bit, stereo, -3 dBTP true-peak ceiling, a 0.3 s fade-in and a clean fade-out)
+  or the score as JSON.
 - **Seamless loops for games:** whole bars, no fades, release tails wrapped onto the start, and loop points in
-  the WAV (`smpl` chunk) that game engines and samplers read.
+  the WAV (`smpl` chunk) that game engines and samplers read. The in-app player fades a loop in when it
+  starts.
 - **Same request and seed, same bytes.** The browser and the CLI produce identical files, and the share link
   reproduces the exact cue on any machine.
 - **CLI** for batch scoring: `npm run score -- --mood dread --seconds 90 --seed 7 --out cue.wav`.
@@ -65,9 +67,9 @@ npm run score -- --mood stalker --seconds 20 --loop --out stalker-loop.wav
 npm run score -- --help
 ```
 
-Output: 44.1 kHz, 16-bit stereo PCM WAV, true peak at or below -1 dBFS, integrated loudness at or below the
-mood's ceiling (chase -14, ritual -15, dread and stalker -16, lullaby -18 LUFS), fade-in and fade-out (the
-fade-out never starts before a late sting lands). A 90-second cue renders in about 2 seconds. The CLI
+Output: 44.1 kHz, 16-bit stereo PCM WAV, true peak at or below -3 dBFS, integrated loudness at or below the
+mood's ceiling (chase -14, ritual -15, dread and stalker -16, lullaby -18 LUFS), a 0.3 s fade-in that keeps the first 50 ms
+at least 20 dB under the cue's peak, and a fade-out (the fade-out never starts before a late sting lands). A 90-second cue renders in about 2 seconds. The CLI
 prints the loudness it measured, and it matches `ffmpeg -af ebur128` within 0.2 LU.
 
 ## Test it
@@ -81,7 +83,7 @@ npm run test:e2e                  # Playwright against the built app (ports 3122
 
 The unit suite checks the FM math (sine table accuracy, envelope timing, operator pitch, FM sidebands,
 feedback, all eight algorithms), the score schema, scene parsing, determinism by seed, sting timing within
-50 ms, the true-peak ceiling, BS.1770 loudness (reference coefficients, the -3.01 LUFS sine, gating), mood
+50 ms, the true-peak ceiling, the opening level of every mood, BS.1770 loudness (reference coefficients, the -3.01 LUFS sine, gating), mood
 loudness ceilings, fades, the WAV header and length, and the live chip core (sample-for-sample equal to the
 offline voice, release, polyphony, no clipping). The end-to-end tests drive the real app: the demo cue is
 ready on first load, summon a cue, play it, export the WAV and parse it, confirm the browser export equals
@@ -93,7 +95,7 @@ loop points, and play the live chip so the AudioWorklet reports voices and real 
 ```
  request ──> Director ──> ScorePlan ──> reconcile ──> Arranger ──> Score ──> FS-666 engine ──> master ──> WAV
  (scene,     local |       (zod)        (length,      (seeded,     (notes)   (Web Worker       (limiter,  (16-bit,
-  mood,      bedrock |                   stings)       per-role)              or Node CLI)      -1 dBTP)   dither)
+  mood,      bedrock |                   stings)       per-role)              or Node CLI)      -3 dBTP)   dither)
   seed)      remote
 
  keyboard ──> LiveChip ──> AudioWorklet (LiveChipCore: same Voice / Operator / Envelope) ──> analyser ──> speakers

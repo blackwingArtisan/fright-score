@@ -80,8 +80,8 @@ and a boom.
 - Voice: LFO vibrato and tremolo and the pitch glide update every 32 samples (control rate).
 - Renderer: per-track polyphony limits with voice stealing, exact sample-accurate note starts, a reverb
   send (Freeverb topology), then the master chain: DC blocker, 11 kHz two-pole low-pass, 4 dB drive into a
-  tanh soft limiter, raised-cosine fades (the fade-out never starts before the last sting plus 0.6 s), and
-  normalization to a -1 dBTP true peak measured with 4x windowed-sinc oversampling.
+  tanh soft limiter, raised-cosine fades (a 0.3 s fade-in; the fade-out never starts before the last sting plus 0.6 s), and
+  normalization to a -3 dBTP true peak measured with 4x windowed-sinc oversampling.
 - Loudness: integrated loudness per ITU-R BS.1770 (bilinear K-weighting that matches the 48 kHz table at any
   rate, 400 ms blocks at 75% overlap, -70 LUFS absolute gate, -10 LU relative gate). Each mood has a
   ceiling (chase -14, ritual -15, dread and stalker -16, lullaby -18 LUFS); a louder cue is turned down to

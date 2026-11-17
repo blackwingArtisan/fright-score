@@ -113,7 +113,14 @@ export function applyGain(gain: number, ...channels: Float32Array[]): void {
   for (const ch of channels) for (let i = 0; i < ch.length; i++) ch[i] *= gain;
 }
 
-/** Raised-cosine fade in over `fadeSec` and fade out over the last `fadeOutSec`. */
+/** Raised-cosine fade-in curve of `points` gains from 0 toward 1, for scheduling on a Web Audio gain. */
+export function fadeInCurve(points: number): Float32Array {
+  const curve = new Float32Array(points);
+  for (let i = 0; i < points; i++) curve[i] = 0.5 - 0.5 * Math.cos((Math.PI * i) / (points - 1));
+  return curve;
+}
+
+/** Raised-cosine fade in over `fadeInSec` and fade out over the last `fadeOutSec`. */
 export function applyFades(channels: Float32Array[], sampleRate: number, fadeInSec: number, fadeOutSec: number): void {
   const length = channels[0]?.length ?? 0;
   const inN = Math.min(length, Math.round(fadeInSec * sampleRate));
@@ -141,11 +148,20 @@ export interface MasterOptions {
   circular?: boolean;
 }
 
+/**
+ * Fade-in length for every non-loop cue. A raised-cosine fade this long holds the first 50 ms at least
+ * 23 dB below the cue's peak, so even a chase that starts on the downbeat opens softly.
+ */
+export const FADE_IN_SEC = 0.3;
+
+/** True-peak ceiling in dBTP. Leaves 3 dB of headroom for editing, mixing under dialogue and lossy encoding. */
+export const CEILING_DB = -3;
+
 export const DEFAULT_MASTER: MasterOptions = {
   sampleRate: 44_100,
-  fadeInSec: 0.08,
+  fadeInSec: FADE_IN_SEC,
   fadeOutSec: 1.5,
-  ceilingDb: -1,
+  ceilingDb: CEILING_DB,
   driveDb: 4,
   lowpassHz: 11_000,
 };

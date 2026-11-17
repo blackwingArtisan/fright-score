@@ -27,7 +27,7 @@ describe('CLI: npm run score', () => {
     expect(info.frameCount).toBe(12 * 44_100);
     let peak = 0;
     for (const s of info.samples) peak = Math.max(peak, Math.abs(s));
-    expect(peak).toBeLessThan(32767 * 0.9); // -1 dBTP ceiling leaves sample peaks below -0.9 dBFS
+    expect(peak).toBeLessThanOrEqual(Math.ceil(32767 * 10 ** (-3 / 20))); // -3 dBTP ceiling
     expect(peak).toBeGreaterThan(32767 * 0.5);
     expect(Math.abs(info.samples[0])).toBeLessThanOrEqual(2);
     expect(Math.abs(info.samples[info.samples.length - 1])).toBeLessThanOrEqual(2);

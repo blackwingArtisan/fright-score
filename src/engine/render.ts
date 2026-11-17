@@ -40,7 +40,7 @@ export interface RenderStats {
   durationSec: number;
   /** Sample peak in dBFS. */
   peakDb: number;
-  /** Estimated true (inter-sample) peak in dBTP; the master chain holds this at -1. */
+  /** Estimated true (inter-sample) peak in dBTP; the master chain holds this at or below -3. */
   truePeakDb: number;
   rmsDb: number;
   /** Integrated loudness (ITU-R BS.1770) in LUFS, after the mood's loudness ceiling. */

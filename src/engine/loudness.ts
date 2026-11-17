@@ -109,7 +109,7 @@ export function integratedLoudness(sampleRate: number, ...channels: Float32Array
 }
 
 /**
- * Loudness ceiling per mood, in LUFS. The master chain pushes every cue to the -1 dBTP peak
+ * Loudness ceiling per mood, in LUFS. The master chain pushes every cue to the -3 dBTP peak
  * ceiling; dense moods would then come out much louder than sparse ones. Each mood is trimmed
  * down to its ceiling so a quiet lullaby stays quiet and a chase still hits hard. Gain is only
  * ever reduced, never raised, so the true-peak ceiling always holds.

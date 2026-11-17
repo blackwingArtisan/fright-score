@@ -20,7 +20,7 @@ inclusion: always
   per-operator frequency ratio, detune, output level and a 5-stage envelope (attack, decay,
   sustain level, sustain decay, release). A patch-level LFO gives vibrato and tremolo.
 - Use a sine lookup table for the oscillator, like the original hardware's log-sin ROM.
-- Master chain: DC blocker, soft limiter, peak normalization to -1 dBFS, fade in and fade out.
+- Master chain: DC blocker, soft limiter, true-peak normalization to -3 dBTP, a 0.3 s fade-in and a fade-out.
   The final peak must never exceed full scale.
 - Determinism: all randomness comes from a seeded PRNG (mulberry32). Never call Math.random in
   engine, composer or arranger code. Same input and seed must give byte-identical WAV output.

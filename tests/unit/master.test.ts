@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { applyFades, dbToGain, gainToDb, master, peakOf, softLimit, truePeakOf, DEFAULT_MASTER } from '../../src/engine/master';
+import {
+  applyFades,
+  dbToGain,
+  fadeInCurve,
+  gainToDb,
+  master,
+  peakOf,
+  softLimit,
+  truePeakOf,
+  CEILING_DB,
+  DEFAULT_MASTER,
+} from '../../src/engine/master';
 
 describe('master chain', () => {
   it('soft limiter is transparent below threshold and never reaches full scale', () => {
@@ -28,6 +39,13 @@ describe('master chain', () => {
     expect(ch[50]).toBeCloseTo(0.5, 1);
   });
 
+  it('builds a raised-cosine fade-in curve for playback that runs from silence to full level', () => {
+    const curve = fadeInCurve(64);
+    expect(curve[0]).toBe(0);
+    expect(curve[63]).toBeCloseTo(1, 6);
+    for (let i = 1; i < curve.length; i++) expect(curve[i]).toBeGreaterThanOrEqual(curve[i - 1]);
+  });
+
   it('true peak catches inter-sample overs that the sample peak misses', () => {
     // A sine at fs/4 sampled at 45 degrees: every sample is 0.707, the waveform peaks at 1.
     const n = 4000;
@@ -37,7 +55,7 @@ describe('master chain', () => {
     expect(truePeakOf(ch)).toBeGreaterThan(0.95);
   });
 
-  it('normalizes a hot, clipping signal to the -1 dBFS ceiling', () => {
+  it('normalizes a hot, clipping signal to the -3 dBTP ceiling', () => {
     const n = 44_100;
     const l = new Float32Array(n);
     const r = new Float32Array(n);
@@ -46,8 +64,9 @@ describe('master chain', () => {
       r[i] = 5 * Math.sin((2 * Math.PI * 330 * i) / 44_100);
     }
     master(l, r, DEFAULT_MASTER);
-    expect(truePeakOf(l, r)).toBeLessThanOrEqual(dbToGain(-1) + 1e-6);
-    expect(peakOf(l, r)).toBeGreaterThan(dbToGain(-3));
+    expect(CEILING_DB).toBe(-3);
+    expect(truePeakOf(l, r)).toBeLessThanOrEqual(dbToGain(CEILING_DB) + 1e-6);
+    expect(peakOf(l, r)).toBeGreaterThan(dbToGain(CEILING_DB - 2));
   });
 
   it('leaves digital silence silent', () => {

@@ -33,4 +33,15 @@ test('a seamless loop exports whole bars with loop points', async ({ page }) => 
   expect(download.suggestedFilename()).toMatch(/-loop-seed\d+\.wav$/);
   const info = parseWav(readFileSync((await download.path())!));
   expect(info.loop).toEqual({ startFrame: 0, endFrame: info.frameCount - 1 });
+
+  // The loop plays through the fade-in the player adds, without errors.
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.getByRole('button', { name: 'Play' }).click();
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'playing');
+  await expect
+    .poll(async () => Number(await page.locator('#clock').getAttribute('data-position')), { timeout: 10_000 })
+    .toBeGreaterThan(0.5);
+  await page.getByRole('button', { name: 'Pause' }).click();
+  expect(errors).toEqual([]);
 });

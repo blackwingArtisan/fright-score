@@ -28,8 +28,8 @@ Options:
   --quiet             Only print the output path
   --help              Show this help
 
-Output: 44.1 kHz, 16-bit, stereo PCM WAV, true-peak ceiling -1 dBFS, a loudness
-ceiling per mood (-14 to -18 LUFS), with fades.`;
+Output: 44.1 kHz, 16-bit, stereo PCM WAV, true-peak ceiling -3 dBFS, a loudness
+ceiling per mood (-14 to -18 LUFS), with a 0.3 s fade-in and a fade-out.`;
 
 export interface CliResult {
   outPath: string;

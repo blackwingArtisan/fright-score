@@ -98,9 +98,9 @@ fix levels or clicks by hand.
 
 1. THE SYSTEM SHALL export 44.1 kHz, 16-bit, stereo PCM WAV with a canonical 44-byte header.
 2. THE SYSTEM SHALL export exactly durationSec x 44,100 frames.
-3. THE SYSTEM SHALL keep the true (inter-sample) peak at or below -1 dBFS.
-4. THE SYSTEM SHALL fade in from silence and fade out to silence, and SHALL NOT start the fade-out before a
-   late sting has landed.
+3. THE SYSTEM SHALL keep the true (inter-sample) peak at or below -3 dBFS.
+4. THE SYSTEM SHALL fade in from silence and fade out to silence, keep the first 50 ms at least 20 dB under
+   the cue's peak, and SHALL NOT start the fade-out before a late sting has landed.
 5. WHEN a sting is requested THE SYSTEM SHALL place its audible onset within 50 ms of the requested time.
 6. THE SYSTEM SHALL add a stereo reverb send, a DC blocker, an output low-pass and a soft limiter.
 7. THE SYSTEM SHALL measure integrated loudness per ITU-R BS.1770 (K-weighting, 400 ms blocks, absolute and
@@ -162,6 +162,7 @@ reproduces it, so that I can drop it into an engine and share the exact take wit
 1. WHERE the user asks for a loop THE SYSTEM SHALL snap the length to whole bars and keep intensity steady.
 2. WHERE the user asks for a loop THE SYSTEM SHALL render with no fades, wrap release tails onto the start,
    and warm the output filters with the loop's end so the wrap point is seamless.
+   WHEN a loop starts playing in the app THE SYSTEM SHALL fade it in over the same 0.3 s as other cues.
 3. WHERE the user asks for a loop THE SYSTEM SHALL write a WAV `smpl` chunk marking the whole file as a
    forward loop.
 4. WHEN a cue is ready THE SYSTEM SHALL put its request in the page URL, and WHEN the page opens with those

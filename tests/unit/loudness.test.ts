@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { integratedLoudness, kWeighting, MOOD_LOUDNESS_LUFS } from '../../src/engine/loudness';
+import { CEILING_DB } from '../../src/engine/master';
 import { renderScore } from '../../src/engine/render';
 import { arrange } from '../../src/score/arranger';
 import { composePlan } from '../../src/score/composer';
@@ -75,7 +76,7 @@ describe('mood loudness ceilings', () => {
       const lufs = integratedLoudness(SR, result.left, result.right);
       expect(lufs).toBeLessThanOrEqual(MOOD_LOUDNESS_LUFS[mood] + 0.05);
       expect(result.stats.loudnessLufs).toBeCloseTo(lufs, 1);
-      expect(result.stats.truePeakDb).toBeLessThanOrEqual(-1 + 1e-3);
+      expect(result.stats.truePeakDb).toBeLessThanOrEqual(CEILING_DB + 1e-3);
       measured[mood] = lufs;
     }
     expect(measured.lullaby).toBeLessThan(measured.chase - 3);

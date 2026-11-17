@@ -1,3 +1,5 @@
+import { FADE_IN_SEC, fadeInCurve } from '../engine/master';
+
 /**
  * Plays a rendered cue with Web Audio and reports the playhead.
  * The AudioContext is created on the first Play click, as browsers require.
@@ -62,7 +64,15 @@ export class Player {
     const source = ctx.createBufferSource();
     source.buffer = this.buffer;
     source.loop = this.loop;
-    source.connect(this.analyser!);
+    if (this.loop && this.offset === 0) {
+      // A seamless loop has no fade baked in, so it would start at full level. Fade it in on first play,
+      // the same way every other cue fades in, and leave the loop itself untouched.
+      const fade = ctx.createGain();
+      fade.gain.setValueCurveAtTime(fadeInCurve(64), ctx.currentTime, FADE_IN_SEC);
+      source.connect(fade).connect(this.analyser!);
+    } else {
+      source.connect(this.analyser!);
+    }
     source.onended = () => {
       if (this.source !== source) return;
       this.offset = this.position;
