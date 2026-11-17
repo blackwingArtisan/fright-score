@@ -82,6 +82,10 @@ and a boom.
   send (Freeverb topology), then the master chain: DC blocker, 11 kHz two-pole low-pass, 4 dB drive into a
   tanh soft limiter, raised-cosine fades (the fade-out never starts before the last sting plus 0.6 s), and
   normalization to a -1 dBTP true peak measured with 4x windowed-sinc oversampling.
+- Loudness: integrated loudness per ITU-R BS.1770 (bilinear K-weighting that matches the 48 kHz table at any
+  rate, 400 ms blocks at 75% overlap, -70 LUFS absolute gate, -10 LU relative gate). Each mood has a
+  ceiling (chase -14, ritual -15, dread and stalker -16, lullaby -18 LUFS); a louder cue is turned down to
+  it. Gain only goes down, so the true-peak ceiling still holds.
 - WAV: canonical RIFF header, TPDF dither from a seeded generator, clamping.
 
 ## Web app
@@ -104,7 +108,8 @@ three-second envelope history) and an oscilloscope from an AnalyserNode.
   algorithm routing and carrier counts, every patch finite, schema rejections, scene parsing, composer
   determinism and constraints, arranger silence windows and sting placement, master limiter, fades and
   true peak, WAV header and round trip, renderer length, ceiling, sting onset within 50 ms, frames,
-  determinism by seed, director adapters with fake clients.
+  determinism by seed, director adapters with fake clients, BS.1770 loudness against the reference
+  coefficients and the -3.01 LUFS sine, and mood loudness ceilings.
 - CLI (Vitest): runs the real `npm run score` and parses the WAV; checks byte-identical reruns and errors.
 - End to end (Playwright on the built app): scene to ready, play moves the playhead, WAV and JSON export are
   valid, browser export equals the CLI export byte for byte, invalid input explained, phone width.

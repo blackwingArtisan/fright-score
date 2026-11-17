@@ -1,6 +1,7 @@
 import type { Score, Track } from '../score/schema';
 import { CONTROL_BLOCK, SAMPLE_RATE } from './constants';
-import { DEFAULT_MASTER, dbToGain, gainToDb, master, peakOf, rmsOf } from './master';
+import { integratedLoudness, MOOD_LOUDNESS_LUFS } from './loudness';
+import { DEFAULT_MASTER, applyGain, dbToGain, gainToDb, master, peakOf, rmsOf } from './master';
 import { getPatch, maxReleaseSec, type Patch } from './patches';
 import { applyReverb } from './reverb';
 import { Voice } from './voice';
@@ -42,6 +43,8 @@ export interface RenderStats {
   /** Estimated true (inter-sample) peak in dBTP; the master chain holds this at -1. */
   truePeakDb: number;
   rmsDb: number;
+  /** Integrated loudness (ITU-R BS.1770) in LUFS, after the mood's loudness ceiling. */
+  loudnessLufs: number;
   noteCount: number;
   maxVoices: number;
   renderMs: number;
@@ -230,7 +233,16 @@ export function renderScore(score: Score, options: RenderOptions = {}): RenderRe
   const masterOptions = loop
     ? { ...DEFAULT_MASTER, sampleRate: sr, fadeInSec: 0, fadeOutSec: 0, circular: true }
     : { ...DEFAULT_MASTER, sampleRate: sr, fadeOutSec: fadeOutFor(score) };
-  const truePeak = master(left, right, masterOptions);
+  let truePeak = master(left, right, masterOptions);
+  // Trim to the mood's loudness ceiling, so sparse and dense moods sit at a sensible level.
+  let loudness = integratedLoudness(sr, left, right);
+  const ceiling = MOOD_LOUDNESS_LUFS[score.plan.mood];
+  if (loudness > ceiling) {
+    const trim = dbToGain(ceiling - loudness);
+    applyGain(trim, left, right);
+    truePeak *= trim;
+    loudness = ceiling;
+  }
   options.onProgress?.(1);
 
   return {
@@ -243,6 +255,7 @@ export function renderScore(score: Score, options: RenderOptions = {}): RenderRe
       peakDb: gainToDb(peakOf(left, right)),
       truePeakDb: gainToDb(truePeak),
       rmsDb: gainToDb(rmsOf(left, right)),
+      loudnessLufs: loudness,
       noteCount,
       maxVoices,
       renderMs: Math.round(now() - startedAt),

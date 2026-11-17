@@ -3,9 +3,9 @@
   "hooks": [
     {
       "name": "Unit tests on engine save",
-      "description": "Runs the Vitest suite whenever the agent saves an engine, score, director or WAV module, so a broken operator or envelope is caught immediately.",
+      "description": "Runs the Vitest suite whenever the agent saves an engine, score, director, WAV or live-chip module, so a broken operator or envelope is caught immediately.",
       "trigger": "PostFileSave",
-      "matcher": "src/(engine|score|director|wav)/.*\\.ts$",
+      "matcher": "src/(engine|score|director|wav|web/live)/.*\\.ts$",
       "action": { "type": "command", "command": "npm run test:unit --silent" },
       "timeout": 120
     }

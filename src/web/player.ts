@@ -27,6 +27,12 @@ export class Player {
     return this.loop && this.duration > 0 ? t % this.duration : Math.min(this.duration, t);
   }
 
+  /** The shared audio context and the analyser every source plays through (created on first use). */
+  audio(): { ctx: AudioContext; output: AnalyserNode } {
+    const ctx = this.ensureContext();
+    return { ctx, output: this.analyser! };
+  }
+
   private ensureContext(): AudioContext {
     if (!this.ctx) {
       this.ctx = new AudioContext({ sampleRate: 44_100 });

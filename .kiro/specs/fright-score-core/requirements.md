@@ -103,6 +103,9 @@ fix levels or clicks by hand.
    late sting has landed.
 5. WHEN a sting is requested THE SYSTEM SHALL place its audible onset within 50 ms of the requested time.
 6. THE SYSTEM SHALL add a stereo reverb send, a DC blocker, an output low-pass and a soft limiter.
+7. THE SYSTEM SHALL measure integrated loudness per ITU-R BS.1770 (K-weighting, 400 ms blocks, absolute and
+   relative gates), and IF a cue is louder than its mood's ceiling THEN THE SYSTEM SHALL lower its gain to
+   that ceiling, so a sparse lullaby never comes out louder than a chase.
 
 ## Requirement 7: Command-line renderer
 
@@ -118,7 +121,7 @@ I can batch cues without opening a browser.
 3. IF an argument is invalid (unknown mood, length outside 5-300 s, unknown director) THEN THE SYSTEM SHALL
    exit with a non-zero code and a message naming the problem.
 
-## Requirement 8: Browser app with a live chip view
+## Requirement 8: Browser app with a chip view
 
 **User story:** As a first-time visitor, I want to see and hear the chip work, so that I understand what
 made my cue and trust the result.
@@ -129,7 +132,7 @@ made my cue and trust the result.
 2. WHEN rendering finishes THE SYSTEM SHALL show the title, key, tempo, director's notes and a timeline of
    sections, intensity, notes, cues and playhead.
 3. WHILE the cue plays THE SYSTEM SHALL show each channel's four operators, their algorithm routing and
-   their envelope levels, plus an oscilloscope of the output.
+   the envelope levels recorded during the render, plus an oscilloscope of the output audio.
 4. WHEN the user clicks the timeline THE SYSTEM SHALL move the playhead there.
 5. WHEN the user chooses Download WAV or Download score JSON THE SYSTEM SHALL save the exact rendered file.
 6. IF the user enters an invalid length THEN THE SYSTEM SHALL say what range is allowed.

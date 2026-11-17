@@ -1,9 +1,10 @@
 # Fright Score
 
-**Describe a scene, get an original horror score.** An AI director writes the plan, and an emulated
-1990s FM synthesis chip plays it live in your browser. Download the result as a royalty-free WAV.
+**Describe a scene, get an original horror score.** An AI director writes the plan, an emulated 1990s FM
+synthesis chip renders it in your browser, and you download the result as a royalty-free WAV. Then play the
+chip yourself, in real time.
 
-![Fright Score: the FS-666 channel view playing a cue](docs/screenshot.png)
+![Fright Score: the demo cue playing, with its timeline and the FS-666 channel view](docs/screenshot.png)
 
 ## Who it is for
 
@@ -14,6 +15,7 @@
 
 ## What works today
 
+- The page opens on a real cue: the "Cellar dread" demo renders in about two seconds, ready to play.
 - Type a scene ("Creeping dread in the cellar, 90 seconds, builds to a sting at 0:70") or pick one of five
   moods: dread, stalker, chase, lullaby, ritual. The app shows what it understood as you type.
 - The director turns it into a plan you can read: key and mode (Phrygian, Locrian, octatonic and more), tempo,
@@ -21,8 +23,15 @@
   requested time, out of a deliberate 0.6 s silence, after a riser and a racing heartbeat.
 - The **FS-666** renders it: four-operator FM with all eight YM2612-style algorithms, operator-1 feedback,
   five-stage envelopes, LFO, pitch glides, ten horror patches, reverb and a mastering chain.
-- The board shows the chip working while the cue plays: each channel's operators light up with their
-  envelopes, copper traces show the algorithm, and a timeline shows every note and cue.
+- Cues are rendered in a Web Worker by the same engine as the CLI, then played back sample-exact, so what
+  you hear is byte for byte the file you download. While a cue plays, each channel's operators light up with
+  the envelope levels recorded during the render, copper traces show the algorithm, the scope shows the
+  output audio, and a timeline shows every note and cue.
+- **Play the chip live:** a keyboard (on screen, or A to K) drives the FS-666 in real time in an
+  AudioWorklet on the audio thread. Pick any of the ten patches and watch its operators and envelopes
+  respond as you play. It runs the same operator code as the renderer, sample for sample.
+- **Levels that fit the mood:** every cue is measured for integrated loudness (ITU-R BS.1770) and trimmed to
+  its mood's ceiling, from -14 LUFS for a chase to -18 LUFS for a lullaby, under a -1 dBTP true peak.
 - **Download WAV** (44.1 kHz, 16-bit, stereo, -1 dBTP true-peak ceiling, clean fades) or the score as JSON.
 - **Seamless loops for games:** whole bars, no fades, release tails wrapped onto the start, and loop points in
   the WAV (`smpl` chunk) that game engines and samplers read.
@@ -56,8 +65,10 @@ npm run score -- --mood stalker --seconds 20 --loop --out stalker-loop.wav
 npm run score -- --help
 ```
 
-Output: 44.1 kHz, 16-bit stereo PCM WAV, true peak held at -1 dBFS, fade-in and fade-out (the fade-out never
-starts before a late sting lands). A 90-second cue renders in about 2 seconds.
+Output: 44.1 kHz, 16-bit stereo PCM WAV, true peak at or below -1 dBFS, integrated loudness at or below the
+mood's ceiling (chase -14, ritual -15, dread and stalker -16, lullaby -18 LUFS), fade-in and fade-out (the
+fade-out never starts before a late sting lands). A 90-second cue renders in about 2 seconds. The CLI
+prints the loudness it measured, and it matches `ffmpeg -af ebur128` within 0.2 LU.
 
 ## Test it
 
@@ -70,9 +81,12 @@ npm run test:e2e                  # Playwright against the built app (ports 3122
 
 The unit suite checks the FM math (sine table accuracy, envelope timing, operator pitch, FM sidebands,
 feedback, all eight algorithms), the score schema, scene parsing, determinism by seed, sting timing within
-50 ms, the true-peak ceiling, fades, and the WAV header and length. The end-to-end tests drive the real app:
-summon a cue, play it, export the WAV and parse it, confirm the browser export equals the CLI export byte
-for byte, open a share link in a fresh page and get the same file, and export a loop with loop points.
+50 ms, the true-peak ceiling, BS.1770 loudness (reference coefficients, the -3.01 LUFS sine, gating), mood
+loudness ceilings, fades, the WAV header and length, and the live chip core (sample-for-sample equal to the
+offline voice, release, polyphony, no clipping). The end-to-end tests drive the real app: the demo cue is
+ready on first load, summon a cue, play it, export the WAV and parse it, confirm the browser export equals
+the CLI export byte for byte, open a share link in a fresh page and get the same file, export a loop with
+loop points, and play the live chip so the AudioWorklet reports voices and real output.
 
 ## Architecture
 
@@ -81,17 +95,20 @@ for byte, open a share link in a fresh page and get the same file, and export a 
  (scene,     local |       (zod)        (length,      (seeded,     (notes)   (Web Worker       (limiter,  (16-bit,
   mood,      bedrock |                   stings)       per-role)              or Node CLI)      -1 dBTP)   dither)
   seed)      remote
+
+ keyboard ──> LiveChip ──> AudioWorklet (LiveChipCore: same Voice / Operator / Envelope) ──> analyser ──> speakers
 ```
 
 | Folder | What lives there |
 |---|---|
-| `src/engine/` | The chip: sine table, envelope, operator, 8 algorithms, voice, patches, reverb, master, renderer |
+| `src/engine/` | The chip: sine table, envelope, operator, 8 algorithms, voice, patches, reverb, master, loudness, renderer |
 | `src/score/` | Schemas, music theory, seeded RNG, scene reader, local composer (Markov motifs), arranger |
 | `src/director/` | Director interface and adapters: local, Amazon Bedrock, remote |
 | `src/wav/` | WAV encoder and parser |
 | `src/cli/` | `npm run score` |
 | `src/server/`, `functions/` | `/api/compose` handler and its Cloudflare Pages Function |
 | `src/web/` | Browser app: form, render worker, player, timeline, chip view, scope |
+| `src/web/live/` | The real-time chip: AudioWorklet processor, its testable core, page-side controller |
 | `tests/` | `unit/`, `cli/`, `e2e/` |
 
 The engine has no DOM dependency, so the browser worker and the CLI run exactly the same code.
@@ -117,10 +134,13 @@ from this repository.
 
 - [`.kiro/steering/`](.kiro/steering): product, tech and structure rules that Kiro loads for every task
   (determinism by seed, the adapter rule, units in names, the folder map).
-- [`.kiro/specs/fright-score-core/`](.kiro/specs/fright-score-core): EARS requirements, design and the task
-  plan the implementation follows.
-- [`.kiro/hooks/`](.kiro/hooks): runs the unit tests when engine code is saved, blocks unseeded randomness
-  (`Math.random`) in engine and composer code, and keeps the task list in sync.
+- [`.kiro/specs/`](.kiro/specs): two specs, each with EARS requirements, a design and a task plan the
+  implementation follows: `fright-score-core` (director, arranger, engine, WAV, CLI, web app, loudness) and
+  `live-chip` (the real-time AudioWorklet keyboard and the demo cue on first load).
+- [`.kiro/hooks/`](.kiro/hooks): three hooks. `test-on-save.json` runs the unit tests when engine, score,
+  director, WAV or live-chip code is saved; `determinism-guard.json` blocks unseeded randomness
+  (`Math.random`, `Date.now`) in engine and composer code; `spec-task-sync.json` is an agent hook that keeps
+  the task lists checked off and the suite green before the agent stops.
 - [`KIRO-LOG.md`](KIRO-LOG.md): every Kiro CLI call, its prompt, what it produced and what it reported.
 
 ## License

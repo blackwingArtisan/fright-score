@@ -18,7 +18,7 @@ test.describe('Fright Score in the browser', () => {
     await expect(page.locator('#cue-title')).not.toHaveText('No cue yet');
     await expect(page.locator('#cue-meta')).toContainText('BPM');
     await expect(page.locator('#director-notes')).toContainText('Sting at 0:09.0');
-    await expect(page.locator('#render-stats')).toContainText('True peak -1.0 dBTP');
+    await expect(page.locator('#render-stats')).toContainText(/True peak -\d+\.\d dBTP, -1\d\.\d LUFS/);
 
     // Play: the playhead moves.
     await page.getByRole('button', { name: 'Play' }).click();

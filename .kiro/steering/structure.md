@@ -14,6 +14,7 @@ src/
     patches.ts       the instrument library (named FM patches)
     reverb.ts        stereo reverb send
     master.ts        DC blocker, limiter, normalization, fades
+    loudness.ts      ITU-R BS.1770 integrated loudness and per-mood loudness ceilings
     render.ts        Score -> stereo PCM (+ visualizer frames)
   score/
     schema.ts        zod schemas: ScorePlan (director output) and Score (realized notes)
@@ -30,7 +31,8 @@ src/
     prompt.ts        LLM prompt and JSON extraction
   wav/wav.ts         16-bit PCM WAV encoder and parser
   cli/score.ts       `npm run score` entry point
-  web/               browser UI (main.ts, worker, views, styles)
+  web/               browser UI (main.ts, render worker, player, views, styles)
+    live/            the real-time chip: AudioWorklet processor, its testable core, page-side controller
 tests/
   unit/              Vitest unit tests, one file per engine/score module
   cli/               CLI end-to-end tests

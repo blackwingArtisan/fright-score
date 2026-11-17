@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Original, royalty-free horror scores from a scene description, played live on an emulated 1990s FM synthesis chip." />
+    <meta name="description" content="Original, royalty-free horror scores from a scene description, synthesized in your browser on an emulated 1990s FM chip you can also play live." />
     <meta name="theme-color" content="#0c241d" />
     <title>Fright Score</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -13,7 +13,7 @@
     <header class="masthead">
       <div class="masthead__title">
         <h1>Fright Score</h1>
-        <p class="masthead__sub">Original horror cues, composed from your scene and played live on the FS&#8209;666, an emulated 1990s four-operator FM chip.</p>
+        <p class="masthead__sub">Original horror cues, composed from your scene and synthesized in your browser by the FS&#8209;666, an emulated 1990s four-operator FM chip. Then play the chip yourself, live.</p>
       </div>
       <dl class="masthead__spec" aria-label="Chip specification">
         <div><dt>Part</dt><dd>FS-666</dd></div>
@@ -94,11 +94,33 @@
         <div class="chip-wrap">
           <div class="chip-label">
             <h3>FS-666 channels</h3>
-            <p>Each row is one instrument. Square pads are modulators, round pads are carriers; copper traces show the algorithm. Pads glow with their envelopes.</p>
+            <p>Each row is one instrument. Square pads are modulators, round pads are carriers; copper traces show the algorithm. Pads glow with the envelope levels the renderer recorded for every frame of the cue.</p>
           </div>
           <canvas id="chip" aria-label="Live view of the FM chip operators and envelopes"></canvas>
           <canvas id="scope" height="72" aria-label="Output waveform"></canvas>
         </div>
+
+        <section class="live" aria-labelledby="live-title">
+          <div class="live__head">
+            <h3 id="live-title">Play the chip live</h3>
+            <p>Real-time FM synthesis on the audio thread (an AudioWorklet): the same operators and envelopes that render the cue, running sample by sample as you play. Keys A to K, Z and X change octave, or tap.</p>
+          </div>
+          <div class="live__controls">
+            <label class="field live__patch" for="live-patch">
+              <span class="field__label">Patch</span>
+              <select id="live-patch" name="live-patch"></select>
+            </label>
+            <div class="live__octave" role="group" aria-label="Octave">
+              <button type="button" id="octave-down" class="btn btn--ghost" aria-label="Octave down">&minus;</button>
+              <span id="live-octave" class="live__octave-label" aria-live="polite">C4</span>
+              <button type="button" id="octave-up" class="btn btn--ghost" aria-label="Octave up">+</button>
+            </div>
+            <p id="live-blurb" class="live__blurb"></p>
+          </div>
+          <canvas id="live-ops" aria-label="Live operator envelopes of the patch you are playing"></canvas>
+          <div id="keys" class="keys" role="group" aria-label="FS-666 keyboard"></div>
+          <p id="live-status" class="live__status" data-frames="0" data-voices="0" data-peak="0">Asleep. Press a key to wake the chip.</p>
+        </section>
 
         <section class="notes" aria-labelledby="notes-title">
           <h3 id="notes-title">Director's notes</h3>

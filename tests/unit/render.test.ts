@@ -27,7 +27,7 @@ describe('renderer', () => {
 
   it('never exceeds the -1 dBFS true-peak ceiling', () => {
     expect(truePeakOf(result.left, result.right)).toBeLessThanOrEqual(dbToGain(-1) + 1e-6);
-    expect(result.stats.truePeakDb).toBeCloseTo(-1, 3);
+    expect(result.stats.truePeakDb).toBeLessThanOrEqual(-1 + 1e-3);
   });
 
   it('fades in from and out to silence', () => {

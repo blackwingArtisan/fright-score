@@ -36,3 +36,5 @@
   - _Requirements: 10.1, 10.2, 10.3_
 - [x] 18. Share links: request in the URL, auto-render on open, copy-link button
   - _Requirements: 10.4_
+- [x] 19. BS.1770 integrated loudness and per-mood loudness ceilings in the renderer; LUFS in CLI and web stats
+  - _Requirements: 6.7_

@@ -28,7 +28,8 @@ Options:
   --quiet             Only print the output path
   --help              Show this help
 
-Output: 44.1 kHz, 16-bit, stereo PCM WAV, true-peak ceiling -1 dBFS, with fades.`;
+Output: 44.1 kHz, 16-bit, stereo PCM WAV, true-peak ceiling -1 dBFS, a loudness
+ceiling per mood (-14 to -18 LUFS), with fades.`;
 
 export interface CliResult {
   outPath: string;
@@ -119,7 +120,7 @@ export async function runCli(argv: string[], env: Record<string, string | undefi
         c.kind === 'riser' ? ` (builds from ${formatTime(c.atSec - (c.lengthSec ?? 4))})` : c.kind === 'silence' ? ` (${c.lengthSec ?? 0.6}s gap)` : '';
       log(`  ${formatTime(c.atSec).padStart(6)}  cue: ${c.kind}${detail}`);
     }
-    log(`  ${result.stats.noteCount} notes, up to ${result.stats.maxVoices} voices, true peak ${result.stats.truePeakDb.toFixed(1)} dBTP, rendered in ${result.stats.renderMs} ms`);
+    log(`  ${result.stats.noteCount} notes, up to ${result.stats.maxVoices} voices, true peak ${result.stats.truePeakDb.toFixed(1)} dBTP, ${result.stats.loudnessLufs.toFixed(1)} LUFS, rendered in ${result.stats.renderMs} ms`);
     if (plan.loop) log('  Seamless loop: no fades, loop points written to the WAV smpl chunk.');
     log(`Wrote ${outPath} (${(wav.byteLength / 1024 / 1024).toFixed(1)} MB, 44.1 kHz 16-bit stereo). Royalty-free: it is yours.`);
   }

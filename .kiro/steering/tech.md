@@ -8,6 +8,8 @@ inclusion: always
 - Vite for the web app, vanilla TypeScript DOM modules (no UI framework), Canvas 2D and SVG for visuals.
 - Audio: the FM engine is pure TypeScript with no DOM dependency, so the browser (in a Web Worker)
   and the CLI share exactly the same renderer. The browser plays the rendered buffer with Web Audio.
+  The live keyboard runs `LiveChipCore` (same Voice code) inside an AudioWorklet; keep that core free of
+  Web Audio types so Vitest can test it.
 - Validation: zod schemas for the director's ScorePlan and the realized Score.
 - Tests: Vitest for unit and CLI tests, Playwright (Chromium) for end-to-end tests against the built app.
 - Deploy target: static hosting on Cloudflare Pages (free tier). Not deployed by the build.

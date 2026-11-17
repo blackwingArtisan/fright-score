@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Spec task check-off",
+      "description": "Reminds the agent to keep the spec task lists in sync after finishing work.",
+      "trigger": "Stop",
+      "action": {
+        "type": "agent",
+        "prompt": "If you completed any task from a tasks.md under .kiro/specs/ in this session, mark it done ([x]) and make sure `npm test` is green before you finish."
+      }
+    }
+  ]
+}

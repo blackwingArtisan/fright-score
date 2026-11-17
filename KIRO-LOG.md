@@ -10,11 +10,18 @@ and any usage it reported. Kiro credits were limited (free plan), so the budget 
   automatically (`inclusion: always`) for every chat and spec task.
 - `.kiro/specs/fright-score-core/` holds the main spec: EARS requirements, design and the task plan
   the implementation followed. Tasks are checked off as they land.
-- `.kiro/hooks/` holds three hooks in the Kiro v1 hook format:
-  - `test-on-save.json`: `PostFileSave` on engine, score, director or WAV modules runs `npm run test:unit`.
+- `.kiro/specs/live-chip/` holds the follow-up spec for the real-time AudioWorklet keyboard and the demo
+  cue on first load, written in the same format after review feedback on the first build.
+- `.kiro/hooks/` holds three hook files in the Kiro v1 hook format, one hook each:
+  - `test-on-save.json`: `PostFileSave` on engine, score, director, WAV or live-chip modules runs
+    `npm run test:unit`.
   - `determinism-guard.json`: `PostFileSave` runs `scripts/check-determinism.mjs`, which fails if
-    `Math.random` shows up in engine, score or director code (every cue must be reproducible by seed),
-    plus a `Stop` agent hook that keeps `tasks.md` in sync.
+    `Math.random` or `Date.now` shows up in engine, score or director code (every cue must be
+    reproducible by seed).
+  - `spec-task-sync.json`: a `Stop` agent hook that checks off finished tasks in any spec's `tasks.md`
+    and asks for a green `npm test` before the agent stops.
+- The hooks are written to the Kiro hook format but have not yet been run inside the Kiro IDE; the same
+  commands run in `npm test` and `npm run check:determinism`.
 
 ## Calls
 
@@ -60,6 +67,8 @@ Result after 22 s, before any tool call:
   time), and the two-call budget was spent.
 
 ### Outcome
+
+No further Kiro calls were made after these two: the two-call budget for this entry was spent.
 
 The spec in `.kiro/specs/fright-score-core/` was written by hand from the same prompt, following the
 steering files and Kiro's spec format (EARS requirements, design, task list), and the implementation

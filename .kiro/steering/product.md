@@ -19,11 +19,16 @@ YM2612 family) renders it to audio in the browser or offline from a CLI.
 2. Royalty-free: the output belongs to the user; the app says so plainly next to every export.
 3. Repeatable: the same request and seed always produce the same audio, byte for byte.
 4. Timed: users can ask for a sting at an exact second and the sting lands there.
-5. Solid files: WAV exports are 44.1 kHz, 16-bit, stereo, never clip, and fade cleanly.
+5. Solid files: WAV exports are 44.1 kHz, 16-bit, stereo, never clip, fade cleanly, and sit at a
+   loudness that fits the mood.
 
 ## Experience principles
 - One clear path: describe the scene or pick a mood, set the length, summon the score, listen, export.
 - Show the machine: the chip's operators, envelopes and algorithms are visible while the cue plays.
+- Let people play it: a real-time keyboard runs the same chip in an AudioWorklet.
+- Never an empty stage: the first view is a real, playable demo cue.
+- Say exactly what is live: cues are rendered, then played back sample-exact; only the keyboard is
+  synthesized in real time. Copy must not blur the two.
 - Explain the director: show the plan (tempo, key, mode, sections, cues) in plain words.
 - The look is a cursed 1993 chip datasheet: gothic lettering stitched onto technical drawings.
 - Works with no account, no network and no paid service. The AI director is an upgrade, not a gate.

@@ -2,16 +2,19 @@ import '@fontsource/pirata-one/400.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import './styles.css';
+import { PATCHES, PATCH_IDS, type PatchId } from '../engine/patches';
 import type { RenderStats, VizFrames } from '../engine/render';
 import { MOOD_PROFILES } from '../score/moods';
 import { scoreFromRequest } from '../score/pipeline';
 import { parseTimePhrase, readScene } from '../score/scene';
 import { MOODS, type Mood, type Score } from '../score/schema';
-import { MODE_LABELS, formatTime } from '../score/theory';
+import { MODE_LABELS, formatTime, midiToName } from '../score/theory';
 import { createWebDirector } from './director';
+import { LiveChip } from './live/live-chip';
 import { Player } from './player';
 import type { RenderRequestMessage, WorkerMessage } from './protocol';
 import { ChipView } from './views/chip';
+import { LiveView } from './views/live';
 import { ScopeView } from './views/scope';
 import { TimelineView } from './views/timeline';
 
@@ -51,14 +54,32 @@ const els = {
   scope: $<HTMLCanvasElement>('scope'),
   notes: $<HTMLParagraphElement>('director-notes'),
   stats: $<HTMLParagraphElement>('render-stats'),
+  livePatch: $<HTMLSelectElement>('live-patch'),
+  liveBlurb: $<HTMLParagraphElement>('live-blurb'),
+  liveOps: $<HTMLCanvasElement>('live-ops'),
+  keys: $<HTMLDivElement>('keys'),
+  octave: $<HTMLSpanElement>('live-octave'),
+  octaveDown: $<HTMLButtonElement>('octave-down'),
+  octaveUp: $<HTMLButtonElement>('octave-up'),
+  liveStatus: $<HTMLParagraphElement>('live-status'),
 };
+
+/** The cue rendered on first load, so the board shows a real score before anyone clicks. */
+const DEMO_REQUEST = { seed: 13, scene: EXAMPLES[0].scene } as const;
 
 const director = createWebDirector(import.meta.env.VITE_FRIGHT_DIRECTOR);
 const player = new Player();
 const timeline = new TimelineView(els.timeline);
 const chip = new ChipView(els.chip);
 const scope = new ScopeView(els.scope);
-const worker = new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' });
+const live = new LiveChip(() => player.audio());
+const liveView = new LiveView(els.liveOps, live);
+
+const createWorker = () => new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' });
+let worker = createWorker();
+
+/** Raised when a newer request replaces a render that is still running. */
+class Superseded extends Error {}
 
 interface Rendered {
   score: Score;
@@ -69,6 +90,8 @@ interface Rendered {
 
 let current: Rendered | undefined;
 let renderId = 0;
+let pending: { reject: (error: Error) => void } | undefined;
+let hasPlayed = false;
 
 type State = 'idle' | 'composing' | 'rendering' | 'ready' | 'playing' | 'error';
 
@@ -223,8 +246,24 @@ function describe(score: Score): string {
   return `${moodLabel}. ${p.key.root} ${MODE_LABELS[p.key.mode]}, ${p.tempoBpm} BPM in ${p.beatsPerBar}/4, ${formatTime(p.durationSec)}. Seed ${score.seed}.${loop}`;
 }
 
-function render(score: Score): Promise<Rendered> {
+/** Stop a render that is still running, so a newer request starts at once and cannot be overwritten. */
+function cancelRender(): void {
+  if (!pending) return;
+  worker.terminate();
+  worker = createWorker();
+  pending.reject(new Superseded('A newer cue replaced this one'));
+  pending = undefined;
+}
+
+interface RenderedAudio extends Rendered {
+  left: Float32Array;
+  right: Float32Array;
+}
+
+function render(score: Score): Promise<RenderedAudio> {
+  cancelRender();
   const id = ++renderId;
+  const w = worker;
   return new Promise((resolve, reject) => {
     const onMessage = (event: MessageEvent<WorkerMessage>) => {
       const msg = event.data;
@@ -234,22 +273,24 @@ function render(score: Score): Promise<Rendered> {
         setStatus('rendering', `Rendering ${Math.round(msg.fraction * 100)}%`);
         return;
       }
-      worker.removeEventListener('message', onMessage);
+      w.removeEventListener('message', onMessage);
+      pending = undefined;
       if (msg.type === 'error') reject(new Error(msg.message));
-      else {
-        player.load(msg.left, msg.right, 44_100, score.plan.loop === true);
-        timeline.setScore(score, msg.left, msg.right);
-        resolve({ score, wav: msg.wav, frames: msg.frames, stats: msg.stats });
-      }
+      else resolve({ score, wav: msg.wav, frames: msg.frames, stats: msg.stats, left: msg.left, right: msg.right });
     };
-    worker.addEventListener('message', onMessage);
+    pending = { reject };
+    w.addEventListener('message', onMessage);
     const request: RenderRequestMessage = { type: 'render', id, score };
-    worker.postMessage(request);
+    w.postMessage(request);
   });
 }
 
+let summonToken = 0;
+
 async function summon(event: Event): Promise<void> {
   event.preventDefault();
+  const token = ++summonToken;
+  cancelRender();
   const seed = Math.max(0, Math.floor(Number(els.seed.value) || 0)) >>> 0;
   els.seed.value = String(seed);
   const seconds = els.seconds.value.trim() ? Number(els.seconds.value) : undefined;
@@ -270,6 +311,11 @@ async function summon(event: Event): Promise<void> {
     ...(els.loop.checked ? { loop: true } : {}),
   };
 
+  await summonCue(request, token, { demo: false });
+}
+
+/** Compose and render a request, then show it on the board. Stale results (an older token) are dropped. */
+async function summonCue(request: CueRequestLike, token: number, { demo }: { demo: boolean }): Promise<void> {
   player.stop();
   setReady(false);
   els.summon.disabled = true;
@@ -277,26 +323,33 @@ async function summon(event: Event): Promise<void> {
   try {
     setStatus('composing', 'Composing');
     const score = await scoreFromRequest(director, request);
+    if (token !== summonToken) return;
     els.title.textContent = score.plan.title;
-    els.meta.textContent = describe(score);
+    els.meta.textContent = demo ? `Demo cue from "${request.scene}". ${describe(score)}` : describe(score);
     els.notes.textContent = score.plan.directorNotes ?? '';
     timeline.setScore(score);
     chip.set(score, undefined);
     setStatus('rendering', 'Rendering 0%');
-    current = await render(score);
+    const rendered = await render(score);
+    if (token !== summonToken) return;
+    player.load(rendered.left, rendered.right, 44_100, score.plan.loop === true);
+    timeline.setScore(score, rendered.left, rendered.right);
+    current = { score, wav: rendered.wav, frames: rendered.frames, stats: rendered.stats };
     chip.set(score, current.frames);
     const s = current.stats;
-    els.stats.textContent = `${s.noteCount} notes on ${score.tracks.length} channels, up to ${s.maxVoices} voices at once. True peak ${s.truePeakDb.toFixed(1)} dBTP. Rendered in ${(s.renderMs / 1000).toFixed(1)} s in your browser.`;
+    els.stats.textContent = `${s.noteCount} notes on ${score.tracks.length} channels, up to ${s.maxVoices} voices at once. True peak ${s.truePeakDb.toFixed(1)} dBTP, ${s.loudnessLufs.toFixed(1)} LUFS. Rendered in ${(s.renderMs / 1000).toFixed(1)} s in your browser.`;
     els.progress.style.width = '100%';
     setReady(true);
-    setStatus('ready', 'Ready');
+    setStatus('ready', demo ? 'Ready: press Play' : 'Ready');
+    els.play.classList.toggle('btn--beckon', !hasPlayed);
     lastRequest = request;
-    history.replaceState(null, '', `?${shareParams(request).toString()}`);
+    if (!demo) history.replaceState(null, '', `?${shareParams(request).toString()}`);
     document.body.dataset.cue = 'ready';
   } catch (error) {
+    if (error instanceof Superseded || token !== summonToken) return;
     setStatus('error', (error as Error).message.slice(0, 120));
   } finally {
-    els.summon.disabled = false;
+    if (token === summonToken) els.summon.disabled = false;
   }
 }
 
@@ -308,6 +361,8 @@ async function togglePlay(): Promise<void> {
     setStatus('ready', 'Paused');
   } else {
     await player.play();
+    hasPlayed = true;
+    els.play.classList.remove('btn--beckon');
     els.play.textContent = 'Pause';
     setStatus('playing', 'Playing');
   }
@@ -322,10 +377,148 @@ function frame(): void {
   const pos = player.position;
   timeline.draw(pos);
   chip.draw(pos);
-  scope.draw(player.analyser, player.playing);
+  scope.draw(player.analyser, player.playing || live.latest.voices > 0);
+  liveView.draw();
+  updateLiveStatus();
   els.clock.textContent = `${formatTime(pos)} / ${formatTime(current?.score.durationSec ?? 0)}`;
   els.clock.dataset.position = pos.toFixed(2);
   requestAnimationFrame(frame);
+}
+
+/* Play the chip live: a one-octave keyboard driving the FS-666 AudioWorklet in real time. */
+
+/** Computer keys for one octave plus the top C, laid out like a piano on the home row. */
+const KEY_MAP = ['a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j', 'k'];
+const BLACK = new Set([1, 3, 6, 8, 10]);
+
+/** A comfortable starting octave for each patch, as the lowest C on the keyboard. */
+const PATCH_BASE: Record<PatchId, number> = {
+  'grave-drone': 36,
+  'wraith-pad': 60,
+  heartbeat: 36,
+  'tritone-brass': 48,
+  'music-box': 72,
+  'glass-bell': 72,
+  'crypt-bass': 36,
+  screech: 60,
+  'ritual-drum': 36,
+  'choir-organ': 48,
+};
+const DEFAULT_LIVE_PATCH: PatchId = 'choir-organ';
+let liveBase = PATCH_BASE[DEFAULT_LIVE_PATCH];
+const keyButtons: HTMLButtonElement[] = [];
+
+function setLiveBase(base: number): void {
+  liveBase = Math.max(24, Math.min(84, base));
+  els.octave.textContent = midiToName(liveBase);
+  keyButtons.forEach((b, i) => {
+    b.setAttribute('aria-label', midiToName(liveBase + i));
+  });
+}
+
+function setLivePatch(id: PatchId): void {
+  live.panic();
+  live.setPatch(id);
+  els.livePatch.value = id;
+  els.liveBlurb.textContent = PATCHES[id].blurb;
+  setLiveBase(PATCH_BASE[id]);
+}
+
+function pressKey(index: number, source: string): void {
+  keyButtons[index]?.classList.add('key--down');
+  void live.noteOn(`${source}:${index}`, liveBase + index);
+}
+
+function releaseKey(index: number, source: string): void {
+  keyButtons[index]?.classList.remove('key--down');
+  live.noteOff(`${source}:${index}`);
+}
+
+function buildLiveChip(): void {
+  for (const id of PATCH_IDS) {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = PATCHES[id].name;
+    els.livePatch.append(option);
+  }
+  els.livePatch.addEventListener('change', () => setLivePatch(els.livePatch.value as PatchId));
+  let white = 0;
+  KEY_MAP.forEach((letter, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    const black = BLACK.has(i);
+    b.className = black ? 'key key--black' : 'key';
+    b.dataset.index = String(i);
+    b.style.setProperty('--slot', String(black ? white - 0.5 : white));
+    if (!black) white++;
+    const cap = document.createElement('span');
+    cap.className = 'key__cap';
+    cap.textContent = letter.toUpperCase();
+    b.append(cap);
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      b.setPointerCapture(e.pointerId);
+      pressKey(i, `p${e.pointerId}`);
+    });
+    const up = (e: PointerEvent) => releaseKey(i, `p${e.pointerId}`);
+    b.addEventListener('pointerup', up);
+    b.addEventListener('pointercancel', up);
+    b.addEventListener('keydown', (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+        e.preventDefault();
+        pressKey(i, 'kb-focus');
+      }
+    });
+    b.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') releaseKey(i, 'kb-focus');
+    });
+    keyButtons.push(b);
+    els.keys.append(b);
+  });
+  els.keys.style.setProperty('--whites', String(white));
+  els.octaveDown.addEventListener('click', () => setLiveBase(liveBase - 12));
+  els.octaveUp.addEventListener('click', () => setLiveBase(liveBase + 12));
+  window.addEventListener('blur', () => {
+    live.panic();
+    keyButtons.forEach((b) => b.classList.remove('key--down'));
+  });
+  setLivePatch(DEFAULT_LIVE_PATCH);
+}
+
+const isTyping = (target: EventTarget | null) =>
+  target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+
+document.addEventListener('keydown', (e) => {
+  if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+  const key = e.key.toLowerCase();
+  const index = KEY_MAP.indexOf(key);
+  if (index >= 0) {
+    e.preventDefault();
+    pressKey(index, 'kb');
+  } else if (key === 'z') setLiveBase(liveBase - 12);
+  else if (key === 'x') setLiveBase(liveBase + 12);
+});
+document.addEventListener('keyup', (e) => {
+  const index = KEY_MAP.indexOf(e.key.toLowerCase());
+  if (index >= 0) releaseKey(index, 'kb');
+});
+
+let liveStatusAt = 0;
+function updateLiveStatus(): void {
+  const t = performance.now();
+  if (t - liveStatusAt < 200) return;
+  liveStatusAt = t;
+  const r = live.latest;
+  const el = els.liveStatus;
+  el.dataset.frames = String(r.framesRendered);
+  el.dataset.voices = String(r.voices);
+  el.dataset.peak = live.peakEver.toFixed(4);
+  if (!live.awake) return;
+  const seconds = (r.framesRendered / 44_100).toFixed(1);
+  el.textContent =
+    r.voices > 0
+      ? `Synthesizing ${r.voices} voice${r.voices === 1 ? '' : 's'} in real time on the audio thread. ${seconds} s of audio so far.`
+      : `Chip awake and listening. ${seconds} s synthesized in real time so far.`;
 }
 
 buildMoods();
@@ -368,5 +561,7 @@ document.addEventListener('keydown', (e) => {
     void togglePlay();
   }
 });
+buildLiveChip();
 requestAnimationFrame(frame);
 if (loadFromUrl()) els.form.requestSubmit();
+else void summonCue(DEMO_REQUEST, ++summonToken, { demo: true });
