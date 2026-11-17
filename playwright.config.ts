@@ -12,6 +12,9 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'retain-on-failure',
     acceptDownloads: true,
+    // Play through Chrome's fake audio output, so the audio clock runs on any machine, including one with
+    // no working sound device, and the tests stay silent.
+    launchOptions: { args: ['--disable-audio-output'] },
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1360, height: 900 } }, testIgnore: /mobile\.spec\.ts/ },
