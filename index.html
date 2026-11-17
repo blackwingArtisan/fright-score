@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Original, royalty-free horror scores from a scene description, played live on an emulated 1990s FM synthesis chip." />
+    <meta name="theme-color" content="#0c241d" />
+    <title>Fright Score</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <a class="skip" href="#direction">Skip to the controls</a>
+    <header class="masthead">
+      <div class="masthead__title">
+        <h1>Fright Score</h1>
+        <p class="masthead__sub">Original horror cues, composed from your scene and played live on the FS&#8209;666, an emulated 1990s four-operator FM chip.</p>
+      </div>
+      <dl class="masthead__spec" aria-label="Chip specification">
+        <div><dt>Part</dt><dd>FS-666</dd></div>
+        <div><dt>Synthesis</dt><dd>4-op FM, 8 algorithms</dd></div>
+        <div><dt>Output</dt><dd>44.1 kHz, 16-bit WAV</dd></div>
+        <div><dt>License</dt><dd>Yours, royalty-free</dd></div>
+      </dl>
+    </header>
+
+    <main class="board">
+      <section id="direction" class="panel direction" aria-labelledby="direction-title">
+        <h2 id="direction-title">Direction</h2>
+        <form id="cue-form" novalidate>
+          <label class="field" for="scene">
+            <span class="field__label">Describe the scene</span>
+            <textarea id="scene" name="scene" rows="4" maxlength="500" spellcheck="true" placeholder="Creeping dread, 90 seconds, builds to a sting at 0:70"></textarea>
+          </label>
+          <p id="heard" class="heard" aria-live="polite"></p>
+          <div class="examples" role="group" aria-label="Example scenes"></div>
+
+          <fieldset class="field moods">
+            <legend class="field__label">Mood</legend>
+            <div class="moods__grid" id="moods"></div>
+          </fieldset>
+
+          <div class="field-row">
+            <label class="field" for="seconds">
+              <span class="field__label">Length (seconds)</span>
+              <input id="seconds" name="seconds" type="number" inputmode="numeric" min="5" max="300" step="1" placeholder="From scene" />
+            </label>
+            <label class="field" for="stings">
+              <span class="field__label">Sting at</span>
+              <input id="stings" name="stings" type="text" placeholder="e.g. 1:10" autocomplete="off" />
+            </label>
+          </div>
+
+          <div class="field-row field-row--seed">
+            <label class="field" for="seed">
+              <span class="field__label">Seed</span>
+              <input id="seed" name="seed" type="number" inputmode="numeric" min="0" max="4294967295" step="1" value="13" />
+            </label>
+            <button type="button" id="reroll" class="btn btn--ghost" title="Pick a new seed">New seed</button>
+          </div>
+
+          <button type="submit" id="summon" class="btn btn--summon">Summon the score</button>
+          <p class="director-name" id="director-name"></p>
+        </form>
+      </section>
+
+      <section class="panel stage" aria-labelledby="cue-title">
+        <div class="stage__head">
+          <div>
+            <h2 id="cue-title" class="cue-title">No cue yet</h2>
+            <p id="cue-meta" class="cue-meta">Describe a scene or pick a mood, then summon the score.</p>
+          </div>
+          <p id="status" class="status" data-state="idle" role="status" aria-live="polite">Idle</p>
+        </div>
+        <div class="progress" aria-hidden="true"><div id="progress-bar" class="progress__bar"></div></div>
+
+        <figure class="timeline">
+          <canvas id="timeline" height="260" aria-label="Score timeline: sections, notes, cues and playhead. Click to move the playhead."></canvas>
+        </figure>
+
+        <div class="transport" role="group" aria-label="Playback and export">
+          <button type="button" id="play" class="btn" disabled>Play</button>
+          <span id="clock" class="clock" aria-live="off">0:00.0 / 0:00.0</span>
+          <span class="transport__spacer"></span>
+          <button type="button" id="export-wav" class="btn" disabled>Download WAV</button>
+          <button type="button" id="export-json" class="btn btn--ghost" disabled>Download score JSON</button>
+        </div>
+
+        <div class="chip-wrap">
+          <div class="chip-label">
+            <h3>FS-666 channels</h3>
+            <p>Each row is one instrument. Square pads are modulators, round pads are carriers; copper traces show the algorithm. Pads glow with their envelopes.</p>
+          </div>
+          <canvas id="chip" aria-label="Live view of the FM chip operators and envelopes"></canvas>
+          <canvas id="scope" height="72" aria-label="Output waveform"></canvas>
+        </div>
+
+        <section class="notes" aria-labelledby="notes-title">
+          <h3 id="notes-title">Director's notes</h3>
+          <p id="director-notes">The director explains the key, tempo, and where the scares land.</p>
+          <p id="render-stats" class="render-stats"></p>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Every cue is generated from rules and a seed, never sampled from existing music. The same scene and seed always give the same file. Use it anywhere.</p>
+      <p>Built by Stubborn Otter Software with Kiro.</p>
+    </footer>
+    <script type="module" src="/src/web/main.ts"></script>
+  </body>
+</html>

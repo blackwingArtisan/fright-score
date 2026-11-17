@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Determinism guard",
+      "description": "Blocks unseeded randomness in the engine and composer: fails if Math.random appears in src/engine, src/score or src/director.",
+      "trigger": "PostFileSave",
+      "matcher": "src/(engine|score|director)/.*\\.ts$",
+      "action": { "type": "command", "command": "node scripts/check-determinism.mjs" },
+      "timeout": 30
+    },
+    {
+      "name": "Spec task check-off",
+      "description": "Reminds the agent to keep the spec's task list in sync after finishing work.",
+      "trigger": "Stop",
+      "action": { "type": "agent", "prompt": "If you completed any task from .kiro/specs/fright-score-core/tasks.md in this session, mark it done ([x]) and make sure `npm test` is green before you finish." }
+    }
+  ]
+}

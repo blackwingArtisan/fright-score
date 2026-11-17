@@ -1,0 +1,34 @@
+# Implementation plan: Fright Score core
+
+- [x] 1. Seeded generator and music theory helpers (modes, degrees, MIDI, time formatting)
+  - _Requirements: 4.4, 5.1_
+- [x] 2. ScorePlan and Score zod schemas with field-level error messages
+  - _Requirements: 1.7, 2.1, 2.2_
+- [x] 3. Scene reader: moods, lengths, sting and hit times, shape words, scene nouns
+  - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.6_
+- [x] 4. Local director: mood profiles, sections, intensity curve, layers, Markov motif, director's notes
+  - _Requirements: 1.4, 1.7, 3.1_
+- [x] 5. reconcilePlan so any director honors the requested length and stings
+  - _Requirements: 2.3_
+- [x] 6. Arranger: drone, pulse, bass, motif, texture, choir, percussion, riser, stinger, boom; silence windows
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+- [x] 7. FM engine: sine table, envelope, operator with feedback, eight algorithms, voice with LFO and glide
+  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+- [x] 8. Patch library of ten instruments tuned for horror
+  - _Requirements: 5.3_
+- [x] 9. Renderer with polyphony limits, voice stealing, reverb and visualizer frames
+  - _Requirements: 5.6, 6.6, 8.3_
+- [x] 10. Master chain: DC blocker, low-pass, soft limiter, fades that respect late stings, true-peak ceiling
+  - _Requirements: 6.3, 6.4, 6.5_
+- [x] 11. WAV encoder and parser with seeded TPDF dither
+  - _Requirements: 4.1, 6.1, 6.2_
+- [x] 12. Director adapters: local, Bedrock (Converse with one repair round), remote; factory by env var
+  - _Requirements: 9.1, 9.2, 9.3, 9.4_
+- [x] 13. CLI `npm run score` with scene, mood, length, stings, seed, JSON output and clear errors
+  - _Requirements: 7.1, 7.2, 7.3_
+- [x] 14. Web app: form with live scene reading, worker render, timeline, FS-666 channel view, scope, exports
+  - _Requirements: 1.8, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
+- [x] 15. Tests: unit suite, CLI test, Playwright end-to-end including browser-equals-CLI bytes
+  - _Requirements: 4.1, 4.2, 4.3, 6.5, 8.5_
+- [x] 16. Server function `/api/compose` wrapping the Bedrock director for the web AI path
+  - _Requirements: 9.1, 9.2_
