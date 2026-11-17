@@ -59,3 +59,14 @@ describe('CLI: npm run score', () => {
     expect(lines.join('\n')).toMatch(/--mood/);
   });
 });
+
+describe('CLI: loops', () => {
+  it('renders a whole-bar loop with loop points', async () => {
+    const out = join(dir, 'loop.wav');
+    const lines: string[] = [];
+    await runCli(['--mood', 'stalker', '--seconds', '10', '--loop', '--seed', '2', '--out', out], {}, (l) => lines.push(l));
+    expect(lines.join('\n')).toMatch(/Seamless loop/);
+    const info = parseWav(readFileSync(out));
+    expect(info.loop).toEqual({ startFrame: 0, endFrame: info.frameCount - 1 });
+  });
+});

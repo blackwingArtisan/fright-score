@@ -8,6 +8,7 @@ export class Player {
   private source: AudioBufferSourceNode | undefined;
   private startedAt = 0;
   private offset = 0;
+  private loop = false;
   analyser: AnalyserNode | undefined;
   onEnded: (() => void) | undefined;
 
@@ -22,7 +23,8 @@ export class Player {
   /** Current playhead in seconds. */
   get position(): number {
     if (!this.ctx || !this.source) return this.offset;
-    return Math.min(this.duration, this.offset + (this.ctx.currentTime - this.startedAt));
+    const t = this.offset + (this.ctx.currentTime - this.startedAt);
+    return this.loop && this.duration > 0 ? t % this.duration : Math.min(this.duration, t);
   }
 
   private ensureContext(): AudioContext {
@@ -35,9 +37,10 @@ export class Player {
     return this.ctx;
   }
 
-  load(left: Float32Array, right: Float32Array, sampleRate: number): void {
+  load(left: Float32Array, right: Float32Array, sampleRate: number, loop = false): void {
     this.stop();
     this.offset = 0;
+    this.loop = loop;
     const ctx = this.ensureContext();
     const buffer = ctx.createBuffer(2, left.length, sampleRate);
     buffer.copyToChannel(left as Float32Array<ArrayBuffer>, 0);
@@ -52,6 +55,7 @@ export class Player {
     if (this.offset >= this.duration - 0.01) this.offset = 0;
     const source = ctx.createBufferSource();
     source.buffer = this.buffer;
+    source.loop = this.loop;
     source.connect(this.analyser!);
     source.onended = () => {
       if (this.source !== source) return;

@@ -20,6 +20,8 @@ export interface CueRequest {
   mood?: Mood;
   durationSec?: number;
   stingAtSec?: number[];
+  /** Seamless loop for games: whole bars, steady intensity, no fades. */
+  loop?: boolean;
   seed: number;
 }
 
@@ -147,6 +149,14 @@ function sectionBounds(durationSec: number, stings: number[], barSec: number, co
   return bounds;
 }
 
+/** Snap a loop length to whole bars, staying inside the allowed range. */
+export function snapLoopLength(durationSec: number, barSec: number): number {
+  let bars = Math.max(2, Math.round(durationSec / barSec));
+  while (bars * barSec > MAX_DURATION_SEC) bars--;
+  while (bars * barSec < MIN_DURATION_SEC) bars++;
+  return round2(bars * barSec);
+}
+
 function sectionCount(durationSec: number): number {
   if (durationSec < 20) return 2;
   if (durationSec < 45) return 3;
@@ -178,6 +188,7 @@ function describePlan(plan: Omit<ScorePlan, 'directorNotes'>, reading: SceneRead
     if (cue.kind === 'riser') lines.push(`A scraping riser climbs for ${cue.lengthSec ?? 4} seconds before ${formatTime(cue.atSec)}.`);
     if (cue.kind === 'hit') lines.push(`A hit lands at ${formatTime(cue.atSec)}.`);
   }
+  if (plan.loop) lines.push(`Built as a seamless ${Math.round(plan.durationSec / ((60 / plan.tempoBpm) * plan.beatsPerBar))}-bar loop: tails wrap to the start, so it can repeat forever in a game.`);
   if (reading?.mood) lines.push(`Read "${plan.mood}" from the scene description.`);
   return lines.join(' ');
 }
@@ -205,13 +216,15 @@ export function composePlan(request: CueRequest): ScorePlan {
   const mood: Mood = request.mood ?? reading?.mood ?? 'dread';
   const profile = MOOD_PROFILES[mood];
 
-  const durationSec = round2(
+  const requestedSec = round2(
     clamp(request.durationSec ?? reading?.durationSec ?? profile.defaultDurationSec, MIN_DURATION_SEC, MAX_DURATION_SEC),
   );
-  const shape: Shape = reading && reading.shape !== 'steady' ? reading.shape : profile.defaultShape;
+  const loop = request.loop === true;
+  const shape: Shape = loop ? 'steady' : reading && reading.shape !== 'steady' ? reading.shape : profile.defaultShape;
   const tempoBpm = pickTempo(profile, rng);
   const beatsPerBar = rng.pick(profile.beatsPerBar);
   const barSec = (60 / tempoBpm) * beatsPerBar;
+  const durationSec = loop ? snapLoopLength(requestedSec, barSec) : requestedSec;
   const mode = rng.weighted(
     profile.modes.map((m) => m.mode),
     profile.modes.map((m) => m.weight),
@@ -219,7 +232,7 @@ export function composePlan(request: CueRequest): ScorePlan {
   const root: NoteName = rng.pick(profile.roots);
 
   let stings = (request.stingAtSec ?? reading?.stingAtSec ?? []).filter((t) => t > 0 && t <= durationSec - 0.25);
-  if (stings.length === 0 && reading?.wantsJumpScare) {
+  if (stings.length === 0 && reading?.wantsJumpScare && !loop) {
     stings = [round2(Math.max(2, Math.round((durationSec * 0.8) / barSec) * barSec))];
   }
   stings = [...new Set(stings.map(round2))].sort((a, b) => a - b);
@@ -263,6 +276,7 @@ export function composePlan(request: CueRequest): ScorePlan {
     motif: composeMotif(profile, rng),
     cues,
     palette: { ...profile.palette },
+    ...(loop ? { loop: true } : {}),
   };
   return parseScorePlan({ ...plan, directorNotes: describePlan(plan, reading, profile) });
 }
@@ -272,7 +286,9 @@ export function composePlan(request: CueRequest): ScorePlan {
  * the requested length and every requested sting time.
  */
 export function reconcilePlan(plan: ScorePlan, request: CueRequest): ScorePlan {
-  const durationSec = request.durationSec ? round2(clamp(request.durationSec, MIN_DURATION_SEC, MAX_DURATION_SEC)) : plan.durationSec;
+  let durationSec = request.durationSec ? round2(clamp(request.durationSec, MIN_DURATION_SEC, MAX_DURATION_SEC)) : plan.durationSec;
+  const loop = plan.loop === true || request.loop === true;
+  if (loop) durationSec = snapLoopLength(durationSec, (60 / plan.tempoBpm) * plan.beatsPerBar);
   const scale = durationSec / plan.durationSec;
   let sections = plan.sections.map((s) => ({ ...s, startSec: round2(s.startSec * scale), endSec: round2(s.endSec * scale) }));
   if (sections.length > 0) sections[sections.length - 1].endSec = durationSec;
@@ -284,6 +300,6 @@ export function reconcilePlan(plan: ScorePlan, request: CueRequest): ScorePlan {
     for (const s of requested) cues.push(...stingCues(s, durationSec));
     cues.sort((a, b) => a.atSec - b.atSec);
   }
-  return parseScorePlan({ ...plan, durationSec, sections, cues });
+  return parseScorePlan({ ...plan, durationSec, sections, cues, ...(loop ? { loop: true } : {}) });
 }
 

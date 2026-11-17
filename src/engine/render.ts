@@ -19,6 +19,9 @@ export const TRACK_POLYPHONY: Record<string, number> = {
   boom: 2,
 };
 
+/** Seconds of release tails rendered past the end of a loop and wrapped onto its start. */
+export const LOOP_TAIL_SEC = 4;
+
 /** Envelope levels per track per operator, sampled for the visualizer. */
 export interface VizFrames {
   frameRate: number;
@@ -101,9 +104,13 @@ export function renderScore(score: Score, options: RenderOptions = {}): RenderRe
   const startedAt = now();
   const sr = SAMPLE_RATE;
   const total = Math.ceil(score.durationSec * sr);
-  const left = new Float32Array(total);
-  const right = new Float32Array(total);
-  const send = new Float32Array(total);
+  const loop = score.plan.loop === true;
+  // Loops render a few extra seconds of tails, then wrap them onto the start.
+  const tail = loop ? Math.min(total, LOOP_TAIL_SEC * sr) : 0;
+  const length = total + tail;
+  let left = new Float32Array(length);
+  let right = new Float32Array(length);
+  const send = new Float32Array(length);
   const frameRate = options.frameRate ?? 30;
   const frameSamples = Math.round(sr / frameRate);
   const frameCount = Math.ceil(total / frameSamples);
@@ -144,8 +151,8 @@ export function renderScore(score: Score, options: RenderOptions = {}): RenderRe
   let noteCount = 0;
   const progressEvery = Math.max(CONTROL_BLOCK, Math.floor(total / 50 / CONTROL_BLOCK) * CONTROL_BLOCK);
 
-  for (let blockStart = 0; blockStart < total; blockStart += CONTROL_BLOCK) {
-    const blockEnd = Math.min(total, blockStart + CONTROL_BLOCK);
+  for (let blockStart = 0; blockStart < length; blockStart += CONTROL_BLOCK) {
+    const blockEnd = Math.min(length, blockStart + CONTROL_BLOCK);
     let voiceTotal = 0;
     for (const pt of prepared) {
       // Start notes that begin in this block.
@@ -194,7 +201,7 @@ export function renderScore(score: Score, options: RenderOptions = {}): RenderRe
 
     if (frames) {
       const frameIndex = Math.floor(blockStart / frameSamples);
-      if (blockStart % frameSamples < CONTROL_BLOCK && frameIndex < frameCount) {
+      if (blockStart < total && blockStart % frameSamples < CONTROL_BLOCK && frameIndex < frameCount) {
         for (let t = 0; t < trackCount; t++) {
           const pt = prepared[t];
           const base = (frameIndex * trackCount + t) * 4;
@@ -211,11 +218,19 @@ export function renderScore(score: Score, options: RenderOptions = {}): RenderRe
         }
       }
     }
-    if (options.onProgress && blockStart % progressEvery === 0) options.onProgress((blockStart / total) * 0.9);
+    if (options.onProgress && blockStart % progressEvery === 0) options.onProgress(Math.min(0.9, (blockStart / length) * 0.9));
   }
 
   applyReverb(send, left, right);
-  const truePeak = master(left, right, { ...DEFAULT_MASTER, sampleRate: sr, fadeOutSec: fadeOutFor(score) });
+  if (loop) {
+    for (const ch of [left, right]) for (let i = 0; i < tail; i++) ch[i % total] += ch[total + i];
+    left = left.slice(0, total);
+    right = right.slice(0, total);
+  }
+  const masterOptions = loop
+    ? { ...DEFAULT_MASTER, sampleRate: sr, fadeInSec: 0, fadeOutSec: 0, circular: true }
+    : { ...DEFAULT_MASTER, sampleRate: sr, fadeOutSec: fadeOutFor(score) };
+  const truePeak = master(left, right, masterOptions);
   options.onProgress?.(1);
 
   return {

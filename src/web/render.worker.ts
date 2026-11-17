@@ -24,7 +24,7 @@ ctx.onmessage = (event) => {
         }
       },
     });
-    const wav = encodeWav(result, score.seed ^ 0x5eed);
+    const wav = encodeWav(result, { ditherSeed: score.seed ^ 0x5eed, loop: score.plan.loop === true });
     const frames = result.frames!;
     ctx.postMessage(
       { type: 'done', id, left: result.left, right: result.right, wav, frames, stats: result.stats },

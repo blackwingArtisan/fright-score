@@ -137,6 +137,8 @@ export interface MasterOptions {
   driveDb: number;
   /** Output low-pass cutoff in Hz. */
   lowpassHz: number;
+  /** Treat the audio as a loop: filters are warmed with the end so the wrap point stays seamless. */
+  circular?: boolean;
 }
 
 export const DEFAULT_MASTER: MasterOptions = {
@@ -151,8 +153,19 @@ export const DEFAULT_MASTER: MasterOptions = {
 /** Run the full master chain on a stereo pair, in place. Returns the final true peak (linear). */
 export function master(left: Float32Array, right: Float32Array, options: MasterOptions = DEFAULT_MASTER): number {
   for (const ch of [left, right]) {
-    dcBlock(ch);
-    lowpass(ch, options.lowpassHz, options.sampleRate);
+    if (options.circular) {
+      // Run the filters over the last stretch first, so their state at sample 0 matches the loop's end.
+      const warm = Math.min(ch.length, 16_384);
+      const tmp = new Float32Array(warm + ch.length);
+      tmp.set(ch.subarray(ch.length - warm), 0);
+      tmp.set(ch, warm);
+      dcBlock(tmp);
+      lowpass(tmp, options.lowpassHz, options.sampleRate);
+      ch.set(tmp.subarray(warm));
+    } else {
+      dcBlock(ch);
+      lowpass(ch, options.lowpassHz, options.sampleRate);
+    }
   }
   const rawPeak = peakOf(left, right);
   if (rawPeak === 0) return 0;

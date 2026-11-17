@@ -32,6 +32,8 @@ const els = {
   moods: $<HTMLDivElement>('moods'),
   seconds: $<HTMLInputElement>('seconds'),
   stings: $<HTMLInputElement>('stings'),
+  loop: $<HTMLInputElement>('loop'),
+  share: $<HTMLButtonElement>('share'),
   seed: $<HTMLInputElement>('seed'),
   reroll: $<HTMLButtonElement>('reroll'),
   summon: $<HTMLButtonElement>('summon'),
@@ -172,12 +174,53 @@ function setReady(enabled: boolean): void {
   els.play.disabled = !enabled;
   els.exportWav.disabled = !enabled;
   els.exportJson.disabled = !enabled;
+  els.share.disabled = !enabled;
 }
+
+/** The request behind the current cue, as URL parameters. Same parameters, same cue, on any machine. */
+function shareParams(request: CueRequestLike): URLSearchParams {
+  const p = new URLSearchParams();
+  if (request.scene) p.set('scene', request.scene);
+  if (request.mood) p.set('mood', request.mood);
+  if (request.durationSec) p.set('s', String(request.durationSec));
+  if (request.stingAtSec?.length) p.set('sting', request.stingAtSec.join(','));
+  if (request.loop) p.set('loop', '1');
+  p.set('seed', String(request.seed));
+  return p;
+}
+
+/** Fill the form from URL parameters. Returns true when there was something to load. */
+function loadFromUrl(): boolean {
+  const p = new URLSearchParams(window.location.search);
+  if (![...p.keys()].some((k) => ['scene', 'mood', 's', 'sting', 'seed', 'loop'].includes(k))) return false;
+  els.scene.value = p.get('scene')?.slice(0, 500) ?? '';
+  const mood = p.get('mood');
+  const moodInput = els.form.querySelector(`input[name="mood"][value="${mood && (MOODS as readonly string[]).includes(mood) ? mood : 'auto'}"]`) as HTMLInputElement;
+  moodInput.checked = true;
+  els.seconds.value = p.get('s') ?? '';
+  els.stings.value = p.get('sting') ?? '';
+  els.seed.value = p.get('seed') ?? els.seed.value;
+  els.loop.checked = p.get('loop') === '1';
+  updateHeard();
+  return true;
+}
+
+interface CueRequestLike {
+  seed: number;
+  scene?: string;
+  mood?: Mood;
+  durationSec?: number;
+  stingAtSec?: number[];
+  loop?: boolean;
+}
+
+let lastRequest: CueRequestLike | undefined;
 
 function describe(score: Score): string {
   const p = score.plan;
   const moodLabel = MOOD_PROFILES[p.mood].label;
-  return `${moodLabel}. ${p.key.root} ${MODE_LABELS[p.key.mode]}, ${p.tempoBpm} BPM in ${p.beatsPerBar}/4, ${formatTime(p.durationSec)}. Seed ${score.seed}.`;
+  const loop = p.loop ? ' Seamless loop.' : '';
+  return `${moodLabel}. ${p.key.root} ${MODE_LABELS[p.key.mode]}, ${p.tempoBpm} BPM in ${p.beatsPerBar}/4, ${formatTime(p.durationSec)}. Seed ${score.seed}.${loop}`;
 }
 
 function render(score: Score): Promise<Rendered> {
@@ -194,7 +237,7 @@ function render(score: Score): Promise<Rendered> {
       worker.removeEventListener('message', onMessage);
       if (msg.type === 'error') reject(new Error(msg.message));
       else {
-        player.load(msg.left, msg.right, 44_100);
+        player.load(msg.left, msg.right, 44_100, score.plan.loop === true);
         timeline.setScore(score, msg.left, msg.right);
         resolve({ score, wav: msg.wav, frames: msg.frames, stats: msg.stats });
       }
@@ -224,6 +267,7 @@ async function summon(event: Event): Promise<void> {
     ...(mood ? { mood } : {}),
     ...(seconds ? { durationSec: seconds } : {}),
     ...(stingAtSec && stingAtSec.length ? { stingAtSec } : {}),
+    ...(els.loop.checked ? { loop: true } : {}),
   };
 
   player.stop();
@@ -246,6 +290,8 @@ async function summon(event: Event): Promise<void> {
     els.progress.style.width = '100%';
     setReady(true);
     setStatus('ready', 'Ready');
+    lastRequest = request;
+    history.replaceState(null, '', `?${shareParams(request).toString()}`);
     document.body.dataset.cue = 'ready';
   } catch (error) {
     setStatus('error', (error as Error).message.slice(0, 120));
@@ -298,7 +344,19 @@ els.timeline.addEventListener('click', (e) => {
 });
 els.exportWav.addEventListener('click', () => {
   if (!current) return;
-  download(current.wav, 'audio/wav', `fright-score-${slug(current.score.plan.title)}-seed${current.score.seed}.wav`);
+  const kind = current.score.plan.loop ? '-loop' : '';
+  download(current.wav, 'audio/wav', `fright-score-${slug(current.score.plan.title)}${kind}-seed${current.score.seed}.wav`);
+});
+els.share.addEventListener('click', async () => {
+  if (!lastRequest) return;
+  const url = `${window.location.origin}${window.location.pathname}?${shareParams(lastRequest).toString()}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    setStatus('ready', 'Link copied');
+  } catch {
+    window.prompt('Copy this link', url);
+  }
+  els.share.dataset.url = url;
 });
 els.exportJson.addEventListener('click', () => {
   if (!current) return;
@@ -311,3 +369,4 @@ document.addEventListener('keydown', (e) => {
   }
 });
 requestAnimationFrame(frame);
+if (loadFromUrl()) els.form.requestSubmit();

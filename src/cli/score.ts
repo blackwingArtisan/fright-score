@@ -22,6 +22,7 @@ Options:
   --sting <times>     Sting time(s), comma separated, e.g. 70 or 1:10,1:25
   --seed <n>          Seed; the same seed always gives the same file (default: 13)
   --out <file.wav>    Output WAV path (default: fright-cue.wav)
+  --loop              Seamless loop for games: whole bars, no fades, loop points in the WAV
   --json <file.json>  Also write the realized score as JSON
   --director <kind>   local | bedrock (default: FRIGHT_DIRECTOR or local)
   --quiet             Only print the output path
@@ -54,6 +55,7 @@ export async function runCli(argv: string[], env: Record<string, string | undefi
       seed: { type: 'string', default: '13' },
       out: { type: 'string', default: 'fright-cue.wav' },
       json: { type: 'string' },
+      loop: { type: 'boolean', default: false },
       director: { type: 'string' },
       quiet: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
@@ -83,6 +85,7 @@ export async function runCli(argv: string[], env: Record<string, string | undefi
     ...(values.mood ? { mood: values.mood as Mood } : {}),
     ...(durationSec ? { durationSec } : {}),
     ...(parseTimes(values.sting) ? { stingAtSec: parseTimes(values.sting) } : {}),
+    ...(values.loop ? { loop: true } : {}),
   };
   if (values.scene && !request.stingAtSec) {
     const reading = readScene(values.scene);
@@ -92,7 +95,7 @@ export async function runCli(argv: string[], env: Record<string, string | undefi
   const director = createDirector(values.director ?? env.FRIGHT_DIRECTOR, env);
   const score = await scoreFromRequest(director, request);
   const result = renderScore(score);
-  const wav = encodeWav(result, seed ^ 0x5eed);
+  const wav = encodeWav(result, { ditherSeed: seed ^ 0x5eed, loop: score.plan.loop === true });
   const outPath = resolve(values.out ?? 'fright-cue.wav');
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, wav);
@@ -117,6 +120,7 @@ export async function runCli(argv: string[], env: Record<string, string | undefi
       log(`  ${formatTime(c.atSec).padStart(6)}  cue: ${c.kind}${detail}`);
     }
     log(`  ${result.stats.noteCount} notes, up to ${result.stats.maxVoices} voices, true peak ${result.stats.truePeakDb.toFixed(1)} dBTP, rendered in ${result.stats.renderMs} ms`);
+    if (plan.loop) log('  Seamless loop: no fades, loop points written to the WAV smpl chunk.');
     log(`Wrote ${outPath} (${(wav.byteLength / 1024 / 1024).toFixed(1)} MB, 44.1 kHz 16-bit stereo). Royalty-free: it is yours.`);
   }
   return { outPath, bytes: wav.byteLength };

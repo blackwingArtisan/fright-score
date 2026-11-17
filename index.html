@@ -58,6 +58,11 @@
             <button type="button" id="reroll" class="btn btn--ghost" title="Pick a new seed">New seed</button>
           </div>
 
+          <label class="check" for="loop">
+            <input id="loop" name="loop" type="checkbox" />
+            <span>Seamless loop for games: whole bars, no fades, loop points in the WAV</span>
+          </label>
+
           <button type="submit" id="summon" class="btn btn--summon">Summon the score</button>
           <p class="director-name" id="director-name"></p>
         </form>
@@ -83,6 +88,7 @@
           <span class="transport__spacer"></span>
           <button type="button" id="export-wav" class="btn" disabled>Download WAV</button>
           <button type="button" id="export-json" class="btn btn--ghost" disabled>Download score JSON</button>
+          <button type="button" id="share" class="btn btn--ghost" disabled>Copy share link</button>
         </div>
 
         <div class="chip-wrap">

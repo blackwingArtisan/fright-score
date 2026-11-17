@@ -62,6 +62,8 @@ export const ScorePlanSchema = z
     motif: MotifSchema,
     cues: z.array(CueSchema).max(16),
     palette: z.partialRecord(RoleSchema, PatchIdSchema),
+    /** Render as a seamless loop: whole bars, no fades, tails wrap to the start. */
+    loop: z.boolean().optional(),
     directorNotes: z.string().max(1200).optional(),
   })
   .superRefine((plan, ctx) => {

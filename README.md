@@ -24,7 +24,10 @@
 - The board shows the chip working while the cue plays: each channel's operators light up with their
   envelopes, copper traces show the algorithm, and a timeline shows every note and cue.
 - **Download WAV** (44.1 kHz, 16-bit, stereo, -1 dBTP true-peak ceiling, clean fades) or the score as JSON.
-- **Same request and seed, same bytes.** The browser and the CLI produce identical files.
+- **Seamless loops for games:** whole bars, no fades, release tails wrapped onto the start, and loop points in
+  the WAV (`smpl` chunk) that game engines and samplers read.
+- **Same request and seed, same bytes.** The browser and the CLI produce identical files, and the share link
+  reproduces the exact cue on any machine.
 - **CLI** for batch scoring: `npm run score -- --mood dread --seconds 90 --seed 7 --out cue.wav`.
 
 ## Run it
@@ -49,6 +52,7 @@ npm run preview        # http://localhost:3121
 npm run score -- --mood dread --seconds 90 --seed 7 --out cue.wav
 npm run score -- --scene "A music box winds down in the nursery, 45 seconds, jump scare at 0:40" --out lullaby.wav
 npm run score -- --mood chase --seconds 30 --sting 0:24 --seed 3 --out chase.wav --json chase.json
+npm run score -- --mood stalker --seconds 20 --loop --out stalker-loop.wav
 npm run score -- --help
 ```
 
@@ -67,8 +71,8 @@ npm run test:e2e                  # Playwright against the built app (ports 3122
 The unit suite checks the FM math (sine table accuracy, envelope timing, operator pitch, FM sidebands,
 feedback, all eight algorithms), the score schema, scene parsing, determinism by seed, sting timing within
 50 ms, the true-peak ceiling, fades, and the WAV header and length. The end-to-end tests drive the real app:
-summon a cue, play it, export the WAV and parse it, and confirm the browser export equals the CLI export
-byte for byte.
+summon a cue, play it, export the WAV and parse it, confirm the browser export equals the CLI export byte
+for byte, open a share link in a fresh page and get the same file, and export a loop with loop points.
 
 ## Architecture
 

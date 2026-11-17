@@ -32,3 +32,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 6.5, 8.5_
 - [x] 16. Server function `/api/compose` wrapping the Bedrock director for the web AI path
   - _Requirements: 9.1, 9.2_
+- [x] 17. Seamless loop mode (whole bars, wrapped tails, circular filters, `smpl` loop points) in CLI and web
+  - _Requirements: 10.1, 10.2, 10.3_
+- [x] 18. Share links: request in the URL, auto-render on open, copy-link button
+  - _Requirements: 10.4_

@@ -148,3 +148,18 @@ and offline today and switches to Amazon Bedrock with one setting.
 3. WHEN the Bedrock director's reply fails validation THE SYSTEM SHALL send the errors back to the model
    once for repair, and IF the repair also fails THEN THE SYSTEM SHALL report the validation errors.
 4. THE SYSTEM SHALL never call a paid service from tests or by default.
+
+## Requirement 10: Seamless loops and share links
+
+**User story:** As a game developer, I want a cue that loops forever without a click or a gap, and a link that
+reproduces it, so that I can drop it into an engine and share the exact take with my team.
+
+### Acceptance criteria
+
+1. WHERE the user asks for a loop THE SYSTEM SHALL snap the length to whole bars and keep intensity steady.
+2. WHERE the user asks for a loop THE SYSTEM SHALL render with no fades, wrap release tails onto the start,
+   and warm the output filters with the loop's end so the wrap point is seamless.
+3. WHERE the user asks for a loop THE SYSTEM SHALL write a WAV `smpl` chunk marking the whole file as a
+   forward loop.
+4. WHEN a cue is ready THE SYSTEM SHALL put its request in the page URL, and WHEN the page opens with those
+   parameters THE SYSTEM SHALL render the same cue, byte for byte.
