@@ -135,6 +135,10 @@ Rendered with the CLI by [`scripts/make-samples.sh`](scripts/make-samples.sh):
 - [`cellar-dread-genesis.vgm`](samples/cellar-dread-genesis.vgm): the demo cue for the Sega Genesis (26 KB of
   YM2612 register writes). Open it in any VGM player or Genesis emulator.
 
+**Starter pack.** `bash scripts/make-starter-pack.sh` renders 5 seamless loops (one per mood) and 20 short
+stings, released under CC0, in under two minutes. [`samples/starter-pack-manifest.csv`](samples/starter-pack-manifest.csv)
+lists the request, seed and sha256 of every file, so anyone can rerun it and check they got the same bytes.
+
 ![Fright Score mid-cue: the masthead, the timeline with the sting marked at 1:10, the transport and the live-render hash check](docs/screenshot.jpg)
 
 | The stitch, just after the sting | The chip, played live |

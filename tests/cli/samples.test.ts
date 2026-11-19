@@ -35,4 +35,15 @@ describe('committed samples', () => {
     const info = parseWav(shippedLoop);
     expect(info.loop).toEqual({ startFrame: 0, endFrame: info.frameCount - 1 });
   });
+
+  it('the starter-pack manifest lists 5 loops and 20 stings, and its chase sting is the Godot sting', async () => {
+    const rows = readFileSync(join(__dirname, '../../samples/starter-pack-manifest.csv'), 'utf8').trim().split('\n').slice(1).map((l) => l.split(','));
+    expect(rows.filter((r) => r[1] === 'loop')).toHaveLength(5);
+    expect(rows.filter((r) => r[1] === 'sting')).toHaveLength(20);
+    expect(new Set(rows.map((r) => r[6])).size).toBe(25);
+    // scripts/make-starter-pack.sh renders chase, 5 s, sting at 0:01, seed 3: the request behind the Godot sting.
+    const chase = rows.find((r) => r[0] === 'stings/chase-sting-seed3.wav')!;
+    const godot = readFileSync(join(__dirname, '../../examples/godot/audio/door-slam-sting.wav'));
+    expect(chase[6]).toBe(await sha256Hex(new Uint8Array(godot)));
+  });
 });

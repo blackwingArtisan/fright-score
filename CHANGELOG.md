@@ -4,6 +4,9 @@
 
 ### Added
 
+- **Starter pack:** `scripts/make-starter-pack.sh` renders 5 loops and 20 stings under CC0 with a manifest of
+  requests, seeds and sha256 hashes; the manifest is committed and a test ties its chase sting to the Godot
+  example's sting, byte for byte.
 - **Proof strip and a clip with sound:** `docs/sting.mp4` (12 s around the sting, the screen capture muxed with
   the CLI's WAV), a refreshed `docs/sting.gif` and screenshot that show the new sting, and two README images:
   the stitch just after the sting and the live keyboard with a chord held.
