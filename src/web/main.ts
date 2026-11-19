@@ -153,6 +153,26 @@ function selectedMood(): Mood | undefined {
   return v && v !== 'auto' ? (v as Mood) : undefined;
 }
 
+/** Show an error under a field and mark it invalid, or clear it when `message` is undefined. */
+function fieldError(input: HTMLInputElement, message: string | undefined): void {
+  const el = document.getElementById(`${input.id}-error`)!;
+  el.textContent = message ?? '';
+  el.hidden = message === undefined;
+  if (message) input.setAttribute('aria-invalid', 'true');
+  else input.removeAttribute('aria-invalid');
+}
+
+/** Sting tokens that are not a time, such as "soon" in "1:10, soon". */
+function badStingTokens(value: string): string[] {
+  return value
+    .split(/[,\s]+/)
+    .filter(Boolean)
+    .filter((v) => {
+      const t = parseTimePhrase(v);
+      return t === undefined || t <= 0;
+    });
+}
+
 function parseStings(value: string): number[] | undefined {
   const times = value
     .split(/[,\s]+/)
@@ -320,9 +340,19 @@ async function summon(event: Event): Promise<void> {
   const seed = Math.max(0, Math.floor(Number(els.seed.value) || 0)) >>> 0;
   els.seed.value = String(seed);
   const seconds = els.seconds.value.trim() ? Number(els.seconds.value) : undefined;
+  fieldError(els.seconds, undefined);
+  fieldError(els.stings, undefined);
   if (seconds !== undefined && (!Number.isFinite(seconds) || seconds < 5 || seconds > 300)) {
+    fieldError(els.seconds, 'Use 5 to 300 seconds.');
     setStatus('error', 'Length must be 5 to 300 seconds');
     els.seconds.focus();
+    return;
+  }
+  const bad = badStingTokens(els.stings.value);
+  if (bad.length > 0) {
+    fieldError(els.stings, `"${bad[0].slice(0, 12)}" is not a time. Use 1:10 or 70, separated by commas.`);
+    setStatus('error', 'Check the sting times');
+    els.stings.focus();
     return;
   }
   const scene = els.scene.value.trim();
@@ -404,6 +434,19 @@ player.onEnded = () => {
   setStatus('ready', 'Ready');
 };
 
+let sliderAt = 0;
+/** Keep the timeline slider's value in step with the playhead, a few times a second. */
+function updateTimelineValue(pos: number, force = false): void {
+  const t = performance.now();
+  if (!force && t - sliderAt < 250) return;
+  sliderAt = t;
+  const dur = current?.score.durationSec ?? 0;
+  const short = (sec: number) => formatTime(sec).replace(/\.\d$/, '');
+  els.timeline.setAttribute('aria-valuemax', dur.toFixed(1));
+  els.timeline.setAttribute('aria-valuenow', pos.toFixed(1));
+  els.timeline.setAttribute('aria-valuetext', `${short(pos)} of ${short(dur)}`);
+}
+
 let lastPos = 0;
 let stingsLanded = 0;
 let scareUntil = 0;
@@ -439,6 +482,7 @@ function frame(): void {
   updateLiveStatus();
   els.clock.textContent = `${formatTime(pos)} / ${formatTime(current?.score.durationSec ?? 0)}`;
   els.clock.dataset.position = pos.toFixed(2);
+  updateTimelineValue(pos);
   requestAnimationFrame(frame);
 }
 
@@ -582,6 +626,8 @@ buildMoods();
 buildExamples();
 els.directorName.textContent = `Director: ${director.label}`;
 els.scene.addEventListener('input', updateHeard);
+els.seconds.addEventListener('input', () => fieldError(els.seconds, undefined));
+els.stings.addEventListener('input', () => fieldError(els.stings, undefined));
 els.form.addEventListener('submit', (e) => void summon(e));
 els.reroll.addEventListener('click', () => {
   els.seed.value = String(Math.floor(Math.random() * 100_000));
@@ -611,6 +657,28 @@ els.timeline.addEventListener('click', (e) => {
   const rect = els.timeline.getBoundingClientRect();
   void seekTo(timeline.timeAt(e.clientX - rect.left));
 });
+/** Scrub with the keyboard: arrows move 1 s (5 s with Shift), Page keys 10 s, Home and End jump to the ends. */
+els.timeline.addEventListener('keydown', (e) => {
+  if (!current) return;
+  const dur = current.score.durationSec;
+  const pos = player.position;
+  const step = e.shiftKey ? 5 : 1;
+  const target: Record<string, number> = {
+    ArrowLeft: pos - step,
+    ArrowDown: pos - step,
+    ArrowRight: pos + step,
+    ArrowUp: pos + step,
+    PageDown: pos - 10,
+    PageUp: pos + 10,
+    Home: 0,
+    End: Math.max(0, dur - 0.05),
+  };
+  if (!(e.key in target)) return;
+  e.preventDefault();
+  void seekTo(Math.max(0, Math.min(dur, target[e.key]))).then(() => updateTimelineValue(player.position, true));
+});
+// Canvas text is drawn once per cue, so redraw it after the web fonts arrive.
+void document.fonts?.ready.then(() => timeline.invalidate());
 els.exportWav.addEventListener('click', () => {
   if (!current) return;
   const kind = current.score.plan.loop ? '-loop' : '';

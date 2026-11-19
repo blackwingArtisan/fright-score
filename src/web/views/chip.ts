@@ -29,7 +29,9 @@ export class ChipView {
 
   draw(positionSec: number): void {
     const rows = this.score?.tracks.length ?? 3;
-    const height = rows * ROW_H + 6;
+    const idle = !this.score || !this.frames;
+    // The idle caption gets its own line under the rows, so it never overlaps the last channel.
+    const height = rows * ROW_H + 6 + (idle ? 24 : 0);
     const { ctx, width } = fitCanvas(this.canvas, height);
     ctx.clearRect(0, 0, width, height);
     const { labelW, padsX, readoutX, ribbonX, ribbonW } = rowLayout(width);
@@ -38,7 +40,7 @@ export class ChipView {
       for (let r = 0; r < rows; r++) this.drawRow(ctx, r, labelW, padsX, readoutX, ribbonX, ribbonW, undefined, 0);
       ctx.fillStyle = COLORS.tin;
       ctx.font = `12px ${FONT_SILK}`;
-      ctx.fillText('Channels light up here when a cue plays.', padsX, height - 12);
+      ctx.fillText('Channels light up here when a cue plays.', 4, rows * ROW_H + 22);
       return;
     }
     const frame = Math.min(this.frames.frameCount - 1, Math.max(0, Math.floor(positionSec * this.frames.frameRate)));

@@ -146,7 +146,7 @@ export class TimelineView {
       ctx.clip();
       ctx.fillStyle = COLORS.silk;
       ctx.font = `19px ${FONT_GOTHIC}`;
-      ctx.fillText(s.name, x0 + 8, 26);
+      ctx.fillText(ellipsize(ctx, s.name, x1 - x0 - 14), x0 + 8, 26);
       ctx.restore();
     });
 
@@ -245,6 +245,20 @@ export class TimelineView {
     }
     return layer;
   }
+}
+
+/** Shorten `text` with an ellipsis at a word boundary when possible, so it fits `maxWidth` pixels. */
+export function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  if (maxWidth < ctx.measureText('\u2026').width * 2) return '';
+  const words = text.split(' ');
+  for (let n = words.length - 1; n > 0; n--) {
+    const candidate = `${words.slice(0, n).join(' ')}\u2026`;
+    if (ctx.measureText(candidate).width <= maxWidth) return candidate;
+  }
+  let cut = text.length - 1;
+  while (cut > 0 && ctx.measureText(`${text.slice(0, cut)}\u2026`).width > maxWidth) cut--;
+  return cut > 0 ? `${text.slice(0, cut)}\u2026` : '';
 }
 
 /** Peak envelope of a stereo signal reduced to `bins` points (0..1). */

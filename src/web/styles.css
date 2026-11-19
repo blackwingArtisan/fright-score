@@ -5,6 +5,8 @@
   --mask-raised: #12322a;
   --copper: #c9894a;
   --copper-dim: #7a5530;
+  /* Edges of controls: at least 3:1 against every board surface (WCAG 1.4.11). */
+  --edge: #a0723f;
   --silk: #ece6d2;
   --silk-dim: #a8b3a9;
   --tin: #8f9a96;
@@ -127,9 +129,16 @@ h3 {
     text-shadow: 0 0 1px var(--silk), 0 2px 0 var(--mask-deep), 0 0 16px rgb(242 196 109 / 0.2);
   }
 }
+.masthead__pitch {
+  max-width: 40ch;
+  margin: 12px 0 0;
+  font-size: var(--step-1);
+  color: var(--silk);
+}
 .masthead__sub {
-  max-width: 58ch;
-  margin: 10px 0 0;
+  max-width: 62ch;
+  margin: 8px 0 0;
+  font-size: var(--step--1);
   color: var(--silk-dim);
 }
 .masthead__spec {
@@ -209,9 +218,17 @@ input[type='number'] {
   font: inherit;
   color: var(--silk);
   background: var(--mask-deep);
-  border: 1px solid var(--copper-dim);
+  border: 1px solid var(--edge);
   border-radius: 3px;
   padding: 10px 12px;
+}
+[aria-invalid='true'] {
+  border-color: var(--blood);
+  box-shadow: 0 0 0 1px var(--blood);
+}
+.field__error {
+  font-size: var(--step--1);
+  color: #ff8a8f;
 }
 textarea {
   resize: vertical;
@@ -220,7 +237,7 @@ textarea {
 }
 textarea::placeholder,
 input::placeholder {
-  color: #6f7d76;
+  color: #7f8d86;
 }
 
 .heard {
@@ -240,7 +257,7 @@ input::placeholder {
   font-size: var(--step--1);
   color: var(--silk-dim);
   background: transparent;
-  border: 1px dashed var(--copper-dim);
+  border: 1px dashed var(--edge);
   border-radius: 999px;
   padding: 3px 10px;
   cursor: pointer;
@@ -267,7 +284,7 @@ input::placeholder {
   display: block;
   text-align: center;
   padding: 8px 4px;
-  border: 1px solid var(--copper-dim);
+  border: 1px solid var(--edge);
   border-radius: 3px;
   font-size: var(--step--1);
   cursor: pointer;
@@ -321,13 +338,18 @@ input::placeholder {
 .btn:hover:not(:disabled) {
   background: rgb(201 137 74 / 0.14);
 }
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
 .btn--ghost {
-  border-color: var(--copper-dim);
+  border-color: var(--edge);
   color: var(--silk-dim);
+}
+/* Disabled reads as switched off: dashed tin outline and tin text, not just a fainter copy. */
+.btn:disabled {
+  color: var(--tin);
+  background: transparent;
+  border-style: dashed;
+  border-color: rgb(143 154 150 / 0.55);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 .btn--summon {
   font-family: var(--font-gothic);
@@ -476,6 +498,22 @@ canvas {
   font-size: var(--step-2);
   color: var(--copper);
 }
+.hint {
+  flex-basis: 100%;
+  font-size: var(--step--1);
+  color: var(--tin);
+}
+.hint summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--silk-dim);
+  text-decoration: underline dotted var(--edge);
+  text-underline-offset: 3px;
+}
+.hint p {
+  margin: 6px 0 0;
+  max-width: 72ch;
+}
 .chip-label p {
   margin: 0;
   font-size: var(--step--1);
@@ -533,7 +571,7 @@ canvas {
   font: inherit;
   color: var(--silk);
   background: var(--mask-deep);
-  border: 1px solid var(--copper-dim);
+  border: 1px solid var(--edge);
   border-radius: 3px;
   padding: 8px 10px;
 }
@@ -827,8 +865,16 @@ canvas {
   .board {
     grid-template-columns: minmax(0, 1fr);
   }
+  /* On narrow screens the stage (and its Listen button) comes first; the form follows. */
+  .stage {
+    order: -1;
+  }
   .masthead {
     grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 16px;
+  }
+  .masthead__spec {
+    display: none;
   }
 }
 
