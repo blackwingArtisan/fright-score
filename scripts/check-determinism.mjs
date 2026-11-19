@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const roots = ['src/engine', 'src/score', 'src/director'];
+const roots = ['src/engine', 'src/score', 'src/director', 'src/export'];
 const offenders = [];
 
 function walk(dir) {

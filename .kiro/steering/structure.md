@@ -21,8 +21,10 @@ src/
     theory.ts        modes, scales, note names, MIDI helpers
     rng.ts           seeded PRNG
     scene.ts         rule-based scene description parser
+    moods.ts         per-mood settings: tempo, modes, layers, patches, section shapes
     composer.ts      local director: mood + seed -> ScorePlan (Markov motifs)
     arranger.ts      ScorePlan + seed -> Score (notes for every track)
+    pipeline.ts      request -> director -> reconcile -> arrange, shared by the CLI, the web app and the bench
   director/
     director.ts      Director interface + factory
     local.ts         local director adapter
@@ -33,8 +35,18 @@ src/
                      arrangement, and a VGM file of register writes (plus its parser)
   wav/wav.ts         16-bit PCM WAV encoder and parser
   cli/score.ts       `npm run score` entry point
-  web/               browser UI (main.ts, render worker, player, views, styles)
+  server/compose.ts  `/api/compose` request handler (validates input, runs a director, reconciles)
+  web/               browser UI (main.ts, render worker, player, styles)
+    views/           canvas views: timeline, chip channels, scope, live keyboard, stitch panel
     live/            the real-time chip: AudioWorklet processor, its testable core, page-side controller
+functions/api/       Cloudflare Pages Function that serves `/api/compose`
+scripts/
+  check-determinism.mjs  fails on Math.random or Date.now in engine, score, director or export code
+  bench.ts           `npm run bench`: times the demo cue from request to WAV
+  make-samples.sh    renders the README samples in samples/
+samples/             listening samples (MP3) and a Genesis VGM
+examples/godot/      Godot 4 project that loops an export with no code, plus a headless check
+docs/                README images
 tests/
   unit/              Vitest unit tests, one file per engine/score module
   cli/               CLI end-to-end tests
