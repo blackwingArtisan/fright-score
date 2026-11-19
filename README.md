@@ -14,7 +14,10 @@ composer, so it runs offline in your browser for free; switch on Amazon Bedrock 
 the same plan instead. Either way, every sound comes from an FM chip recreation that has never heard a
 recording.
 
-![The demo cue: the riser climbs, the board goes silent, and the sting lands at 1:10 with a blood flash](docs/sting.gif)
+![The demo cue: the riser climbs, the board drops toward black in the planned silence, and the sting lands at 1:10 with a blood flash and a glitch on the title](docs/sting.gif)
+
+With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue around the sting, the screen capture
+muxed with the exact WAV the CLI renders (the hit lands 6.5 s in).
 
 [Judges: 60 seconds](#judges-60-seconds) · [Hear the samples](#hear-it) · [Run it](#run-it) · [Built with Kiro](#built-with-kiro) · MIT licensed
 
@@ -132,7 +135,11 @@ Rendered with the CLI by [`scripts/make-samples.sh`](scripts/make-samples.sh):
 - [`cellar-dread-genesis.vgm`](samples/cellar-dread-genesis.vgm): the demo cue for the Sega Genesis (26 KB of
   YM2612 register writes). Open it in any VGM player or Genesis emulator.
 
-![Fright Score mid-cue: the timeline, transport and the FS-666 channels lit](docs/screenshot.jpg)
+![Fright Score mid-cue: the masthead, the timeline with the sting marked at 1:10, the transport and the live-render hash check](docs/screenshot.jpg)
+
+| The stitch, just after the sting | The chip, played live |
+|---|---|
+| ![The stitch panel: the director's plan with the silence, riser and sting cues on the left, and the YM2612 register writes in step with the playhead on the right, ending in KEY ON](docs/stitch.png) | ![The live keyboard with A, D and G held on the Tritone Brass patch: three voices, the operator pads lit and the envelope ribbon rising](docs/live-chip.png) |
 
 ## Kiroween 2026
 

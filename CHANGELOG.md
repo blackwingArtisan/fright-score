@@ -4,6 +4,9 @@
 
 ### Added
 
+- **Proof strip and a clip with sound:** `docs/sting.mp4` (12 s around the sting, the screen capture muxed with
+  the CLI's WAV), a refreshed `docs/sting.gif` and screenshot that show the new sting, and two README images:
+  the stitch just after the sting and the live keyboard with a chord held.
 - **Wider Kiro workspace:** file-matched steering for the engine (`engine-dsp.md`), manual steering for the
   WAV and VGM formats (`export-formats.md`), an on-demand `render-bench` hook, and an `fs666-sound-designer`
   custom agent with a write and command allowlist. A unit test checks that every hook, steering file and
