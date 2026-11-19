@@ -119,6 +119,24 @@
           <canvas id="scope" height="72" aria-label="Output waveform"></canvas>
         </div>
 
+        <section class="stitch" aria-labelledby="stitch-title">
+          <div class="stitch__head">
+            <h3 id="stitch-title">The stitch</h3>
+            <p>Left: the plan the AI director wrote. Right: the Sega Genesis sound-chip register writes it becomes, in step with the playhead.</p>
+          </div>
+          <div class="stitch__cols">
+            <div class="stitch__col">
+              <h4 class="stitch__label">Director's plan</h4>
+              <pre id="stitch-plan" class="stitch__plan" tabindex="0" aria-label="The director's plan as JSON"></pre>
+            </div>
+            <div class="stitch__col">
+              <h4 class="stitch__label">YM2612 register writes</h4>
+              <ol id="stitch-writes" class="stitch__writes" aria-label="Latest register writes"></ol>
+              <p id="stitch-count" class="stitch__count"></p>
+            </div>
+          </div>
+        </section>
+
         <section id="live" class="live" aria-labelledby="live-title">
           <div class="live__head">
             <h3 id="live-title">Play the chip live</h3>

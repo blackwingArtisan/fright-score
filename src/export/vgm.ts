@@ -604,3 +604,63 @@ export function parseVgm(bytes: Uint8Array): ParsedVgm {
     title,
   };
 }
+
+/** Operator number (1-4) for a register's slot offset; the chip orders slots OP1, OP3, OP2, OP4. */
+const SLOT_TO_OP = [1, 3, 2, 4] as const;
+
+/** A register write in datasheet terms, for showing what the chip receives. */
+export interface WriteLabel {
+  /** Channel 1-6, or undefined for global registers. */
+  channel: number | undefined;
+  /** Operator 1-4, or undefined for channel and global registers. */
+  op: number | undefined;
+  /** Register mnemonic, such as "TL" or "KEY ON". */
+  name: string;
+  /** The value, decoded where it helps ("ops 1234", "alg 4 fb 3"). */
+  detail: string;
+}
+
+const hexByte = (v: number) => `0x${v.toString(16).padStart(2, '0').toUpperCase()}`;
+
+/** Describe a YM2612 register write the way the datasheet names it. */
+export function describeWrite(w: Pick<VgmWrite, 'port' | 'reg' | 'value'>): WriteLabel {
+  const hex = hexByte(w.value);
+  if (w.reg === 0x28) {
+    const code = w.value & 7;
+    const channel = (code < 4 ? code : code - 1) + 1;
+    const ops = [0, 1, 2, 3].filter((i) => w.value & (0x10 << i)).map((i) => i + 1);
+    return ops.length ? { channel, op: undefined, name: 'KEY ON', detail: `ops ${ops.join('')}` } : { channel, op: undefined, name: 'KEY OFF', detail: hex };
+  }
+  if (w.reg < 0x30) {
+    const names: Record<number, string> = { 0x22: 'LFO', 0x27: 'CH3 MODE', 0x2b: 'DAC' };
+    return { channel: undefined, op: undefined, name: names[w.reg] ?? `REG ${hexByte(w.reg)}`, detail: hex };
+  }
+  const channel = w.port * 3 + (w.reg & 3) + 1;
+  if (w.reg >= 0xa0) {
+    const group = w.reg & 0xfc;
+    if (group === 0xa0) return { channel, op: undefined, name: 'FNUM LO', detail: hex };
+    if (group === 0xa4) return { channel, op: undefined, name: 'BLOCK/FNUM HI', detail: `block ${(w.value >> 3) & 7}` };
+    if (group === 0xb0) return { channel, op: undefined, name: 'FB/ALG', detail: `alg ${w.value & 7} fb ${(w.value >> 3) & 7}` };
+    if (group === 0xb4) return { channel, op: undefined, name: 'PAN/FMS', detail: `${['--', 'R', 'L', 'LR'][w.value >> 6]} fms ${w.value & 7}` };
+    return { channel, op: undefined, name: `REG ${hexByte(w.reg)}`, detail: hex };
+  }
+  const op = SLOT_TO_OP[(w.reg >> 2) & 3];
+  switch (w.reg & 0xf0) {
+    case 0x30:
+      return { channel, op, name: 'DT/MUL', detail: `mul ${w.value & 15} dt ${(w.value >> 4) & 7}` };
+    case 0x40:
+      return { channel, op, name: 'TL', detail: `${w.value & 127} (-${((w.value & 127) * TL_STEP_DB).toFixed(1)} dB)` };
+    case 0x50:
+      return { channel, op, name: 'AR', detail: String(w.value & 31) };
+    case 0x60:
+      return { channel, op, name: 'D1R', detail: String(w.value & 31) };
+    case 0x70:
+      return { channel, op, name: 'D2R', detail: String(w.value & 31) };
+    case 0x80:
+      return { channel, op, name: 'D1L/RR', detail: `sl ${w.value >> 4} rr ${w.value & 15}` };
+    case 0x90:
+      return { channel, op, name: 'SSG-EG', detail: hex };
+    default:
+      return { channel, op, name: `REG ${hexByte(w.reg)}`, detail: hex };
+  }
+}

@@ -529,6 +529,121 @@ canvas {
   border-top: 1px dashed var(--ectoplasm-dim);
 }
 
+/* The stitch: the director's JSON beside the Genesis register writes, datasheet style. */
+.stitch {
+  border: 1px solid var(--copper-dim);
+  border-radius: 4px;
+  padding: 14px;
+  background: linear-gradient(180deg, #121614, #0b0e0d);
+  display: grid;
+  gap: 10px;
+}
+.stitch__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: baseline;
+}
+.stitch__head h3 {
+  font-size: var(--step-2);
+  color: var(--copper);
+}
+.stitch__head p {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--tin);
+  max-width: 72ch;
+}
+.stitch__cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+.stitch__col {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.stitch__label {
+  margin: 0;
+  font: 700 var(--step--1) var(--font-silk);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--silk-dim);
+}
+.stitch__plan {
+  margin: 0;
+  height: 15.5em;
+  overflow: auto;
+  padding: 8px 10px;
+  font: 11.5px/1.45 var(--font-silk);
+  color: var(--silk-dim);
+  background: var(--mask-deep);
+  border: 1px solid var(--copper-dim);
+  border-radius: 3px;
+  white-space: pre;
+}
+.stitch__section.is-now {
+  color: var(--mask-deep);
+  background: var(--copper);
+}
+.stitch__writes {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  height: 15.5em;
+  overflow: hidden;
+  font: 11.5px/1.45 var(--font-silk);
+  background: var(--mask-deep);
+  border: 1px solid #4f9a86;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.stitch__write {
+  display: grid;
+  grid-template-columns: 6.5ch 8.5ch 13ch minmax(0, 1fr);
+  gap: 8px;
+  padding: 0 10px;
+  color: var(--ectoplasm);
+  white-space: nowrap;
+}
+.stitch__write span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stitch__write span:first-child {
+  color: var(--tin);
+}
+.stitch__write:last-child {
+  background: rgb(127 217 192 / 0.12);
+}
+.stitch__write--on {
+  color: #ffb3b6;
+}
+.stitch__count {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--tin);
+}
+@media (max-width: 700px) {
+  .stitch__cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stitch__plan,
+  .stitch__writes {
+    height: 11em;
+  }
+  .stitch__write {
+    grid-template-columns: 6.5ch 8.5ch minmax(0, 1fr);
+  }
+  .stitch__write span:last-child {
+    display: none;
+  }
+}
+
 /* Play the chip live */
 .live {
   border: 1px solid var(--copper-dim);

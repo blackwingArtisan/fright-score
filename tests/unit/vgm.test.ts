@@ -4,6 +4,7 @@ import {
   YM2612_CLOCK_HZ,
   arFor,
   attackTime,
+  describeWrite,
   dtFor,
   envelopeTime96,
   fnumBlock,
@@ -131,5 +132,16 @@ describe('VGM export', () => {
     const loop = parseVgm(scoreToVgm(loopScore).bytes);
     expect(loop.loopOffset).toBeGreaterThanOrEqual(0x40);
     expect(loop.loopSamples).toBe(loop.totalSamples);
+  });
+});
+
+describe('register labels for the stitch panel', () => {
+  it('names writes the way the YM2612 datasheet does', () => {
+    expect(describeWrite({ port: 0, reg: 0x28, value: 0xf4 })).toEqual({ channel: 4, op: undefined, name: 'KEY ON', detail: 'ops 1234' });
+    expect(describeWrite({ port: 0, reg: 0x28, value: 0x02 }).name).toBe('KEY OFF');
+    // Register 0x48 is channel 1, slot offset 8, which is operator 2.
+    expect(describeWrite({ port: 0, reg: 0x48, value: 8 })).toEqual({ channel: 1, op: 2, name: 'TL', detail: '8 (-6.0 dB)' });
+    expect(describeWrite({ port: 1, reg: 0xb2, value: (3 << 3) | 4 })).toEqual({ channel: 6, op: undefined, name: 'FB/ALG', detail: 'alg 4 fb 3' });
+    expect(describeWrite({ port: 0, reg: 0x22, value: 9 }).name).toBe('LFO');
   });
 });

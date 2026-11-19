@@ -19,3 +19,20 @@ test('exports the cue for the Sega Genesis as a VGM file of YM2612 register writ
   // The sting keys on exactly at 0:08.
   expect(vgm.writes.some((w) => w.reg === 0x28 && (w.value & 0xf0) !== 0 && w.at === 8 * 44_100)).toBe(true);
 });
+
+test('the stitch panel shows the director plan beside the register writes at the playhead', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  await expect(page.locator('#stitch-plan')).toContainText('"sections": [');
+  await expect(page.locator('#stitch-count')).toContainText('register writes');
+  // At the start the chip is being set up.
+  await expect(page.locator('#stitch-writes li').first()).toContainText('0:00.0');
+  // Scrub to the sting at 1:10: its key-on writes are the newest rows.
+  const slider = page.getByRole('slider', { name: /Score timeline/ });
+  await slider.focus();
+  await page.keyboard.press('Home');
+  for (let i = 0; i < 7; i++) await page.keyboard.press('PageUp');
+  await expect(page.locator('#stitch-writes li').last()).toContainText('1:10.0');
+  await expect(page.locator('#stitch-writes li.stitch__write--on').last()).toContainText('KEY ON');
+  await expect(page.locator('#stitch-plan .is-now')).toHaveCount(1);
+});

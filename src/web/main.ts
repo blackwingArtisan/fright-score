@@ -3,7 +3,7 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import './styles.css';
 import { PATCHES, PATCH_IDS, type PatchId } from '../engine/patches';
-import { scoreToVgm } from '../export/vgm';
+import { scoreToVgm, type VgmResult } from '../export/vgm';
 import type { RenderStats, VizFrames } from '../engine/render';
 import { MOOD_PROFILES } from '../score/moods';
 import { scoreFromRequest } from '../score/pipeline';
@@ -17,6 +17,7 @@ import type { RenderRequestMessage, WorkerMessage } from './protocol';
 import { ChipView } from './views/chip';
 import { LiveView } from './views/live';
 import { ScopeView } from './views/scope';
+import { StitchView } from './views/stitch';
 import { TimelineView } from './views/timeline';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -82,6 +83,7 @@ const chip = new ChipView(els.chip);
 const scope = new ScopeView(els.scope);
 const live = new LiveChip(() => player.audio());
 const liveView = new LiveView(els.liveOps, live);
+const stitch = new StitchView($('stitch-plan'), $<HTMLOListElement>('stitch-writes'), $('stitch-count'));
 
 const createWorker = () => new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' });
 let worker = createWorker();
@@ -91,6 +93,8 @@ class Superseded extends Error {}
 
 interface Rendered {
   score: Score;
+  /** The same cue arranged for the Sega Genesis (YM2612). */
+  vgm: VgmResult;
   wav: Uint8Array;
   frames: VizFrames;
   stats: RenderStats;
@@ -325,7 +329,7 @@ function render(score: Score): Promise<RenderedAudio> {
       pending = undefined;
       timeline.setProgress(undefined);
       if (msg.type === 'error') reject(new Error(msg.message));
-      else resolve({ score, wav: msg.wav, frames: msg.frames, stats: msg.stats, left: msg.left, right: msg.right });
+      else resolve({ score, vgm: scoreToVgm(score), wav: msg.wav, frames: msg.frames, stats: msg.stats, left: msg.left, right: msg.right });
     };
     pending = { reject };
     w.addEventListener('message', onMessage);
@@ -394,7 +398,8 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
     if (token !== summonToken) return;
     player.load(rendered.left, rendered.right, 44_100, score.plan.loop === true);
     timeline.setScore(score, rendered.left, rendered.right);
-    current = { score, wav: rendered.wav, frames: rendered.frames, stats: rendered.stats };
+    current = { score, vgm: rendered.vgm, wav: rendered.wav, frames: rendered.frames, stats: rendered.stats };
+    stitch.set(score, rendered.vgm);
     chip.set(score, current.frames);
     const s = current.stats;
     els.stats.textContent = `${s.noteCount} notes on ${score.tracks.length} channels, up to ${s.maxVoices} voices at once. True peak ${s.truePeakDb.toFixed(1)} dBTP, ${s.loudnessLufs.toFixed(1)} LUFS. Rendered in ${(s.renderMs / 1000).toFixed(1)} s in your browser.`;
@@ -450,6 +455,7 @@ function updateTimelineValue(pos: number, force = false): void {
   els.timeline.setAttribute('aria-valuetext', `${short(pos)} of ${short(dur)}`);
 }
 
+let stitchAt = 0;
 let lastPos = 0;
 let stingsLanded = 0;
 let scareUntil = 0;
@@ -481,6 +487,10 @@ function frame(): void {
   timeline.draw(pos, performance.now() < scareUntil);
   chip.draw(pos);
   scope.draw(player.analyser, player.playing || live.latest.voices > 0);
+  if (performance.now() - stitchAt > 66) {
+    stitchAt = performance.now();
+    stitch.draw(pos);
+  }
   liveView.draw();
   updateLiveStatus();
   els.clock.textContent = `${formatTime(pos)} / ${formatTime(current?.score.durationSec ?? 0)}`;
@@ -700,8 +710,7 @@ els.share.addEventListener('click', async () => {
 });
 els.exportVgm.addEventListener('click', () => {
   if (!current) return;
-  const { bytes } = scoreToVgm(current.score);
-  download(bytes, 'audio/x-vgm', `fright-score-${slug(current.score.plan.title)}-seed${current.score.seed}.vgm`);
+  download(current.vgm.bytes, 'audio/x-vgm', `fright-score-${slug(current.score.plan.title)}-seed${current.score.seed}.vgm`);
 });
 els.exportJson.addEventListener('click', () => {
   if (!current) return;
