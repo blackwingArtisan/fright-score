@@ -5,6 +5,7 @@ playwright-report/
 coverage/
 *.wav
 !samples/*.wav
+!examples/godot/audio/*.wav
 .DS_Store
 .env
 .env.*
