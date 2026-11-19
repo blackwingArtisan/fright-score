@@ -8,7 +8,7 @@ import type { Director } from './director';
  */
 export class RemoteDirector implements Director {
   readonly kind = 'remote' as const;
-  readonly label = 'AI director (server)';
+  readonly label = 'Amazon Bedrock director (server)';
 
   constructor(
     private readonly endpoint = '/api/compose',

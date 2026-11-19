@@ -25,6 +25,10 @@
 
 ### Changed
 
+- The copy says what the director is: rules and a seed by default, Amazon Bedrock when switched on, and
+  "the AI writes the sheet music, never the sound". The comparison names Beatoven.ai, Soundraw and
+  ElevenLabs Music and credits what they do well; the README adds sourced stock and Suno prices, the
+  PSX-horror niche, a weekly game-master persona and a priced plan, plus a 60-second path for judges.
 - The README and the page lead with the pitch: horror music for a game jam, with the scare on the second you
   ask for.
 - Examples write cue times as `1:10` rather than `0:70` (both are still accepted).

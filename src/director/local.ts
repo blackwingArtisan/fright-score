@@ -5,7 +5,7 @@ import type { Director } from './director';
 /** Free, offline director: rule-based scene reading plus a seeded Markov composer. */
 export class LocalDirector implements Director {
   readonly kind = 'local' as const;
-  readonly label = 'Local director (rules + Markov, offline)';
+  readonly label = 'Local director: rules and a seeded Markov composer, offline';
 
   async plan(request: CueRequest): Promise<ScorePlan> {
     return composePlan(request);
