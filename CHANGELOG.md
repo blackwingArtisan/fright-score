@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Godot add-on:** a `FrightScoreCue` node lands a sting on a game event. In the example, opening the cellar
+  door cuts the loop to silence and the hit lands 0.6 s later; `verify_scare.gd` times it headless.
 - **Loading states:** while a cue renders, the stitch panel shows what the director and the chip are doing,
   the channel rows show the incoming patch names, Play resets and the clock shows the new length.
 - **A calmer transport:** Download WAV is the one primary button, Download for Sega Genesis stays beside it,

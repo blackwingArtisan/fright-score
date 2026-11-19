@@ -1,8 +1,13 @@
 extends Node
-## Plays the Fright Score loop as ambience and fires the sting on demand.
-## The loop needs no code: Godot reads the loop points Fright Score writes into the WAV.
+## The hallway loops as ambience. Press E to open the cellar door: the music cuts to silence and the
+## sting lands 0.6 s later, on the event, wherever the player happens to be in the loop.
+
+
+func _ready() -> void:
+	$Door.opened.connect($Cue.scare)
+	$Cue.scare_landed.connect(func() -> void: $Hint.text = "Something was waiting behind the door.")
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("scare"):
-		$Sting.play()
+	if event.is_action_pressed("open_door"):
+		$Door.open()

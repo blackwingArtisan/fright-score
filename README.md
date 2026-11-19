@@ -113,6 +113,13 @@ scare has to land on a set second and the loop has to sit in a game engine.
 | Cost for commercial use | Free | Suno Pro, $10 a month | Paid plans | About $9 to $39 a track, $3 a stinger |
 | Where the sound comes from | An FM synth, no training data | Neural models trained on recordings (the subject of the 2024 label lawsuits) | Neural models trained on audio | Human composers |
 
+## In a game: the scare lands on the event
+
+A jam game does not know at which second the player opens the door. The [Godot add-on](examples/godot)
+handles that: `$Door.opened.connect($Cue.scare)`. The hallway loop cuts to silence, the sting file starts at
+the top of its 0.6 s pre-silence, and the hit lands 0.6 s after the door opens. A headless Godot check
+measures it: the hit lands 0.598 s after the event, within one frame.
+
 ## Hear it
 
 Rendered with the CLI by [`scripts/make-samples.sh`](scripts/make-samples.sh):
@@ -144,8 +151,8 @@ or $10 a month for Suno Pro):
   cues. Less than half of Suno Pro, and less than one stock track.
 - **Game master pack, $2 a month:** a saved weekly session, one loop and three stings per scene, each on its
   own seed, re-rendered byte for byte whenever the group returns.
-- **Engine plugins:** a Godot add-on first (the [example](examples/godot) already loops an export with no code),
-  then Unity and FMOD.
+- **Engine plugins:** the [Godot add-on](examples/godot) already loops an export with no code and lands the sting
+  when the player opens the door; Unity and FMOD next.
 - **Market:** 112,036 horror games on itch.io, 5,268 of them PSX-style, and jams of nearly 10,000 entries that
   each need audio by the deadline.
 - **Retro scene:** VGM export opens the door to homebrew Genesis games and chiptune artists.
@@ -276,7 +283,7 @@ chip so the AudioWorklet reports voices and real output.
 | `src/server/`, `functions/` | `/api/compose` handler and its Cloudflare Pages Function |
 | `src/web/` | Browser app: form, render worker, player, timeline, chip view, stitch panel, scope |
 | `src/web/live/` | The real-time chip: AudioWorklet processor, its testable core, page-side controller |
-| `examples/godot/` | A Godot 4 project that loops an export with no code, plus a headless check |
+| `examples/godot/` | A Godot 4 project and add-on: a loop with no code, and a sting that lands on a game event, with headless checks |
 | `samples/` | Listening samples and a VGM, rendered by `scripts/make-samples.sh` |
 | `tests/` | `unit/`, `cli/`, `e2e/` |
 

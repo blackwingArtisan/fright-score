@@ -1,4 +1,4 @@
-; Godot 4 project: plays a Fright Score loop and fires a sting on a key press.
+; Godot 4 project: loops a Fright Score cue and lands its sting when the player opens a door.
 config_version=5
 
 [application]
@@ -9,8 +9,12 @@ config/features=PackedStringArray("4.3")
 
 [input]
 
-scare={
+open_door={
 "deadzone": 0.5,
-"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":32,"key_label":0,"unicode":32,"location":0,"echo":false,"script":null)
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":69,"key_label":0,"unicode":101,"location":0,"echo":false,"script":null)
 ]
 }
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/fright_score/plugin.cfg")
