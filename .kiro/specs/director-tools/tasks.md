@@ -6,29 +6,29 @@ on the unchanged pipeline, so the sessions can run in either order.
 
 ## Session A: Bedrock tool use and its tests
 
-- [ ] 1. Add `src/director/tool.ts`: `SCORE_CUE_TOOL_NAME` and `scoreCueToolSpec()`, with the input schema from `z.toJSONSchema(ScorePlanSchema, { target: 'draft-7', io: 'input' })`, `$schema` deleted, `palette` rewritten to one optional property per role, built once and cached
+- [x] 1. Add `src/director/tool.ts`: `SCORE_CUE_TOOL_NAME` and `scoreCueToolSpec()`, with the input schema from `z.toJSONSchema(ScorePlanSchema, { target: 'draft-7', io: 'input' })`, `$schema` deleted, `palette` rewritten to one optional property per role, built once and cached
   - _Requirements: 1.1a, 1.1b, 1.1c, 1.1d, 1.1e_
-- [ ] 2. Rewrite `directorSystemPrompt()`: call `score_cue`, drop the JSON shape block, keep the patch list and craft rules; leave `directorUserPrompt()` alone
+- [x] 2. Rewrite `directorSystemPrompt()`: call `score_cue`, drop the JSON shape block, keep the patch list and craft rules; leave `directorUserPrompt()` alone
   - _Requirements: 2.2b, 2.2c_
-- [ ] 3. Send `toolConfig` (one tool) and `toolChoice: { tool: { name: 'score_cue' } }` on every `ConverseCommand` in `BedrockDirector.plan`
+- [x] 3. Send `toolConfig` (one tool) and `toolChoice: { tool: { name: 'score_cue' } }` on every `ConverseCommand` in `BedrockDirector.plan`
   - _Requirements: 1.1a, 2.2a_
-- [ ] 4. Find the `score_cue` `toolUse` block in the reply, validate its `input` with `parseScorePlan`, and return the plan on success
+- [x] 4. Find the `score_cue` `toolUse` block in the reply, validate its `input` with `parseScorePlan`, and return the plan on success
   - _Requirements: 2.1, 2.2_
-- [ ] 5. On a validation error, append the assistant message as returned and one user message with a `toolResult` (`status: "error"`, the message as text) for every `toolUseId`; share the `maxRepairs` limit; keep the final "could not produce a valid plan" error
+- [x] 5. On a validation error, append the assistant message as returned and one user message with a `toolResult` (`status: "error"`, the message as text) for every `toolUseId`; share the `maxRepairs` limit; keep the final "could not produce a valid plan" error
   - _Requirements: 2.3a, 2.3b, 2.3c, 2.3d_
-- [ ] 6. Handle a reply with no `score_cue` call (text only, empty with a placeholder, `max_tokens`): count it as a failed attempt and ask for the tool call; let client errors propagate unchanged
+- [x] 6. Handle a reply with no `score_cue` call (text only, empty with a placeholder, `max_tokens`): count it as a failed attempt and ask for the tool call; let client errors propagate unchanged
   - _Requirements: 2.4a, 2.4b, 2.4c, 2.5_
-- [ ] 7. Delete `extractJsonObject` and `planFromModelReply` from `src/director/prompt.ts` and any import of them
+- [x] 7. Delete `extractJsonObject` and `planFromModelReply` from `src/director/prompt.ts` and any import of them
   - _Requirements: 3.3a, 3.3b_
-- [ ] 8. Test `tests/unit/bedrock-tools.test.ts`, request: a fake client records the `ConverseCommand`; assert `modelId`, the one tool, `toolChoice`, and the schema's top-level `object`, required keys, enum values, and no `propertyNames` or `$schema`
+- [x] 8. Test `tests/unit/bedrock-tools.test.ts`, request: a fake client records the `ConverseCommand`; assert `modelId`, the one tool, `toolChoice`, and the schema's top-level `object`, required keys, enum values, and no `propertyNames` or `$schema`
   - _Requirements: 7.1a, 1.1, 2.2a_
-- [ ] 9. Test the repair loop: invalid then valid (check the second request's assistant message and `toolResult` with `toolUseId`, `status: "error"`, message), and a stubborn model that ends in "could not produce a valid plan" after `maxRepairs + 1` calls
+- [x] 9. Test the repair loop: invalid then valid (check the second request's assistant message and `toolResult` with `toolUseId`, `status: "error"`, message), and a stubborn model that ends in "could not produce a valid plan" after `maxRepairs + 1` calls
   - _Requirements: 7.1b, 2.3_
-- [ ] 10. Test a text-only reply then a valid one, an always-text model, an empty reply, a `max_tokens` reply, two `toolUse` blocks (both answered) and a client that throws (same error reaches the caller)
+- [x] 10. Test a text-only reply then a valid one, an always-text model, an empty reply, a `max_tokens` reply, two `toolUse` blocks (both answered) and a client that throws (same error reaches the caller)
   - _Requirements: 7.1c, 7.1d, 2.3b, 2.4, 2.5_
-- [ ] 11. Rewrite the two Bedrock tests in `tests/unit/director.test.ts` for tool use, and delete the tests of the removed helpers
+- [x] 11. Rewrite the two Bedrock tests in `tests/unit/director.test.ts` for tool use, and delete the tests of the removed helpers
   - _Requirements: 7.4, 3.3_
-- [ ] 12. Run `npm run typecheck`, `npm run test:unit` and `npm run check:determinism`; confirm with `git diff --stat` that the composer, arranger, `src/engine/`, `src/wav/` and the compose handler are untouched
+- [x] 12. Run `npm run typecheck`, `npm run test:unit` and `npm run check:determinism`; confirm with `git diff --stat` that the composer, arranger, `src/engine/`, `src/wav/` and the compose handler are untouched
   - _Requirements: 3.1, 3.2, 3.4, 3.5, 7.4_
 
 ## Session B: MCP server, registration, tests and the README section

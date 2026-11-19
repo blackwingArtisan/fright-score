@@ -3,15 +3,18 @@ import { BedrockDirector } from '../../src/director/bedrock';
 import { createDirector } from '../../src/director';
 import { parseDirectorKind } from '../../src/director/director';
 import { LocalDirector } from '../../src/director/local';
-import { directorSystemPrompt, directorUserPrompt, extractJsonObject, planFromModelReply } from '../../src/director/prompt';
+import { directorSystemPrompt, directorUserPrompt } from '../../src/director/prompt';
 import { RemoteDirector } from '../../src/director/remote';
 import { composePlan } from '../../src/score/composer';
 import { scoreFromRequest } from '../../src/score/pipeline';
 
 const samplePlan = composePlan({ seed: 9, mood: 'ritual', durationSec: 30 });
 
-function converseReply(text: string) {
-  return { output: { message: { role: 'assistant', content: [{ text }] } } };
+function toolReply(input: unknown, toolUseId = 'tooluse_1') {
+  return {
+    stopReason: 'tool_use',
+    output: { message: { role: 'assistant', content: [{ toolUse: { toolUseId, name: 'score_cue', input } }] } },
+  };
 }
 
 describe('director adapters', () => {
@@ -27,38 +30,29 @@ describe('director adapters', () => {
     expect(plan).toEqual(samplePlan);
   });
 
-  it('describes the full JSON contract in the system prompt', () => {
+  it('system prompt names the tool, keeps the patch list and craft rules, and drops the JSON shape (Req 1.2b, 1.2c)', () => {
     const prompt = directorSystemPrompt();
-    for (const word of ['durationSec', 'tempoBpm', 'phrygian', 'grave-drone', 'sting', 'silence']) expect(prompt).toContain(word);
+    for (const word of ['score_cue', 'grave-drone', 'sting', 'silence', 'tritone']) expect(prompt).toContain(word);
+    for (const word of ['JSON shape', 'tempoBpm', 'beatsPerBar']) expect(prompt).not.toContain(word);
     expect(directorUserPrompt({ seed: 1, scene: 'a cellar', durationSec: 30, stingAtSec: [20] })).toMatch(/Stings at: 20/);
   });
 
-  it('extracts JSON from fenced or chatty model replies', () => {
-    expect(extractJsonObject('Here you go:\n```json\n{"a": {"b": "}"}}\n```')).toEqual({ a: { b: '}' } });
-    expect(extractJsonObject('Sure! {"x": 1} hope that helps')).toEqual({ x: 1 });
-    expect(() => extractJsonObject('no json here')).toThrow();
-    expect(planFromModelReply(JSON.stringify(samplePlan))).toEqual(samplePlan);
-  });
-
-  it('bedrock director validates the model reply (fake client, no network)', async () => {
-    const send = vi.fn().mockResolvedValue(converseReply('```json\n' + JSON.stringify(samplePlan) + '\n```'));
+  it('bedrock director validates the tool input (fake client, no network) (Req 2.1, 2.2, 7.4)', async () => {
+    const send = vi.fn().mockResolvedValue(toolReply(samplePlan));
     const director = new BedrockDirector({ modelId: 'test-model', region: 'us-east-1', client: { send } as never });
     const plan = await director.plan({ seed: 1, scene: 'cult chanting' });
     expect(plan.title).toBe(samplePlan.title);
     expect(send).toHaveBeenCalledTimes(1);
   });
 
-  it('bedrock director asks the model to repair invalid JSON once, then gives up', async () => {
-    const bad = JSON.stringify({ ...samplePlan, tempoBpm: 999 });
-    const send = vi
-      .fn()
-      .mockResolvedValueOnce(converseReply(bad))
-      .mockResolvedValueOnce(converseReply(JSON.stringify(samplePlan)));
+  it('bedrock director repairs an invalid tool input once, then gives up (Req 2.3, 7.4)', async () => {
+    const bad = { ...samplePlan, tempoBpm: 999 };
+    const send = vi.fn().mockResolvedValueOnce(toolReply(bad)).mockResolvedValueOnce(toolReply(samplePlan));
     const director = new BedrockDirector({ modelId: 'm', region: 'us-east-1', client: { send } as never });
     await expect(director.plan({ seed: 1 })).resolves.toMatchObject({ mood: 'ritual' });
     expect(send).toHaveBeenCalledTimes(2);
 
-    const alwaysBad = vi.fn().mockResolvedValue(converseReply(bad));
+    const alwaysBad = vi.fn().mockResolvedValue(toolReply(bad));
     const stubborn = new BedrockDirector({ modelId: 'm', region: 'us-east-1', client: { send: alwaysBad } as never });
     await expect(stubborn.plan({ seed: 1 })).rejects.toThrow(/could not produce a valid plan/);
   });

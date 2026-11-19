@@ -1,14 +1,21 @@
-import { BedrockRuntimeClient, ConverseCommand, type ConverseCommandOutput } from '@aws-sdk/client-bedrock-runtime';
+import {
+  BedrockRuntimeClient,
+  ConverseCommand,
+  type ContentBlock,
+  type ConverseCommandOutput,
+  type Message,
+} from '@aws-sdk/client-bedrock-runtime';
 import type { CueRequest } from '../score/composer';
-import type { ScorePlan } from '../score/schema';
+import { parseScorePlan, type ScorePlan } from '../score/schema';
 import type { Director } from './director';
-import { directorSystemPrompt, directorUserPrompt, planFromModelReply } from './prompt';
+import { directorSystemPrompt, directorUserPrompt } from './prompt';
+import { SCORE_CUE_TOOL_NAME, scoreCueToolSpec } from './tool';
 
 export interface BedrockDirectorOptions {
   /** Bedrock model or inference profile ID. */
   modelId: string;
   region: string;
-  /** Validation retries: the model sees its own errors and repairs the JSON. */
+  /** Validation retries: the model sees its own errors and repairs the plan. Shared by validation errors and missing tool calls. */
   maxRepairs?: number;
   /** Explicit credentials for runtimes without the default AWS provider chain (e.g. Workers). */
   credentials?: { accessKeyId: string; secretAccessKey: string; sessionToken?: string };
@@ -19,8 +26,8 @@ export interface BedrockDirectorOptions {
 export const DEFAULT_BEDROCK_MODEL = 'us.amazon.nova-pro-v1:0';
 
 /**
- * The real AI path: Amazon Bedrock's Converse API turns a scene into ScorePlan JSON,
- * which is then validated with the same zod schema as the local director's output.
+ * The real AI path: Amazon Bedrock's Converse API turns a scene into a ScorePlan through a
+ * forced `score_cue` tool call, whose input is then validated with the same zod schema as the local director's output.
  * Only runs when FRIGHT_DIRECTOR=bedrock and AWS credentials are configured.
  */
 export class BedrockDirector implements Director {
@@ -56,10 +63,8 @@ export class BedrockDirector implements Director {
   }
 
   async plan(request: CueRequest): Promise<ScorePlan> {
-    const messages: { role: 'user' | 'assistant'; content: { text: string }[] }[] = [
-      { role: 'user', content: [{ text: directorUserPrompt(request) }] },
-    ];
-    let lastError: unknown;
+    const messages: Message[] = [{ role: 'user', content: [{ text: directorUserPrompt(request) }] }];
+    let lastError: Error | undefined;
     for (let attempt = 0; attempt <= this.maxRepairs; attempt++) {
       const output: ConverseCommandOutput = await this.client.send(
         new ConverseCommand({
@@ -67,22 +72,48 @@ export class BedrockDirector implements Director {
           system: [{ text: directorSystemPrompt() }],
           messages,
           inferenceConfig: { maxTokens: 2000, temperature: 0.8 },
+          toolConfig: {
+            tools: [scoreCueToolSpec()],
+            toolChoice: { tool: { name: SCORE_CUE_TOOL_NAME } },
+          },
         }),
       );
-      const text = (output.output?.message?.content ?? [])
-        .map((block) => ('text' in block && typeof block.text === 'string' ? block.text : ''))
-        .join('');
-      try {
-        return planFromModelReply(text);
-      } catch (error) {
-        lastError = error;
-        messages.push({ role: 'assistant', content: [{ text }] });
-        messages.push({
-          role: 'user',
-          content: [{ text: `That JSON was rejected: ${(error as Error).message}. Reply with corrected JSON only.` }],
-        });
+      const blocks = output.output?.message?.content ?? [];
+      const toolUses = blocks.flatMap((block) => (block.toolUse ? [block.toolUse] : []));
+      const call = toolUses.find((use) => use.name === SCORE_CUE_TOOL_NAME);
+      const cutOff = output.stopReason === 'max_tokens';
+
+      // Every toolUseId must be answered; the failed call gets the reason, any other block an "unknown tool".
+      let reason: string;
+      if (call && !cutOff) {
+        try {
+          return parseScorePlan(call.input);
+        } catch (error) {
+          lastError = error as Error;
+          reason = lastError.message;
+        }
+      } else if (call) {
+        lastError = new Error('The model reply was cut off (max_tokens) before the plan was complete');
+        reason = `${lastError.message}. Call ${SCORE_CUE_TOOL_NAME} again with the complete plan.`;
+      } else {
+        lastError = new Error(`The model did not call ${SCORE_CUE_TOOL_NAME}`);
+        reason = `Unknown tool. Call ${SCORE_CUE_TOOL_NAME}.`;
       }
+
+      messages.push({ role: 'assistant', content: blocks.length > 0 ? blocks : [{ text: '(no reply)' }] });
+      const results: ContentBlock[] = toolUses.map((use) => ({
+        toolResult: {
+          toolUseId: use.toolUseId,
+          status: 'error',
+          content: [{ text: use === call ? reason : `Unknown tool. Call ${SCORE_CUE_TOOL_NAME}.` }],
+        },
+      }));
+      messages.push({
+        role: 'user',
+        content:
+          results.length > 0 ? results : [{ text: `Call the ${SCORE_CUE_TOOL_NAME} tool with the complete plan.` }],
+      });
     }
-    throw new Error(`Bedrock director could not produce a valid plan: ${(lastError as Error).message}`);
+    throw new Error(`Bedrock director could not produce a valid plan: ${lastError?.message ?? 'unknown error'}`);
   }
 }
