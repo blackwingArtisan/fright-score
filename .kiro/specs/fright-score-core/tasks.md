@@ -97,3 +97,26 @@ and heading accessible names, and the Playwright-asserted strings are unchanged.
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
 - [x] 40. Playwright assertion that the masthead flicker is on by default and disabled under prefers-reduced-motion
   - _Requirements: 11.1, 11.2_
+
+## Requirement-to-test traceability
+
+Each requirement, the tests that pin it down, and the open task for any criterion not yet pinned. Unit and
+CLI tests run under Vitest (`npm run test:unit`); `e2e/` tests run under Playwright (`npm run test:e2e`).
+
+| Requirement | Tests | Open tasks |
+|---|---|---|
+| 1. Direct a cue from a scene or a mood | `unit/scene.test.ts` (canonical brief, cue time is not the length, several cues and hits, jump scare without a time, no mood); `unit/composer.test.ts` (length and sting honored, jump scare near the end); `e2e/app.spec.ts` (what the director heard, 1.8) | 20 (1.4), 21 (1.6), 22 (1.5) |
+| 2. Validate every plan | `unit/schema.test.ts`; `unit/composer.test.ts` (reconcilePlan); `unit/director.test.ts` (the pipeline enforces stings) | 23 (2.2) |
+| 3. Arrange the plan into notes | `unit/arranger.test.ts` (schema-valid, notes inside the cue, silence window, exact sting, drone returns) | 24 (3.2), 25 (3.5) |
+| 4. Determinism by seed | `unit/render.test.ts`, `unit/wav.test.ts`, `unit/arranger.test.ts`, `unit/composer.test.ts`, `unit/rng.test.ts`; `e2e/app.spec.ts` (browser equals CLI byte for byte, 4.3); `e2e/share-loop.spec.ts`; `npm run check:determinism` (4.4) | none |
+| 5. Emulate a four-operator FM chip | `unit/sine.test.ts`, `unit/operator.test.ts`, `unit/algorithms.test.ts`, `unit/envelope.test.ts`, `unit/voice.test.ts` | 26 (5.2), 27 (5.4), 28 (5.6) |
+| 6. Solid audio output | `unit/render.test.ts` (length, -3 dBTP, fades, sting within 50 ms), `unit/master.test.ts`, `unit/wav.test.ts`, `unit/loudness.test.ts` (BS.1770, mood ceilings) | 29 (6.4), 30 (6.6), 31 (6.2) |
+| 7. Command-line renderer | `cli/score.test.ts` (end to end through npm, same bytes by seed, JSON, bad arguments, help, loops, VGM); `cli/samples.test.ts` | 32 (7.1), 33 (7.3), 34 (7.4) |
+| 8. Browser app with a chip view | `e2e/app.spec.ts`, `e2e/a11y.spec.ts`, `e2e/sting.spec.ts`, `e2e/layout.spec.ts`, `e2e/mobile.spec.ts` (8.7) | 35 (8.1), 36 (8.4) |
+| 9. Swappable AI director | `unit/director.test.ts` (local by default, Bedrock with a fake client and one repair round, remote); `unit/server.test.ts`; every test uses fake clients (9.4) | none |
+| 10. Seamless loops and share links | `unit/loop.test.ts`; `cli/score.test.ts` (loops); `e2e/share-loop.spec.ts` | 37 (10.1), 38 (10.2) |
+| 11. A cursed datasheet look | `e2e/app.spec.ts` (flicker on, and off under reduced motion: 11.1, 11.2) | 11.3 to 11.6 are checked by visual review |
+
+Tasks 26 and 34 were re-checked against the current suite and stay open: `unit/operator.test.ts` covers
+feedback levels 0, 2 and 5 but not 0 through 7 or the clamp at 7, and `cli/score.test.ts` runs `--quiet` and
+`--help` without asserting what `--quiet` prints.

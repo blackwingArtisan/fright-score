@@ -39,7 +39,19 @@ yet pinned by a test. Each carries its requirement numbers.
   - _Requirements: 1.6_
 - [ ] 15. Add a live-chip e2e test that losing page focus while keys are held releases every voice
   - _Requirements: 1.7_
-- [ ] 16. Add a live-chip e2e test that summoning a new cue cancels a render still in progress
+- [x] 16. Add a live-chip e2e test that summoning a new cue cancels a render still in progress
   - _Requirements: 2.4_
+  - Covered by `e2e/live-chip.spec.ts`, "a newer request replaces the demo render instead of racing it": the
+    request is summoned while the demo cue is still rendering, and only the newer cue reaches the board.
 - [ ] 17. Add a live-chip e2e test that the Play button stops beckoning after the first play
   - _Requirements: 2.3_
+
+## Requirement-to-test traceability
+
+| Requirement | Tests | Open tasks |
+|---|---|---|
+| 1. Play the chip in real time | `unit/live-core.test.ts` (silent until played, sample for sample equal to the offline engine, reports, release, polyphony cap, patch switch and panic); `e2e/live-chip.spec.ts` (real-time synthesis on the AudioWorklet from A to K and the on-screen keys) | 10, 11 (1.3), 12 (1.4), 13 (1.5), 14 (1.6), 15 (1.7) |
+| 2. A first view that shows the product working | `e2e/live-chip.spec.ts` (demo cue on first load with a clean form and URL, a newer request replaces the demo render); `e2e/sting.spec.ts` (Listen and Jump to the scare) | 17 (2.3) |
+
+Task 12 was re-checked against the current suite and stays open: `unit/live-core.test.ts` proves the voice
+count is capped, but not that the oldest released voice is the one stolen.
