@@ -4,6 +4,10 @@
 
 ### Added
 
+- **Wider Kiro workspace:** file-matched steering for the engine (`engine-dsp.md`), manual steering for the
+  WAV and VGM formats (`export-formats.md`), an on-demand `render-bench` hook, and an `fs666-sound-designer`
+  custom agent with a write and command allowlist. A unit test checks that every hook, steering file and
+  agent resource points at scripts and files that exist.
 - **A harder sting and a haunted chip:** the board drops toward black during the planned 0.6 s silence and
   `--dread` goes to full, so the hit lands out of the dark; at the hit the title glitches and a crack splits
   the timeline. Resting pads hold a slow ectoplasm glow, the channel header is a chip package with a skull in

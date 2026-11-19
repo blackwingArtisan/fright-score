@@ -1,0 +1,12 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Render benchmark",
+      "description": "Run on demand after an engine change: times the 90-second demo cue from request to WAV bytes and prints the median, so a slower operator or envelope shows up before it ships.",
+      "trigger": "UserTriggered",
+      "action": { "type": "command", "command": "npm run bench --silent" },
+      "timeout": 300
+    }
+  ]
+}
