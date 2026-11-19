@@ -71,6 +71,10 @@ const els = {
   jump: $<HTMLButtonElement>('jump'),
   tryLive: $<HTMLButtonElement>('try-live'),
   live: $<HTMLElement>('live'),
+  direction: $<HTMLElement>('direction'),
+  board: document.querySelector<HTMLElement>('.board')!,
+  transport: document.querySelector<HTMLElement>('.transport')!,
+  writeCta: $<HTMLAnchorElement>('write-cta'),
 };
 
 /** The cue rendered on first load, so the board shows a real score before anyone clicks. */
@@ -734,6 +738,26 @@ document.addEventListener('keydown', (e) => {
     void togglePlay();
   }
 });
+/* Phones: put the form right after the transport, and pin a "Write your scene" button until it is in view. */
+const narrow = window.matchMedia('(max-width: 900px)');
+function placeDirection(): void {
+  if (narrow.matches) {
+    if (els.direction.previousElementSibling !== els.transport) els.transport.after(els.direction);
+  } else if (els.direction.parentElement !== els.board) {
+    els.board.prepend(els.direction);
+  }
+}
+placeDirection();
+narrow.addEventListener('change', placeDirection);
+new IntersectionObserver(([entry]) => {
+  els.writeCta.hidden = entry.isIntersecting;
+}).observe(els.direction);
+els.writeCta.addEventListener('click', (e) => {
+  e.preventDefault();
+  els.direction.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  els.scene.focus({ preventScroll: true });
+});
+
 buildLiveChip();
 requestAnimationFrame(frame);
 if (loadFromUrl()) els.form.requestSubmit();

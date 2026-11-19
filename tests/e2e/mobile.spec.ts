@@ -20,3 +20,20 @@ test('on a phone the cue and its Listen button come before the form, in the firs
   const formTop = (await page.locator('#direction').boundingBox())!.y;
   expect(stageTop).toBeLessThan(formTop);
 });
+
+test('on a phone the form sits right after the transport, and a pinned button jumps to it', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  const transport = (await page.locator('.transport').boundingBox())!;
+  const form = (await page.locator('#direction').boundingBox())!;
+  const chip = (await page.locator('.chip-wrap').boundingBox())!;
+  expect(form.y).toBeGreaterThanOrEqual(transport.y + transport.height);
+  expect(form.y).toBeLessThan(chip.y);
+
+  const cta = page.getByRole('link', { name: 'Write your scene' });
+  await expect(cta).toBeInViewport();
+  await cta.click();
+  await expect(page.getByLabel('Describe the scene')).toBeFocused();
+  await expect(page.getByLabel('Describe the scene')).toBeInViewport();
+  await expect(cta).toBeHidden();
+});

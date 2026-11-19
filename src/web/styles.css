@@ -204,6 +204,46 @@ h3 {
   margin-bottom: 14px;
 }
 
+/* On wide screens the form follows the scroll, so Summon the score stays in reach beside the board. */
+@media (min-width: 901px) {
+  .direction {
+    position: sticky;
+    top: var(--gutter);
+    align-self: start;
+    max-height: calc(100vh - 2 * var(--gutter));
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--copper-dim) transparent;
+  }
+}
+
+/* Phones: a button pinned to the bottom of the screen that jumps to the scene field. */
+.write-cta {
+  display: none;
+}
+@media (max-width: 900px) {
+  .write-cta {
+    position: fixed;
+    right: var(--gutter);
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 18px 10px;
+    font: 400 var(--step-1) var(--font-gothic);
+    letter-spacing: 0.02em;
+    color: var(--silk);
+    text-decoration: none;
+    background: linear-gradient(180deg, #7d1a22, #4c0c12);
+    border: 1px solid var(--blood);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.5), 0 0 0 3px rgb(224 52 63 / 0.25);
+  }
+  .write-cta[hidden] {
+    display: none;
+  }
+}
+
 /* Direction form */
 .direction form {
   display: grid;
@@ -1008,7 +1048,8 @@ canvas {
   .board {
     grid-template-columns: minmax(0, 1fr);
   }
-  /* On narrow screens the stage (and its Listen button) comes first; the form follows. */
+  /* On narrow screens the stage (and its Listen button) comes first. main.ts moves the form in right after
+     the transport, so it sits under the cue rather than below the whole board. */
   .stage {
     order: -1;
   }
