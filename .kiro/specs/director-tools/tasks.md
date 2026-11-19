@@ -43,10 +43,10 @@ on the unchanged pipeline, so the sessions can run in either order.
   - _Requirements: 5.7, 5.8_
 - [x] 17. Add `scripts/mcp/fright-score-mcp.ts`: line-delimited JSON-RPC over stdio, `initialize`, `ping`, `tools/list`, `tools/call`, silent notifications, errors -32700, -32601 and -32602, diagnostics on stderr only, clean exit when stdin closes, local director whatever `FRIGHT_DIRECTOR` says
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
-- [ ] 18. Register `fright-score` in `.kiro/settings/mcp.json` beside `aws-docs` and `context7` (`npx tsx scripts/mcp/fright-score-mcp.ts`, 120 s timeout, no `env`); call both tools from a Kiro session to confirm the relative path works, else switch to an absolute path
+- [x] 18. Register `fright-score` in `.kiro/settings/mcp.json` beside `aws-docs` and `context7` (`npx tsx scripts/mcp/fright-score-mcp.ts`, 120 s timeout, no `env`); call both tools from a Kiro session to confirm the relative path works, else switch to an absolute path
   - [x] Registered in `.kiro/settings/mcp.json`
   - [x] Proved from the repo root by piping `initialize`, `tools/list` and a `list_patches` call into the exact registered command (the session cannot load a server added during it)
-  - [ ] Confirmed from a new Kiro session by calling both tools (developer; if the relative path fails there, switch to an absolute path)
+  - [x] Confirmed from a new Kiro session by calling both tools (developer; if the relative path fails there, switch to an absolute path)
   - _Requirements: 6.3a, 6.3b, 6.3c_
 - [x] 19. Test `tests/cli/mcp.test.ts`, protocol: spawn the server with `--import tsx` and an environment with no `AWS_*` and `FRIGHT_DIRECTOR=bedrock`; `initialize`, `tools/list`, `ping`, a notification with no reply, unknown method, unknown tool, garbage line, clean exit on stdin close
   - _Requirements: 7.2a, 7.2c, 7.3, 4.2, 4.3, 4.4_
