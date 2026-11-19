@@ -8,6 +8,7 @@ import { scoreFromRequest } from '../score/pipeline';
 import { readScene, parseTimePhrase } from '../score/scene';
 import { MOODS, type Mood } from '../score/schema';
 import { MODE_LABELS, formatTime } from '../score/theory';
+import { scoreToVgm } from '../export/vgm';
 import { encodeWav } from '../wav/wav';
 
 const HELP = `Fright Score: render an original, royalty-free horror cue to a WAV file.
@@ -24,6 +25,7 @@ Options:
   --out <file.wav>    Output WAV path (default: fright-cue.wav)
   --loop              Seamless loop for games: whole bars, no fades, loop points in the WAV
   --json <file.json>  Also write the realized score as JSON
+  --vgm <file.vgm>    Also write a Sega Genesis (YM2612) version as a VGM file
   --director <kind>   local | bedrock (default: FRIGHT_DIRECTOR or local)
   --quiet             Only print the output path
   --help              Show this help
@@ -56,6 +58,7 @@ export async function runCli(argv: string[], env: Record<string, string | undefi
       seed: { type: 'string', default: '13' },
       out: { type: 'string', default: 'fright-cue.wav' },
       json: { type: 'string' },
+      vgm: { type: 'string' },
       loop: { type: 'boolean', default: false },
       director: { type: 'string' },
       quiet: { type: 'boolean', default: false },
@@ -105,6 +108,15 @@ export async function runCli(argv: string[], env: Record<string, string | undefi
     mkdirSync(dirname(jsonPath), { recursive: true });
     writeFileSync(jsonPath, JSON.stringify(score, null, 2));
   }
+  let vgmLine: string | undefined;
+  if (values.vgm) {
+    const vgmPath = resolve(values.vgm);
+    const vgm = scoreToVgm(score);
+    mkdirSync(dirname(vgmPath), { recursive: true });
+    writeFileSync(vgmPath, vgm.bytes);
+    const s = vgm.stats;
+    vgmLine = `Wrote ${vgmPath} for the Sega Genesis: ${s.registerWrites} YM2612 register writes, ${s.notes - s.dropped} of ${s.notes} notes on six FM channels.`;
+  }
 
   if (values.quiet) {
     log(outPath);
@@ -123,6 +135,7 @@ export async function runCli(argv: string[], env: Record<string, string | undefi
     log(`  ${result.stats.noteCount} notes, up to ${result.stats.maxVoices} voices, true peak ${result.stats.truePeakDb.toFixed(1)} dBTP, ${result.stats.loudnessLufs.toFixed(1)} LUFS, rendered in ${result.stats.renderMs} ms`);
     if (plan.loop) log('  Seamless loop: no fades, loop points written to the WAV smpl chunk.');
     log(`Wrote ${outPath} (${(wav.byteLength / 1024 / 1024).toFixed(1)} MB, 44.1 kHz 16-bit stereo). Royalty-free: it is yours.`);
+    if (vgmLine) log(vgmLine);
   }
   return { outPath, bytes: wav.byteLength };
 }

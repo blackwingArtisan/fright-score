@@ -3,6 +3,7 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import './styles.css';
 import { PATCHES, PATCH_IDS, type PatchId } from '../engine/patches';
+import { scoreToVgm } from '../export/vgm';
 import type { RenderStats, VizFrames } from '../engine/render';
 import { MOOD_PROFILES } from '../score/moods';
 import { scoreFromRequest } from '../score/pipeline';
@@ -50,6 +51,7 @@ const els = {
   clock: $<HTMLSpanElement>('clock'),
   exportWav: $<HTMLButtonElement>('export-wav'),
   exportJson: $<HTMLButtonElement>('export-json'),
+  exportVgm: $<HTMLButtonElement>('export-vgm'),
   chip: $<HTMLCanvasElement>('chip'),
   scope: $<HTMLCanvasElement>('scope'),
   notes: $<HTMLParagraphElement>('director-notes'),
@@ -240,6 +242,7 @@ function setReady(enabled: boolean): void {
   els.play.disabled = !enabled;
   els.exportWav.disabled = !enabled;
   els.exportJson.disabled = !enabled;
+  els.exportVgm.disabled = !enabled;
   els.share.disabled = !enabled;
 }
 
@@ -694,6 +697,11 @@ els.share.addEventListener('click', async () => {
     window.prompt('Copy this link', url);
   }
   els.share.dataset.url = url;
+});
+els.exportVgm.addEventListener('click', () => {
+  if (!current) return;
+  const { bytes } = scoreToVgm(current.score);
+  download(bytes, 'audio/x-vgm', `fright-score-${slug(current.score.plan.title)}-seed${current.score.seed}.vgm`);
 });
 els.exportJson.addEventListener('click', () => {
   if (!current) return;

@@ -29,6 +29,8 @@ src/
     bedrock.ts       Amazon Bedrock director adapter (real path)
     remote.ts        HTTP director adapter for the web app
     prompt.ts        LLM prompt and JSON extraction
+  export/vgm.ts      Sega Genesis export: FS-666 patches -> YM2612 registers, a six-channel
+                     arrangement, and a VGM file of register writes (plus its parser)
   wav/wav.ts         16-bit PCM WAV encoder and parser
   cli/score.ts       `npm run score` entry point
   web/               browser UI (main.ts, render worker, player, views, styles)

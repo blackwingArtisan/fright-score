@@ -70,3 +70,17 @@ describe('CLI: loops', () => {
     expect(info.loop).toEqual({ startFrame: 0, endFrame: info.frameCount - 1 });
   });
 });
+
+describe('CLI: Sega Genesis export', () => {
+  it('writes a VGM beside the WAV with --vgm', async () => {
+    const { parseVgm } = await import('../../src/export/vgm');
+    const out = join(dir, 'genesis.wav');
+    const vgmPath = join(dir, 'genesis.vgm');
+    const lines: string[] = [];
+    await runCli(['--mood', 'chase', '--seconds', '8', '--sting', '6', '--seed', '4', '--out', out, '--vgm', vgmPath], {}, (l) => lines.push(l));
+    expect(lines.join('\n')).toMatch(/for the Sega Genesis: \d+ YM2612 register writes/);
+    const vgm = parseVgm(readFileSync(vgmPath));
+    expect(vgm.totalSamples).toBe(8 * 44_100);
+    expect(vgm.waitedSamples).toBe(vgm.totalSamples);
+  });
+});
