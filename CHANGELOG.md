@@ -4,6 +4,11 @@
 
 ### Added
 
+- **A harder sting and a haunted chip:** the board drops toward black during the planned 0.6 s silence and
+  `--dread` goes to full, so the hit lands out of the dark; at the hit the title glitches and a crack splits
+  the timeline. Resting pads hold a slow ectoplasm glow, the channel header is a chip package with a skull in
+  the silkscreen, and the stinger and boom rows are tinted red. Under reduced motion the glow is steady and the
+  sting stays a still red frame with a still crack.
 - **Instant first load:** the demo cue plays from a pre-rendered preview in about a second while the live
   render runs; when it lands, playback carries on in the exact render and the page shows that its sha256
   matches the published demo hash. The masthead's explainer folds into one line.

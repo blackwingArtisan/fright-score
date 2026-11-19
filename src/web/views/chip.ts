@@ -19,6 +19,9 @@ export const HISTORY_FRAMES = 90;
 export class ChipView {
   private score: Score | undefined;
   private frames: VizFrames | undefined;
+  /** Ectoplasm glow of resting pads for the current frame, 0..1. */
+  private rest = 0.6;
+  private readonly still = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : undefined;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
@@ -28,6 +31,8 @@ export class ChipView {
   }
 
   draw(positionSec: number): void {
+    // Resting pads breathe on a slow four-second cycle; under reduced motion they hold a steady glow.
+    this.rest = this.still?.matches ? 0.6 : 0.5 + 0.4 * Math.sin((performance.now() / 4000) * Math.PI * 2);
     const rows = this.score?.tracks.length ?? 3;
     const idle = !this.score || !this.frames;
     // The idle caption gets its own line under the rows, so it never overlaps the last channel.
@@ -84,6 +89,8 @@ export class ChipView {
       },
       readout: live ? { voices: frames.voices[idx], midi: frames.notes[idx] } : undefined,
       accent: track?.role === 'stinger' ? COLORS.blood : COLORS.copper,
+      rest: this.rest,
+      danger: track?.role === 'stinger',
     });
     ctx.globalAlpha = 1;
   }
@@ -106,6 +113,10 @@ export interface OperatorRowSpec {
   readout: { voices: number; midi: number } | undefined;
   /** Colour of the envelope history line. */
   accent: string;
+  /** 0..1: the ectoplasm glow of pads at rest (the board breathes while nothing sounds). */
+  rest?: number;
+  /** Tint the row blood red (the stinger and boom channels, both role "stinger"). */
+  danger?: boolean;
 }
 
 /** Horizontal layout of a channel row for a canvas `width` CSS pixels wide. */
@@ -130,6 +141,15 @@ export function drawOperatorRow(ctx: CanvasRenderingContext2D, spec: OperatorRow
   const { y0, labelW, padsX, readoutX, ribbonX, ribbonW, patch, level } = spec;
   const mid = y0 + 30;
   const algo = getAlgorithm(patch?.algorithm ?? 4);
+
+  // Stinger and boom channels sit on a faint blood-red band.
+  if (spec.danger) {
+    const band = ctx.createLinearGradient(0, 0, ctx.canvas.width, 0);
+    band.addColorStop(0, 'rgb(224 52 63 / 0.16)');
+    band.addColorStop(1, 'rgb(224 52 63 / 0.03)');
+    ctx.fillStyle = band;
+    ctx.fillRect(0, y0, ctx.canvas.width, ROW_H - 4);
+  }
 
   // Row divider, like a silkscreen outline.
   ctx.strokeStyle = 'rgb(122 85 48 / 0.45)';
@@ -204,6 +224,20 @@ export function drawOperatorRow(ctx: CanvasRenderingContext2D, spec: OperatorRow
     else ctx.rect(cx - PAD / 2, mid - PAD / 2, PAD, PAD);
     ctx.fill();
     ctx.stroke();
+    const rest = spec.rest ?? 0;
+    if (lv <= 0.002 && rest > 0) {
+      // At rest the pads hold a faint ectoplasm glow, as if something were still inside the chip.
+      ctx.save();
+      ctx.shadowColor = COLORS.ectoplasm;
+      ctx.shadowBlur = 4 + 10 * rest;
+      ctx.strokeStyle = `rgb(127 217 192 / ${0.25 + 0.45 * rest})`;
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      if (isCarrier) ctx.arc(cx, mid, PAD / 2 - 3, 0, Math.PI * 2);
+      else ctx.rect(cx - PAD / 2 + 3, mid - PAD / 2 + 3, PAD - 6, PAD - 6);
+      ctx.stroke();
+      ctx.restore();
+    }
     if (lv > 0.002) {
       ctx.save();
       ctx.shadowColor = COLORS.copper;

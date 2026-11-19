@@ -556,6 +556,10 @@ let scareTimer: ReturnType<typeof setTimeout> | undefined;
 
 /** The visual payoff when the playhead crosses a sting: blood vignette, shake, pad flare, red playhead. */
 function landSting(): void {
+  setHush(false);
+  document.body.classList.remove('is-stung');
+  void document.body.offsetWidth;
+  document.body.classList.add('is-stung');
   stingsLanded++;
   els.stage.dataset.stings = String(stingsLanded);
   els.stage.classList.remove('stage--sting');
@@ -563,7 +567,24 @@ function landSting(): void {
   els.stage.classList.add('stage--sting');
   scareUntil = performance.now() + STING_FLASH_MS;
   clearTimeout(scareTimer);
-  scareTimer = setTimeout(() => els.stage.classList.remove('stage--sting'), STING_FLASH_MS);
+  scareTimer = setTimeout(() => {
+    els.stage.classList.remove('stage--sting');
+    document.body.classList.remove('is-stung');
+  }, STING_FLASH_MS);
+}
+
+let hushed = false;
+/** The board goes dark during the planned silence before a sting, so the hit lands out of black. */
+function setHush(on: boolean): void {
+  if (on === hushed) return;
+  hushed = on;
+  document.body.classList.toggle('is-hush', on);
+}
+
+/** True while the playhead is inside one of the plan's silence windows (the 0.6 s before a sting). */
+function inSilence(pos: number): boolean {
+  if (!player.playing) return false;
+  return (playable?.plan.cues ?? []).some((c) => c.kind === 'silence' && pos >= c.atSec && pos < c.atSec + (c.lengthSec ?? 0.6));
 }
 
 /** Fire `landSting` for every sting the playhead passed since the last frame (not across a seek or loop wrap). */
@@ -579,7 +600,7 @@ let dreadShown = -1;
 function updateDread(pos: number): void {
   const sections = playable?.plan.sections ?? [];
   const section = player.playing ? sections.find((s) => pos >= s.startSec && pos < s.endSec) : undefined;
-  const dread = Math.round((section?.intensity ?? 0.25) * 20) / 20;
+  const dread = hushed ? 1 : Math.round((section?.intensity ?? 0.25) * 20) / 20;
   if (dread === dreadShown) return;
   dreadShown = dread;
   document.documentElement.style.setProperty('--dread', String(dread));
@@ -587,6 +608,7 @@ function updateDread(pos: number): void {
 
 function frame(): void {
   const pos = player.position;
+  setHush(inSilence(pos));
   checkStings(pos);
   updateDread(pos);
   timeline.draw(pos, performance.now() < scareUntil);

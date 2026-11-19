@@ -1097,6 +1097,110 @@ canvas {
   }
 }
 
+/* The planned silence before a sting: the board drops toward black, so the hit lands out of the dark. */
+.hush {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 65% at 50% 45%, rgb(2 6 5 / 0.55), rgb(0 0 0 / 0.82));
+  opacity: 0;
+  transition: opacity 90ms linear;
+}
+.is-hush .hush {
+  opacity: 1;
+  transition: opacity 380ms ease-in;
+}
+
+/* At the hit the title glitches and a crack splits the timeline. */
+.is-stung .masthead h1 {
+  animation: headingGlitch 420ms steps(1) 1;
+}
+@keyframes headingGlitch {
+  0% {
+    transform: translate(-3px, 0) skewX(-6deg);
+    text-shadow: 4px 0 0 rgb(224 52 63 / 0.9), -4px 0 0 rgb(127 217 192 / 0.7);
+    clip-path: inset(0 0 52% 0);
+  }
+  25% {
+    transform: translate(4px, 1px);
+    text-shadow: -5px 0 0 rgb(224 52 63 / 0.9), 3px 0 0 rgb(127 217 192 / 0.7);
+    clip-path: inset(40% 0 0 0);
+  }
+  50% {
+    transform: translate(-2px, -1px) skewX(4deg);
+    text-shadow: 2px 0 0 rgb(224 52 63 / 0.9), -2px 0 0 rgb(127 217 192 / 0.7);
+    clip-path: inset(18% 0 30% 0);
+  }
+  75%,
+  100% {
+    transform: none;
+    clip-path: none;
+  }
+}
+.timeline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20400%20100'%20preserveAspectRatio='none'%3E%3Cpath%20d='M0%2048%20L46%2052%20L71%2039%20L104%2058%20L131%2046%20L163%2063%20L190%2041%20L214%2055%20L249%2036%20L271%2050%20L306%2044%20L330%2061%20L366%2047%20L400%2053'%20fill='none'%20stroke='%23ece6d2'%20stroke-width='1.6'%20vector-effect='non-scaling-stroke'/%3E%3Cpath%20d='M131%2046%20L139%2028%20L150%2019%20M214%2055%20L222%2074%20L218%2088%20M306%2044%20L314%2027%20M71%2039%20L64%2024'%20fill='none'%20stroke='%23e0343f'%20stroke-width='1.2'%20vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0 4px rgb(224 52 63 / 0.8));
+}
+.stage--sting .timeline::after {
+  animation: crack 600ms ease-out 1;
+}
+@keyframes crack {
+  0% {
+    opacity: 1;
+    clip-path: inset(0 100% 0 0);
+  }
+  12% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* The channel view's header is a chip package: a ceramic body, legs on both sides, a skull in the silkscreen. */
+.chip-package {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 4px;
+  background: linear-gradient(180deg, #1d2120, #0d100f);
+  border: 1px solid #2b302e;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.6);
+}
+.chip-package::before,
+.chip-package::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 5px;
+  background: repeating-linear-gradient(90deg, #a8b3a9 0 4px, transparent 4px 11px);
+  opacity: 0.55;
+}
+.chip-package::before {
+  top: -6px;
+}
+.chip-package::after {
+  bottom: -6px;
+}
+.chip-package__skull {
+  width: 1.05em;
+  height: 1.05em;
+  fill: var(--silk-dim);
+  opacity: 0.8;
+}
+
 /* The Play button breathes until the first listen. */
 .btn--beckon {
   animation: beckon 1.8s ease-in-out infinite;
@@ -1200,6 +1304,10 @@ canvas {
   * {
     animation: none !important;
     transition: none !important;
+  }
+  /* No sweep, shake, glitch or dimming fade: a still red frame and a still crack while the sting lands. */
+  .stage--sting .timeline::after {
+    opacity: 1;
   }
   /* No vignette sweep or shake: a still red frame around the page for as long as the sting lands. */
   .stage--sting .stage__scare {

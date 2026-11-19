@@ -24,12 +24,30 @@ async function watchSting(page: Page): Promise<void> {
         vignette: s.animationName,
         frame: s.boxShadow,
         shake: getComputedStyle(timeline).animationName,
+        glitch: getComputedStyle(document.querySelector('h1')!).animationName,
+        crack: getComputedStyle(timeline, '::after').animationName,
+        crackOpacity: getComputedStyle(timeline, '::after').opacity,
       };
     }).observe(stage, { attributes: true, attributeFilter: ['class'] });
+    // The board goes dark during the planned silence, before the sting lands.
+    new MutationObserver(() => {
+      if (document.body.classList.contains('is-hush') && !stage.classList.contains('stage--sting')) {
+        (window as unknown as { __hush: boolean }).__hush = true;
+      }
+    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   });
 }
 
-const seen = (page: Page) => page.evaluate(() => (window as unknown as { __sting?: { vignette: string; frame: string; shake: string } }).__sting);
+interface StingStyle {
+  vignette: string;
+  frame: string;
+  shake: string;
+  glitch: string;
+  crack: string;
+  crackOpacity: string;
+}
+const seen = (page: Page) => page.evaluate(() => (window as unknown as { __sting?: StingStyle }).__sting);
+const hushed = (page: Page) => page.evaluate(() => (window as unknown as { __hush?: boolean }).__hush === true);
 
 test.describe('the sting payoff and the 60-second path', () => {
   test('the Listen overlay names the scare time and starts playback', async ({ page }) => {
@@ -55,6 +73,10 @@ test.describe('the sting payoff and the 60-second path', () => {
     const style = await seen(page);
     expect(style?.vignette).toBe('scareVignette');
     expect(style?.shake).toBe('scareShake');
+    expect(style?.glitch).toBe('headingGlitch');
+    expect(style?.crack).toBe('crack');
+    expect(await hushed(page)).toBe(true);
+    await expect(page.locator('body')).not.toHaveClass(/is-hush/);
     // The flash clears again after about 600 ms.
     await expect(page.locator('.stage')).not.toHaveClass(/stage--sting/, { timeout: 3_000 });
     expect(errors).toEqual([]);
@@ -70,6 +92,8 @@ test.describe('the sting payoff and the 60-second path', () => {
     expect(style?.vignette).toBe('none');
     expect(style?.shake).toBe('none');
     expect(style?.frame).toContain('inset');
+    expect(style?.glitch).toBe('none');
+    expect(style?.crackOpacity).toBe('1');
   });
 
   test('the live-chip callout scrolls to the keyboard', async ({ page }) => {

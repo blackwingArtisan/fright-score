@@ -9,6 +9,7 @@ export const COLORS = {
   silkDim: '#a8b3a9',
   tin: '#8f9a96',
   blood: '#e0343f',
+  ectoplasm: '#7fd9c0',
 } as const;
 
 export const FONT_SILK = "'IBM Plex Mono', ui-monospace, Menlo, monospace";
