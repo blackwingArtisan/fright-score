@@ -4,7 +4,7 @@
 synthesis chip renders it in your browser, and you download the result as a royalty-free WAV. Then play the
 chip yourself, in real time.
 
-![Fright Score: the demo cue playing, with its timeline and the FS-666 channel view](docs/screenshot.png)
+![Fright Score: the demo cue playing, with its timeline and the FS-666 channel view](docs/screenshot.jpg)
 
 ## Who it is for
 
