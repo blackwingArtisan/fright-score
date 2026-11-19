@@ -1,8 +1,44 @@
 # Kiro log
 
 A record of every Kiro call made while building Fright Score: what was asked, what Kiro produced,
-and any usage it reported. Kiro credits were limited (free plan), so the budget was two
-`kiro-cli` calls for this entry.
+and the credits it used. The first two calls ran on the free plan; later passes used the
+`kiroween2026` bonus credits.
+
+## Kiro pass 3: the director tools, specced and built by Kiro (2026-11-19)
+
+Kiro wrote the spec `.kiro/specs/director-tools/` and then built all 24 of its tasks over three
+`kiro-cli` sessions, plus a fourth 23-second session in which Kiro called the new MCP server itself.
+The developer ran the shell, ran every check, read the diffs and committed. No line of Kiro's code
+needed a fix.
+
+| Session | What Kiro did | Time | Credits | Transcript |
+|---|---|---|---|---|
+| 3: spec | Wrote `requirements.md` (8 requirements, EARS criteria), `design.md` and `tasks.md` (24 tasks in two build sessions), using the aws-docs MCP server for the Converse tool-use shapes. | 4 min 38 s | 7.80 | [session 3](docs/kiro-sessions/session-3-director-tools-spec.md) |
+| 4: tasks 1-12 | The Bedrock director now answers through a forced `score_cue` tool call whose input schema is generated from the zod ScorePlan schema. Rejected input, a reply cut off at `max_tokens` and a missing call are repaired through error `toolResult` blocks. 18 new unit tests against a fake client. | 3 min 18 s | 3.41 | [session 4](docs/kiro-sessions/session-4-bedrock-tool-use.md) |
+| 5: tasks 13-24 | Checked the protocol subset against the current MCP specification with 8 context7 MCP calls and corrected the design, then wrote the stdio MCP server `scripts/mcp/fright-score-mcp.ts` with `score_cue` and `list_patches`, 23 tests that spawn it, the `.kiro/settings/mcp.json` registration and the README section. | 4 min 44 s | 7.03 | [session 5](docs/kiro-sessions/session-5-mcp-server.md) |
+| 6: confirm | Called `fright-score/list_patches` and `fright-score/score_cue` from a new Kiro session through the relative-path registration; the hash matched the README sample. Ticked the last box of task 18. | 23 s | under 0.01 | [session 6](docs/kiro-sessions/session-6-mcp-from-kiro.md) |
+
+- **Command** for every session (repo root, stdin closed, never `--trust-all-tools`):
+  `kiro-cli chat --v3 --no-interactive --trust-workspace --trust-tools=<list> "<prompt>" </dev/null`.
+  The trusted list was `fs_read,fs_write,run_command,@aws-docs,@context7` for sessions 3 and 4, plus
+  `web_fetch` for session 5, and `fs_read,fs_write,@fright-score` for session 6. Each transcript holds the
+  exact prompt and Kiro's full output.
+- **Credits:** 18.24 in total, read with `/usage` before and after each session.
+- **Who wrote what:** Kiro wrote 1,646 of the 1,661 lines added for this feature (99%): the spec (628),
+  the tool-use change and its tests (340), the MCP server, its tests, the README section and the spec
+  corrections (676) and two checkbox ticks. The developer wrote the 15-line `.kiro/settings/mcp.json`
+  that pins the aws-docs and context7 server versions, before session 3. `kiro-cli` itself upgraded
+  `.kiro/agents/fs666-sound-designer.json` to its current agent format on first load.
+- **MCP used for real:** aws-docs in session 3, context7 in session 5 (it changed three rows of the
+  design's protocol table), and Kiro calling the project's own server in session 6.
+- **Hook:** in sessions 4, 5 and 6, after Kiro's summary `kiro-cli` started a second turn whose work
+  matches the `Stop` agent hook `spec-task-sync.json`: Kiro re-checked the task ticks and ran `npm test`
+  (in session 6 the run was denied because the shell was not trusted, and the developer ran it).
+- **Checks after each commit**, from a fresh clone: typecheck clean, Vitest 157 to 198 tests, the
+  determinism check, Playwright 26 of 26.
+- **Setup fix on the developer's side:** context7 did not load at first because of a broken local `npx`
+  cache entry. Clearing it fixed the load; session 5 used it.
+- **Open:** the Bedrock path is still tested only with a fake client. No live Bedrock call was made.
 
 ## How Kiro is used in this repo
 
@@ -12,6 +48,10 @@ and any usage it reported. Kiro credits were limited (free plan), so the budget 
   the implementation followed. Tasks are checked off as they land.
 - `.kiro/specs/live-chip/` holds the follow-up spec for the real-time AudioWorklet keyboard and the demo
   cue on first load, written in the same format after review feedback on the first build.
+- `.kiro/specs/director-tools/` holds the spec Kiro wrote and built in pass 3: Bedrock tool use and the
+  Fright Score MCP server.
+- `.kiro/settings/mcp.json` registers three MCP servers: aws-docs and context7 (pinned versions) and the
+  project's own `fright-score` server.
 - `.kiro/hooks/` holds three hook files in the Kiro v1 hook format, one hook each:
   - `test-on-save.json`: `PostFileSave` on engine, score, director, WAV or live-chip modules runs
     `npm run test:unit`.

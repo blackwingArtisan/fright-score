@@ -149,7 +149,7 @@ lists the request, seed and sha256 of every file, so anyone can rerun it and che
 
 - **Category:** Frankenstein. A score director (rules by default, Amazon Bedrock when switched on) stitched to a
   recreated 1990s FM chip, with a Sega Genesis export.
-- **Built with Kiro:** specs with EARS requirements, steering, three hooks and a logged Kiro CLI agent pass. See
+- **Built with Kiro:** specs with EARS requirements, steering, hooks, a custom agent, MCP servers and a Kiro-built feature. See
   [Built with Kiro](#built-with-kiro) and [`KIRO-LOG.md`](KIRO-LOG.md).
 - **AWS:** the director has an Amazon Bedrock adapter (Converse API, validated with zod) and a Cloudflare
   Pages Function for it. The free local director is the default.
@@ -380,6 +380,7 @@ The optional `/api/compose` function in `functions/` needs AWS credentials as Pa
 | Steering | [`.kiro/steering/`](.kiro/steering) | Product, tech and structure rules Kiro loads for every task: determinism by seed, the adapter rule, units in names, the folder map. `engine-dsp.md` loads only when engine or live-chip files are in context (hot-loop and determinism rules); `export-formats.md` is pulled in by hand for WAV `smpl` and VGM work. |
 | Hooks | [`.kiro/hooks/`](.kiro/hooks) | `test-on-save` runs the unit tests when engine, score, director, WAV or live-chip code is saved. `determinism-guard` blocks unseeded randomness (`Math.random`, `Date.now`) in engine and composer code. `spec-task-sync` is an agent hook that checks off finished tasks and asks for a green suite before the agent stops. `render-bench` is run on demand and times the demo render after an engine change. |
 | Custom agent | [`.kiro/agents/fs666-sound-designer.json`](.kiro/agents/fs666-sound-designer.json) | A patch-design agent: loads the tech, engine and export steering plus the patch bank, may write only engine code and unit tests, and may run only the typecheck, tests, determinism check, benchmark and CLI. A unit test keeps every hook, steering file and agent resource pointing at files and scripts that exist. |
+| Spec built by Kiro, MCP | [`.kiro/specs/director-tools/`](.kiro/specs/director-tools), [`scripts/mcp/`](scripts/mcp), [`KIRO-LOG.md`](KIRO-LOG.md), pass 3 | Kiro wrote the spec and built all 24 tasks in three sessions (18.24 credits): the Bedrock director's forced `score_cue` tool call and the stdio MCP server with `score_cue` and `list_patches`, 41 new tests, and 99% of the feature's lines. It used the aws-docs and context7 MCP servers while designing, then called its own server from a new session. |
 | Agent run with sub-agents | [`KIRO-LOG.md`](KIRO-LOG.md), pass 2 | Kiro CLI audited both specs against the code with two sub-agents, rewrote every acceptance criterion in strict EARS form, added 27 tasks for behaviors no test pinned down, built the candlelit theme and its reduced-motion test, and validated the hooks against the v1 schema (29.38 credits). |
 
 [`KIRO-LOG.md`](KIRO-LOG.md) records every Kiro call, its prompt, what it produced and the credits it used.

@@ -91,11 +91,11 @@ context7 had the MCP specification for 2025-11-25 and 2026-07-28. I used no web_
 - The server also answers a non-object or batch message with `-32600`.
 - The `writeWavTo` check follows symlinks, so a link inside the working folder cannot lead out of it. I added a test for that.
 - Because the tests run the server from a temporary folder, they load `tsx` by its absolute file URL instead of the bare `--import tsx`.
-- I also added a test that checks the `mcp.json` entry.[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=211
+- I also added a test that checks the `mcp.json` entry.
 
 [tool] Run Command
 `npm test` is green. I ran it with `E2E_PORT=3833`: typecheck passes, 198 unit tests pass, and 26 Playwright tests pass.
 
-Every task I completed is ticked in `tasks.md`. The one exception is the last sub-item of task 18, "Confirmed from a new Kiro session". You asked me to leave it unticked, and it needs a new Kiro session to confirm.[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=31
+Every task I completed is ticked in `tasks.md`. The one exception is the last sub-item of task 18, "Confirmed from a new Kiro session". You asked me to leave it unticked, and it needs a new Kiro session to confirm.
 
 ```

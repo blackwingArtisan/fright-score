@@ -61,9 +61,9 @@ All four checks pass: `npm run typecheck`, `npm run test:unit`, `npm run check:d
 
 **Spec:** I changed nothing in the spec and did not need to look up any Converse detail. The design left open how to treat a `score_cue` call cut off by `max_tokens`. I answer that call with an error `toolResult` saying the reply was cut off, because Bedrock needs a result for every tool call. It counts as a failed attempt under the shared `maxRepairs` limit.
 
-`dist/` and `test-results/` are in the workspace. I assumed they existed before this session or are ignored build output, so I didn't touch them.[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=164
+`dist/` and `test-results/` are in the workspace. I assumed they existed before this session or are ignored build output, so I didn't touch them.
 
 [tool] Run Command
-`npm test` is green. I ran it with `E2E_PORT=3832`: typecheck passes, all 175 unit tests pass, and all 26 Playwright tests pass. Tasks 1 to 12 are already ticked in `tasks.md`.[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=18
+`npm test` is green. I ran it with `E2E_PORT=3832`: typecheck passes, all 175 unit tests pass, and all 26 Playwright tests pass. Tasks 1 to 12 are already ticked in `tasks.md`.
 
 ```

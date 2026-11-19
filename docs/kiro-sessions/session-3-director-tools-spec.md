@@ -102,7 +102,7 @@ I wrote `requirements.md`, `design.md` and `tasks.md` in `.kiro/specs/director-t
 - **Which models can force a tool:** the docs disagree on whether Nova can. One page says Claude 3 and Nova, another says Claude 3 only. The default model is Nova Pro, so a live run with credentials should confirm it. I couldn't find a per-model table.
 - **MCP protocol details:** I couldn't verify these. context7 is in `mcp.json` but this session didn't expose it, and the web fetch and search calls failed on permissions. The version strings, `structuredContent`, error codes and framing are written from memory. I said so under "Sources looked up". Task 13 checks them before any code is written.
 
-`.kiro/settings/` is untracked in git, so the `fright-score` registration won't be shared until that folder is committed. The design notes this.[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=175
-I didn't complete any task from a `tasks.md` this session. I only wrote the spec, and all 24 tasks in `director-tools/tasks.md` stay unchecked. The hook doesn't apply, so I marked nothing and didn't run `npm test`. I changed no code, so the suite is in the same state as before.[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=41
+`.kiro/settings/` is untracked in git, so the `fright-score` registration won't be shared until that folder is committed. The design notes this.
+I didn't complete any task from a `tasks.md` this session. I only wrote the spec, and all 24 tasks in `director-tools/tasks.md` stay unchecked. The hook doesn't apply, so I marked nothing and didn't run `npm test`. I changed no code, so the suite is in the same state as before.
 
 ```
