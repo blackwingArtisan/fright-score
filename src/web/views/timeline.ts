@@ -12,6 +12,7 @@ export class TimelineView {
   private waveform: Float32Array | undefined;
   private staticLayer: HTMLCanvasElement | undefined;
   private width = 0;
+  private progress: number | undefined;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
@@ -21,13 +22,24 @@ export class TimelineView {
     this.staticLayer = undefined;
   }
 
+  /** Render progress 0..1 drawn across the timeline, or undefined when no render is running. */
+  setProgress(fraction: number | undefined): void {
+    this.progress = fraction === undefined ? undefined : Math.max(0, Math.min(1, fraction));
+  }
+
+  /** Drop the cached layer so the next frame redraws it (after web fonts load, for example). */
+  invalidate(): void {
+    this.staticLayer = undefined;
+  }
+
   /** Seconds at a CSS x offset within the canvas. */
   timeAt(x: number): number {
     if (!this.score) return 0;
     return Math.max(0, Math.min(this.score.durationSec, (x / this.canvas.clientWidth) * this.score.durationSec));
   }
 
-  draw(playheadSec: number): void {
+  /** Draw the frame. `scare` turns the playhead blood red while a sting lands. */
+  draw(playheadSec: number, scare = false): void {
     const { ctx, width } = fitCanvas(this.canvas, HEIGHT);
     if (!this.staticLayer || this.width !== width) {
       this.width = width;
@@ -35,17 +47,53 @@ export class TimelineView {
     }
     ctx.clearRect(0, 0, width, HEIGHT);
     ctx.drawImage(this.staticLayer, 0, 0, width, HEIGHT);
-    if (this.score) {
+    if (this.progress !== undefined) {
+      this.drawProgress(ctx, width, this.progress);
+    } else if (this.score) {
       const x = (playheadSec / this.score.durationSec) * width;
-      ctx.fillStyle = 'rgb(236 230 210 / 0.12)';
+      ctx.fillStyle = scare ? 'rgb(224 52 63 / 0.22)' : 'rgb(236 230 210 / 0.12)';
       ctx.fillRect(0, SECTION_H, x, HEIGHT - SECTION_H - RULER_H);
-      ctx.strokeStyle = COLORS.silk;
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = scare ? COLORS.blood : COLORS.silk;
+      ctx.lineWidth = scare ? 3 : 1.5;
+      if (scare) {
+        ctx.shadowColor = COLORS.blood;
+        ctx.shadowBlur = 12;
+      }
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, HEIGHT);
       ctx.stroke();
+      ctx.shadowBlur = 0;
     }
+  }
+
+  /** The render sweeping across the board: everything right of the sweep is still dark. */
+  private drawProgress(ctx: CanvasRenderingContext2D, width: number, fraction: number): void {
+    const x = fraction * width;
+    ctx.fillStyle = 'rgb(7 22 17 / 0.82)';
+    ctx.fillRect(x, 0, width - x, HEIGHT);
+    const grad = ctx.createLinearGradient(x - 60, 0, x, 0);
+    grad.addColorStop(0, 'rgb(201 137 74 / 0)');
+    grad.addColorStop(1, 'rgb(201 137 74 / 0.45)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(Math.max(0, x - 60), 0, Math.min(60, x), HEIGHT);
+    ctx.strokeStyle = COLORS.copper;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, HEIGHT);
+    ctx.stroke();
+    const label = `Rendering on the FS-666  ${Math.round(fraction * 100)}%`;
+    ctx.font = `bold 12px ${FONT_SILK}`;
+    const w = ctx.measureText(label).width + 16;
+    const lx = Math.min(width - w - 6, Math.max(6, x + 8));
+    ctx.fillStyle = COLORS.maskDeep;
+    ctx.fillRect(lx, HEIGHT / 2 - 13, w, 24);
+    ctx.strokeStyle = COLORS.copperDim;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(lx + 0.5, HEIGHT / 2 - 12.5, w - 1, 23);
+    ctx.fillStyle = COLORS.silk;
+    ctx.fillText(label, lx + 8, HEIGHT / 2 + 4);
   }
 
   private renderStatic(width: number): HTMLCanvasElement {

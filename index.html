@@ -29,7 +29,7 @@
         <form id="cue-form" novalidate>
           <label class="field" for="scene">
             <span class="field__label">Describe the scene</span>
-            <textarea id="scene" name="scene" rows="4" maxlength="500" spellcheck="true" placeholder="Creeping dread, 90 seconds, builds to a sting at 0:70"></textarea>
+            <textarea id="scene" name="scene" rows="4" maxlength="500" spellcheck="true" placeholder="Creeping dread, 90 seconds, builds to a sting at 1:10"></textarea>
           </label>
           <p id="heard" class="heard" aria-live="polite"></p>
           <div class="examples" role="group" aria-label="Example scenes"></div>
@@ -68,7 +68,8 @@
         </form>
       </section>
 
-      <section class="panel stage" aria-labelledby="cue-title">
+      <section class="panel stage" aria-labelledby="cue-title" data-stings="0">
+        <div class="stage__scare" aria-hidden="true"></div>
         <div class="stage__head">
           <div>
             <h2 id="cue-title" class="cue-title">No cue yet</h2>
@@ -80,16 +81,26 @@
 
         <figure class="timeline">
           <canvas id="timeline" height="260" aria-label="Score timeline: sections, notes, cues and playhead. Click to move the playhead."></canvas>
+          <button type="button" id="listen" class="listen" hidden>
+            <span class="listen__icon" aria-hidden="true"></span>
+            <span class="listen__text"><span class="listen__word">Listen.</span> <span id="listen-hint">The scare lands at 1:10</span></span>
+          </button>
         </figure>
 
         <div class="transport" role="group" aria-label="Playback and export">
           <button type="button" id="play" class="btn" disabled>Play</button>
+          <button type="button" id="jump" class="btn btn--scare" disabled>Jump to the scare</button>
           <span id="clock" class="clock" aria-live="off">0:00.0 / 0:00.0</span>
           <span class="transport__spacer"></span>
           <button type="button" id="export-wav" class="btn" disabled>Download WAV</button>
           <button type="button" id="export-json" class="btn btn--ghost" disabled>Download score JSON</button>
           <button type="button" id="share" class="btn btn--ghost" disabled>Copy share link</button>
         </div>
+
+        <button type="button" id="try-live" class="try-live">
+          <span class="try-live__keys" aria-hidden="true"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>&hellip;<kbd>K</kbd></span>
+          <span>Try it: press A to K to perform on the chip yourself</span>
+        </button>
 
         <div class="chip-wrap">
           <div class="chip-label">
@@ -100,7 +111,7 @@
           <canvas id="scope" height="72" aria-label="Output waveform"></canvas>
         </div>
 
-        <section class="live" aria-labelledby="live-title">
+        <section id="live" class="live" aria-labelledby="live-title">
           <div class="live__head">
             <h3 id="live-title">Play the chip live</h3>
             <p>Real-time FM synthesis on the audio thread (an AudioWorklet): the same operators and envelopes that render the cue, running sample by sample as you play. Keys A to K, Z and X change octave, or tap.</p>

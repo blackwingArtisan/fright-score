@@ -425,6 +425,7 @@ input::placeholder {
 }
 
 .timeline {
+  position: relative;
   margin: 0;
   border: 1px solid var(--copper-dim);
   border-radius: 4px;
@@ -617,6 +618,169 @@ canvas {
   color: var(--tin);
 }
 
+/* The 60-second path: a big Listen overlay on the timeline, Jump to the scare, and the live-chip callout. */
+.listen {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100% - 24px);
+  padding: 14px 22px 14px 16px;
+  font: inherit;
+  color: var(--silk);
+  text-align: left;
+  background: rgb(7 22 17 / 0.88);
+  border: 1px solid var(--blood);
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgb(7 22 17 / 0.6), 0 0 32px rgb(224 52 63 / 0.35);
+  cursor: pointer;
+  animation: beckon 1.8s ease-in-out infinite;
+}
+.listen[hidden] {
+  display: none;
+}
+.listen:hover {
+  background: rgb(40 10 14 / 0.92);
+}
+.listen__icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #96202a, #5a0f16);
+  border: 1px solid var(--blood);
+  position: relative;
+}
+.listen__icon::after {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 13px;
+  border-left: 14px solid var(--silk);
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+}
+.listen__text {
+  display: grid;
+  line-height: 1.2;
+}
+.listen__word {
+  font-family: var(--font-gothic);
+  font-size: var(--step-2);
+}
+#listen-hint {
+  font-size: var(--step--1);
+  color: var(--silk-dim);
+}
+.btn--scare {
+  border-color: var(--blood);
+}
+.btn--scare:hover:not(:disabled) {
+  background: rgb(224 52 63 / 0.16);
+}
+.try-live {
+  justify-self: start;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font: inherit;
+  font-size: var(--step--1);
+  color: var(--silk-dim);
+  background: transparent;
+  border: 1px dashed var(--ectoplasm-dim);
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.try-live:hover {
+  color: var(--silk);
+  border-color: var(--ectoplasm);
+}
+.try-live kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  margin-right: 3px;
+  padding: 0 4px;
+  font: inherit;
+  text-align: center;
+  color: var(--mask-deep);
+  background: var(--silk);
+  border-radius: 3px;
+  box-shadow: 0 2px 0 var(--copper-dim);
+}
+.live--beckon {
+  animation: liveBeckon 1.2s ease-out 2;
+}
+@keyframes liveBeckon {
+  0% {
+    box-shadow: 0 0 0 0 rgb(127 217 192 / 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgb(127 217 192 / 0);
+  }
+}
+
+/* The sting lands: a blood vignette over the page, a two-frame shake with a chromatic split on the
+   timeline, and the operator pads flaring. Under reduced motion this becomes a static red frame. */
+.stage {
+  position: relative;
+}
+.stage__scare {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 40%, rgb(150 12 22 / 0.42) 78%, rgb(90 4 10 / 0.75) 100%);
+}
+.stage--sting .stage__scare {
+  animation: scareVignette 600ms ease-out forwards;
+}
+.stage--sting .timeline {
+  animation: scareShake 140ms steps(1) 1;
+}
+.stage--sting .chip-wrap {
+  animation: padFlare 600ms ease-out 1;
+}
+@keyframes scareVignette {
+  0% {
+    opacity: 1;
+  }
+  35% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes scareShake {
+  0% {
+    transform: translate(-4px, 2px);
+    filter: drop-shadow(3px 0 0 rgb(224 52 63 / 0.85)) drop-shadow(-3px 0 0 rgb(127 217 192 / 0.6));
+  }
+  50% {
+    transform: translate(3px, -2px);
+    filter: drop-shadow(-3px 0 0 rgb(224 52 63 / 0.85)) drop-shadow(3px 0 0 rgb(127 217 192 / 0.6));
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes padFlare {
+  0% {
+    filter: brightness(1.9) saturate(1.6);
+    border-color: var(--blood);
+  }
+  100% {
+    filter: none;
+  }
+}
+
 /* The Play button breathes until the first listen. */
 .btn--beckon {
   animation: beckon 1.8s ease-in-out infinite;
@@ -690,5 +854,11 @@ canvas {
   * {
     animation: none !important;
     transition: none !important;
+  }
+  /* No vignette sweep or shake: a still red frame around the page for as long as the sting lands. */
+  .stage--sting .stage__scare {
+    opacity: 1;
+    background: none;
+    box-shadow: inset 0 0 0 6px var(--blood);
   }
 }

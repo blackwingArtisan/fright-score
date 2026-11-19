@@ -21,7 +21,7 @@ import { TimelineView } from './views/timeline';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 const EXAMPLES: { label: string; scene: string }[] = [
-  { label: 'Cellar dread', scene: 'Creeping dread in the cellar, 90 seconds, builds to a sting at 0:70' },
+  { label: 'Cellar dread', scene: 'Creeping dread in the cellar, 90 seconds, builds to a sting at 1:10' },
   { label: 'Music box', scene: 'A music box winds down in the nursery, 45 seconds, jump scare at 0:40' },
   { label: 'Corn maze chase', scene: 'They chase us through the corn maze, 40 seconds' },
   { label: 'The ritual', scene: 'Cult chanting around the altar by candlelight, 75 seconds, it answers at 1:05' },
@@ -62,6 +62,12 @@ const els = {
   octaveDown: $<HTMLButtonElement>('octave-down'),
   octaveUp: $<HTMLButtonElement>('octave-up'),
   liveStatus: $<HTMLParagraphElement>('live-status'),
+  stage: document.querySelector<HTMLElement>('.stage')!,
+  listen: $<HTMLButtonElement>('listen'),
+  listenHint: $<HTMLSpanElement>('listen-hint'),
+  jump: $<HTMLButtonElement>('jump'),
+  tryLive: $<HTMLButtonElement>('try-live'),
+  live: $<HTMLElement>('live'),
 };
 
 /** The cue rendered on first load, so the board shows a real score before anyone clicks. */
@@ -193,7 +199,24 @@ function download(bytes: Uint8Array | string, type: string, filename: string): v
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+/** Sting times of the current cue, in seconds, earliest first. */
+function stingTimes(score: Score | undefined): number[] {
+  return (score?.plan.cues ?? []).filter((c) => c.kind === 'sting').map((c) => c.atSec).sort((a, b) => a - b);
+}
+
+/** How far before the first sting "Jump to the scare" lands, so the riser and the silence are heard. */
+const JUMP_LEAD_SEC = 6;
+
+/** How long the stage reacts when a sting lands. */
+const STING_FLASH_MS = 600;
+
 function setReady(enabled: boolean): void {
+  const stings = stingTimes(current?.score);
+  els.jump.disabled = !enabled || stings.length === 0;
+  els.listen.hidden = !enabled || hasPlayed;
+  if (enabled) {
+    els.listenHint.textContent = stings.length ? `The scare lands at ${formatTime(stings[0]).replace(/\.0$/, '')}` : 'Hear the cue';
+  }
   els.play.disabled = !enabled;
   els.exportWav.disabled = !enabled;
   els.exportJson.disabled = !enabled;
@@ -249,6 +272,7 @@ function describe(score: Score): string {
 /** Stop a render that is still running, so a newer request starts at once and cannot be overwritten. */
 function cancelRender(): void {
   if (!pending) return;
+  timeline.setProgress(undefined);
   worker.terminate();
   worker = createWorker();
   pending.reject(new Superseded('A newer cue replaced this one'));
@@ -270,11 +294,13 @@ function render(score: Score): Promise<RenderedAudio> {
       if (msg.id !== id) return;
       if (msg.type === 'progress') {
         els.progress.style.width = `${Math.round(msg.fraction * 100)}%`;
+        timeline.setProgress(msg.fraction);
         setStatus('rendering', `Rendering ${Math.round(msg.fraction * 100)}%`);
         return;
       }
       w.removeEventListener('message', onMessage);
       pending = undefined;
+      timeline.setProgress(undefined);
       if (msg.type === 'error') reject(new Error(msg.message));
       else resolve({ score, wav: msg.wav, frames: msg.frames, stats: msg.stats, left: msg.left, right: msg.right });
     };
@@ -328,6 +354,7 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
     els.meta.textContent = demo ? `Demo cue from "${request.scene}". ${describe(score)}` : describe(score);
     els.notes.textContent = score.plan.directorNotes ?? '';
     timeline.setScore(score);
+    timeline.setProgress(0);
     chip.set(score, undefined);
     setStatus('rendering', 'Rendering 0%');
     const rendered = await render(score);
@@ -347,6 +374,7 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
     document.body.dataset.cue = 'ready';
   } catch (error) {
     if (error instanceof Superseded || token !== summonToken) return;
+    timeline.setProgress(undefined);
     setStatus('error', (error as Error).message.slice(0, 120));
   } finally {
     if (token === summonToken) els.summon.disabled = false;
@@ -362,6 +390,8 @@ async function togglePlay(): Promise<void> {
   } else {
     await player.play();
     hasPlayed = true;
+    lastPos = player.position;
+    els.listen.hidden = true;
     els.play.classList.remove('btn--beckon');
     els.play.textContent = 'Pause';
     setStatus('playing', 'Playing');
@@ -369,13 +399,40 @@ async function togglePlay(): Promise<void> {
 }
 
 player.onEnded = () => {
+  lastPos = 0;
   els.play.textContent = 'Play';
   setStatus('ready', 'Ready');
 };
 
+let lastPos = 0;
+let stingsLanded = 0;
+let scareUntil = 0;
+let scareTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** The visual payoff when the playhead crosses a sting: blood vignette, shake, pad flare, red playhead. */
+function landSting(): void {
+  stingsLanded++;
+  els.stage.dataset.stings = String(stingsLanded);
+  els.stage.classList.remove('stage--sting');
+  void els.stage.offsetWidth; // restart the animation if two stings land close together
+  els.stage.classList.add('stage--sting');
+  scareUntil = performance.now() + STING_FLASH_MS;
+  clearTimeout(scareTimer);
+  scareTimer = setTimeout(() => els.stage.classList.remove('stage--sting'), STING_FLASH_MS);
+}
+
+/** Fire `landSting` for every sting the playhead passed since the last frame (not across a seek or loop wrap). */
+function checkStings(pos: number): void {
+  if (player.playing && pos >= lastPos && pos - lastPos < 0.5) {
+    for (const t of stingTimes(current?.score)) if (lastPos < t && t <= pos) landSting();
+  }
+  lastPos = pos;
+}
+
 function frame(): void {
   const pos = player.position;
-  timeline.draw(pos);
+  checkStings(pos);
+  timeline.draw(pos, performance.now() < scareUntil);
   chip.draw(pos);
   scope.draw(player.analyser, player.playing || live.latest.voices > 0);
   liveView.draw();
@@ -530,10 +587,29 @@ els.reroll.addEventListener('click', () => {
   els.seed.value = String(Math.floor(Math.random() * 100_000));
 });
 els.play.addEventListener('click', () => void togglePlay());
+els.listen.addEventListener('click', () => void togglePlay());
+
+async function seekTo(sec: number): Promise<void> {
+  await player.seek(sec);
+  lastPos = player.position;
+}
+
+els.jump.addEventListener('click', async () => {
+  const first = stingTimes(current?.score)[0];
+  if (first === undefined) return;
+  await seekTo(Math.max(0, first - JUMP_LEAD_SEC));
+  if (!player.playing) await togglePlay();
+});
+els.tryLive.addEventListener('click', () => {
+  els.live.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+  els.live.classList.remove('live--beckon');
+  void els.live.offsetWidth;
+  els.live.classList.add('live--beckon');
+});
 els.timeline.addEventListener('click', (e) => {
   if (!current) return;
   const rect = els.timeline.getBoundingClientRect();
-  void player.seek(timeline.timeAt(e.clientX - rect.left));
+  void seekTo(timeline.timeAt(e.clientX - rect.left));
 });
 els.exportWav.addEventListener('click', () => {
   if (!current) return;

@@ -17,7 +17,7 @@ Usage:
 
 Options:
   --mood <name>       ${MOODS.join(' | ')} (default: read from --scene, else dread)
-  --scene <text>      Scene description, e.g. "creeping dread, builds to a sting at 0:70"
+  --scene <text>      Scene description, e.g. "creeping dread, builds to a sting at 1:10"
   --seconds <n>       Length in seconds, 5-300 (also accepts 1:30)
   --sting <times>     Sting time(s), comma separated, e.g. 70 or 1:10,1:25
   --seed <n>          Seed; the same seed always gives the same file (default: 13)
