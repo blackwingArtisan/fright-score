@@ -168,17 +168,17 @@ All diagnostics use `console.error`. Nothing but protocol messages is written to
 
 | Message | Reply |
 |---|---|
-| `initialize` | `{ protocolVersion, capabilities: { tools: {} }, serverInfo: { name: 'fright-score', version } }`. `protocolVersion` is the client's if it is one of `2025-06-18`, `2025-03-26`, `2024-11-05`, otherwise the newest of the three. `version` is read from `package.json`. |
+| `initialize` | `{ protocolVersion, capabilities: { tools: {} }, serverInfo: { name: 'fright-score', version } }`. `protocolVersion` is the client's if it is one of `2025-11-25`, `2025-06-18`, `2025-03-26`, `2024-11-05`, otherwise the newest of the four (`2025-11-25`). `version` is read from `package.json`. |
 | `notifications/initialized` and any message without `id` | no reply |
 | `ping` | `{}` |
-| `tools/list` | `{ tools: [{ name, description, inputSchema }] }`, with `inputSchema` from `z.toJSONSchema` (draft 7, top-level object) |
-| `tools/call` | `{ content: [{ type: 'text', text }], structuredContent, isError? }` |
+| `tools/list` | `{ tools: [{ name, description, inputSchema }] }`, with `inputSchema` from `z.toJSONSchema` (target `draft-2020-12`, top-level object; no-argument tools use `{ type: 'object', additionalProperties: false }`) |
+| `tools/call` | `{ content: [{ type: 'text', text }], structuredContent, isError? }`; `text` is the serialized `structuredContent` |
+| `server/discover` (2026-07-28 probe) | error `-32601` like any unknown method; a client that supports both eras then falls back to `initialize` |
 | unknown tool name | error `-32602` |
 | unknown method | error `-32601` |
 | a line that is not JSON | error `-32700` with `id: null`; keep reading |
 
-The protocol versions and message shapes above come from my knowledge of the specification, not from a page I
-read in this session. Task 13 confirms or corrects them. Argument validation failures and pipeline errors are
+These rows were checked against the specification in task 13 (see "Protocol check, task 13"). Argument validation failures and pipeline errors are
 tool errors (`isError: true` with the message as text), not protocol errors, so the calling model can see the
 message and retry.
 
@@ -308,11 +308,45 @@ Checked in this repository:
 
 Not looked up, and why:
 
-- **MCP specification and TypeScript SDK documentation.** The task asked for the context7 MCP server. It is in
-  `.kiro/settings/mcp.json`, but this session did not expose it as a tool, and fetching the SDK README and a web
-  search were both stopped by a permission failure. The protocol details in "Protocol handling" (version
-  strings, `structuredContent`, error codes, newline-delimited framing) are from memory. Task 13 verifies them.
+- **MCP TypeScript SDK documentation.** Not read; the server is hand-written. The specification itself was read
+  in task 13 (see "Protocol check, task 13").
 - **Which Bedrock models honor a forced specific tool.** See the disagreement above.
+
+## Protocol check, task 13
+
+Read with the context7 server (library `/modelcontextprotocol/modelcontextprotocol`, per-version pages
+`/websites/modelcontextprotocol_io_specification_2025-11-25` and `..._2026-07-28`). Sources, all under
+`https://modelcontextprotocol.io/specification/`:
+
+- `2025-11-25/basic/transports`: stdio messages are newline-delimited and must not contain embedded newlines;
+  the server must write only valid MCP messages to stdout and may log anything to stderr.
+- `2025-11-25/basic/lifecycle`: `initialize` carries `protocolVersion`, `capabilities`, `clientInfo`; the server
+  answers the same version if it supports it, otherwise another it supports (preferably its latest). The client
+  then sends `notifications/initialized`. Shutdown on stdio is the client closing the server's stdin.
+- `2025-11-25/schema`: `InitializeResult` is `protocolVersion`, `capabilities`, `serverInfo`, optional
+  `instructions`. `CallToolResult` is `content` (required), optional `structuredContent` and `isError`.
+- `2025-11-25/server/tools`: unknown tools are a protocol error `-32602`; input validation and business errors are
+  results with `isError: true`. A tool that returns `structuredContent` SHOULD also return the serialized JSON in a
+  text block. Tool names: 1 to 128 characters from letters, digits, `_`, `-`, `.`. A tool with no parameters uses
+  `{ "type": "object", "additionalProperties": false }`.
+- `2025-11-25/basic` (JSON Schema usage): a schema with no `$schema` is 2020-12, and implementations must support
+  2020-12.
+- `2025-11-25/basic/utilities/ping`: `ping` is answered with `{}`.
+- `2026-07-28/changelog` and `.../basic/transports/stdio`: the newest revision removes the `initialize` handshake,
+  carries the version in each request's `_meta`, and adds a required `server/discover`. A client that supports
+  both eras probes with `server/discover` and falls back to `initialize` on any other error.
+
+Corrections to the design as first written:
+
+1. `2025-11-25` is a current revision and the newest one with the `initialize` handshake; it is added to the
+   supported list and is the fallback version. The three older versions stay.
+2. `inputSchema` uses `target: 'draft-2020-12'`, not draft 7: MCP defaults to 2020-12 and a draft-7 schema would
+   need an explicit `$schema`. (The Bedrock tool schema in part 1 is a separate matter and stays as written.)
+3. The `structuredContent` text block is the serialized JSON, per the SHOULD above (already the plan).
+4. Revision `2026-07-28` is not implemented. `server/discover` gets `-32601`, which makes dual-era clients fall
+   back to `initialize`. Supporting the stateless revision would be a separate piece of work.
+5. Confirmed unchanged: newline framing, `ping` as `{}`, `-32601` and `-32700`, `-32602` for an unknown tool, and
+   `isError` for argument and pipeline errors.
 
 ## Testing strategy
 

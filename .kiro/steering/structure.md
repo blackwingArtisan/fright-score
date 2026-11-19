@@ -44,6 +44,7 @@ scripts/
   check-determinism.mjs  fails on Math.random or Date.now in engine, score, director or export code
   bench.ts           `npm run bench`: times the demo cue from request to WAV
   make-samples.sh    renders the README samples in samples/
+  mcp/               MCP server over stdio (fright-score-mcp.ts) and its tools score_cue and list_patches (tools.ts); uses the local director
 samples/             listening samples (MP3) and a Genesis VGM
 examples/godot/      Godot 4 project that loops an export with no code, plus a headless check
 docs/                README images

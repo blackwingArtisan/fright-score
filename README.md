@@ -88,8 +88,8 @@ app: the plan's JSON sits beside the register writes it turns into, and any cue 
 real YM2612 register writes that Genesis emulators and VGM players can play.
 
 What runs today: the default director is a rule-based scene reader plus a seeded Markov composer, offline and
-free. The Amazon Bedrock director (Converse API, ScorePlan JSON validated with zod) is written, tested with a
-fake client and switched on with `FRIGHT_DIRECTOR=bedrock`. Both write the same ScorePlan, and the chip never
+free. The Amazon Bedrock director (Converse API, answering through a typed `score_cue` tool call whose input is
+validated with zod) is written, tested with a fake client and switched on with `FRIGHT_DIRECTOR=bedrock`. Both write the same ScorePlan, and the chip never
 knows which one wrote it.
 
 ## Why now
@@ -250,6 +250,57 @@ lands). The CLI prints the loudness it measured, and it matches `ffmpeg -af ebur
 A 90-second cue renders in seconds. `npm run bench` times the demo cue from request to WAV bytes; on an Apple
 M4 Max under heavy load (load average 67) it measured a median of 6.7 s, 13.5 times faster than real time.
 
+### Use it from an agent (MCP)
+
+Fright Score ships a Model Context Protocol server, so an agent such as a Kiro session can ask for a cue and
+check it. It speaks JSON-RPC over stdio, needs no account and no network, and always uses the local director
+(rules and a seeded Markov composer, not an AI model), whatever `FRIGHT_DIRECTOR` says. When the Bedrock director
+is used elsewhere, the model writes the plan (the sheet music) and the FS-666 chip makes the sound; the MCP server
+has no model in it at all.
+
+Register it in `.kiro/settings/mcp.json`, next to any other servers:
+
+```json
+"fright-score": {
+  "command": "npx",
+  "args": ["tsx", "scripts/mcp/fright-score-mcp.ts"],
+  "timeout": 120000
+}
+```
+
+The server has two tools:
+
+- `list_patches` takes no arguments and returns the ten FS-666 instruments (`id`, `name`, `blurb`, `algorithm`,
+  `feedback`) in library order.
+- `score_cue` renders a cue and returns the plan, the second each sting lands, and the SHA-256 of the WAV.
+
+| `score_cue` argument | Meaning |
+|---|---|
+| `scene` | Scene description, up to 500 characters. Sting times written in it ("a sting at 1:10") are read as in the CLI. |
+| `mood` | One of the moods listed by `npm run score -- --help`. |
+| `durationSec` | 5 to 300. |
+| `stingAtSec` | Up to eight times in seconds, each above 0 and at most 300. |
+| `seed` | Integer, 0 to 4,294,967,295. Default 13. Same arguments and seed always give the same `sha256`. |
+| `writeWavTo` | Optional. A new `.wav` path inside the server's working folder. The server refuses an existing file, a path outside the folder and any other extension. Without it, no file is written. |
+
+A sample result for `{ "mood": "chase", "durationSec": 30, "stingAtSec": [24], "seed": 3 }` (the plan is shortened
+here):
+
+```json
+{
+  "director": "local",
+  "seed": 3,
+  "durationSec": 30,
+  "stingLandingSec": [24],
+  "sha256": "3e289fecc70aa4e968ef6ebf59ed8683fe41d2c40749af73aa63e98900d6908d",
+  "wavBytes": 5292044,
+  "plan": { "title": "Requiem for the Chapel", "mood": "chase", "tempoBpm": 169, "...": "..." }
+}
+```
+
+`sha256` equals the hash of the file `npm run score -- --mood chase --seconds 30 --sting 24 --seed 3` writes. Bad
+arguments come back as a tool result with `isError: true`, so the agent can read the message and retry.
+
 ## Test it
 
 ```bash
@@ -295,6 +346,7 @@ chip so the AudioWorklet reports voices and real output.
 | `src/export/` | Sega Genesis export: YM2612 register mapping, six-channel arrangement, VGM writer and parser |
 | `src/wav/` | WAV encoder and parser |
 | `src/cli/` | `npm run score` |
+| `scripts/mcp/` | The MCP server (`fright-score-mcp.ts`) and its two tools (`tools.ts`) |
 | `src/server/`, `functions/` | `/api/compose` handler and its Cloudflare Pages Function |
 | `src/web/` | Browser app: form, render worker, player, timeline, chip view, stitch panel, scope |
 | `src/web/live/` | The real-time chip: AudioWorklet processor, its testable core, page-side controller |
@@ -308,7 +360,7 @@ The engine has no DOM dependency, so the browser worker and the CLI run exactly 
 
 | Service | Default (free, offline) | Real path (written and type-checked, not run by default) | Switch |
 |---|---|---|---|
-| Score director | `LocalDirector`: rule-based scene reader plus seeded Markov composer | `BedrockDirector`: Amazon Bedrock Converse API returns ScorePlan JSON, validated with zod, one repair round | `FRIGHT_DIRECTOR=bedrock` (CLI) |
+| Score director | `LocalDirector`: rule-based scene reader plus seeded Markov composer | `BedrockDirector`: Amazon Bedrock Converse API answers through a typed `score_cue` tool call, validated with zod, one repair round | `FRIGHT_DIRECTOR=bedrock` (CLI) |
 | Web score director | `LocalDirector` in the browser | `RemoteDirector` POSTs to `/api/compose`, a Pages Function that runs the Bedrock director server-side | `VITE_FRIGHT_DIRECTOR=remote` at build time |
 
 Whatever the director returns, `reconcilePlan` forces the requested length and sting times, and the same

@@ -33,29 +33,32 @@ on the unchanged pipeline, so the sessions can run in either order.
 
 ## Session B: MCP server, registration, tests and the README section
 
-- [ ] 13. Before any code, check the MCP subset (versions, `initialize` reply, newline framing, `tools/list`, `tools/call` result with `structuredContent`, error codes) against the current specification with the context7 server, and write any correction into design.md's "Protocol handling" table
+- [x] 13. Before any code, check the MCP subset (versions, `initialize` reply, newline framing, `tools/list`, `tools/call` result with `structuredContent`, error codes) against the current specification with the context7 server, and write any correction into design.md's "Protocol handling" table
   - _Requirements: 4.1, 4.2, 4.3_
-- [ ] 14. Add `scripts/mcp/tools.ts` with the `list_patches` tool: no arguments, ids in `PATCH_IDS` order with `name`, `blurb`, `algorithm`, `feedback`
+- [x] 14. Add `scripts/mcp/tools.ts` with the `list_patches` tool: no arguments, ids in `PATCH_IDS` order with `name`, `blurb`, `algorithm`, `feedback`
   - _Requirements: 6.1, 6.2_
-- [ ] 15. Add the `score_cue` tool to `tools.ts`: arguments from `ComposeRequestSchema.extend` (seed default 13, `writeWavTo`), scene-derived sting times as the CLI does, local director, `scoreFromRequest`, `renderScore`, `encodeWav` with `seed ^ 0x5eed`, then `sha256`, `durationSec` from `parseWav`, `stingLandingSec` from the realized score
+- [x] 15. Add the `score_cue` tool to `tools.ts`: arguments from `ComposeRequestSchema.extend` (seed default 13, `writeWavTo`), scene-derived sting times as the CLI does, local director, `scoreFromRequest`, `renderScore`, `encodeWav` with `seed ^ 0x5eed`, then `sha256`, `durationSec` from `parseWav`, `stingLandingSec` from the realized score
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
-- [ ] 16. Add the `writeWavTo` checks to `score_cue`: `.wav` name, inside the working directory, no overwrite, no file when absent; return `isError` results for bad arguments and pipeline errors
+- [x] 16. Add the `writeWavTo` checks to `score_cue`: `.wav` name, inside the working directory, no overwrite, no file when absent; return `isError` results for bad arguments and pipeline errors
   - _Requirements: 5.7, 5.8_
-- [ ] 17. Add `scripts/mcp/fright-score-mcp.ts`: line-delimited JSON-RPC over stdio, `initialize`, `ping`, `tools/list`, `tools/call`, silent notifications, errors -32700, -32601 and -32602, diagnostics on stderr only, clean exit when stdin closes, local director whatever `FRIGHT_DIRECTOR` says
+- [x] 17. Add `scripts/mcp/fright-score-mcp.ts`: line-delimited JSON-RPC over stdio, `initialize`, `ping`, `tools/list`, `tools/call`, silent notifications, errors -32700, -32601 and -32602, diagnostics on stderr only, clean exit when stdin closes, local director whatever `FRIGHT_DIRECTOR` says
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 - [ ] 18. Register `fright-score` in `.kiro/settings/mcp.json` beside `aws-docs` and `context7` (`npx tsx scripts/mcp/fright-score-mcp.ts`, 120 s timeout, no `env`); call both tools from a Kiro session to confirm the relative path works, else switch to an absolute path
+  - [x] Registered in `.kiro/settings/mcp.json`
+  - [x] Proved from the repo root by piping `initialize`, `tools/list` and a `list_patches` call into the exact registered command (the session cannot load a server added during it)
+  - [ ] Confirmed from a new Kiro session by calling both tools (developer; if the relative path fails there, switch to an absolute path)
   - _Requirements: 6.3a, 6.3b, 6.3c_
-- [ ] 19. Test `tests/cli/mcp.test.ts`, protocol: spawn the server with `--import tsx` and an environment with no `AWS_*` and `FRIGHT_DIRECTOR=bedrock`; `initialize`, `tools/list`, `ping`, a notification with no reply, unknown method, unknown tool, garbage line, clean exit on stdin close
+- [x] 19. Test `tests/cli/mcp.test.ts`, protocol: spawn the server with `--import tsx` and an environment with no `AWS_*` and `FRIGHT_DIRECTOR=bedrock`; `initialize`, `tools/list`, `ping`, a notification with no reply, unknown method, unknown tool, garbage line, clean exit on stdin close
   - _Requirements: 7.2a, 7.2c, 7.3, 4.2, 4.3, 4.4_
-- [ ] 20. Test `score_cue` over stdio: same seed twice gives the same `sha256`, another seed gives another, the hash equals `runCli`'s file for the same arguments, `stingLandingSec` matches the requested time, nothing is written without `writeWavTo`, a written file hashes to the reported value and is refused for an existing file, an outside path and a name without `.wav`, and a bad argument gives `isError` while the server keeps answering
+- [x] 20. Test `score_cue` over stdio: same seed twice gives the same `sha256`, another seed gives another, the hash equals `runCli`'s file for the same arguments, `stingLandingSec` matches the requested time, nothing is written without `writeWavTo`, a written file hashes to the reported value and is refused for an existing file, an outside path and a name without `.wav`, and a bad argument gives `isError` while the server keeps answering
   - _Requirements: 7.2b, 5.4, 5.5, 5.6, 5.7, 5.8_
-- [ ] 21. Test `list_patches` over stdio: ten patches in `PATCH_IDS` order with the five fields
+- [x] 21. Test `list_patches` over stdio: ten patches in `PATCH_IDS` order with the five fields
   - _Requirements: 6.1, 7.2a_
-- [ ] 22. README: a section "Use it from an agent (MCP)" with the registration, both tools, the `score_cue` arguments and a sample result; update the adapter table row for the Bedrock director; say the model writes the plan and the FS-666 makes the sound, and that the MCP server uses the local director
+- [x] 22. README: a section "Use it from an agent (MCP)" with the registration, both tools, the `score_cue` arguments and a sample result; update the adapter table row for the Bedrock director; say the model writes the plan and the FS-666 makes the sound, and that the MCP server uses the local director
   - _Requirements: 8.1, 8.2, 8.3_
-- [ ] 23. List `scripts/mcp/` in `.kiro/steering/structure.md`
+- [x] 23. List `scripts/mcp/` in `.kiro/steering/structure.md`
   - _Requirements: 8.4_
-- [ ] 24. Run `npm run typecheck`, `npm run test:unit`, `npm run check:determinism` and confirm that no file was left behind by the tests
+- [x] 24. Run `npm run typecheck`, `npm run test:unit`, `npm run check:determinism` and confirm that no file was left behind by the tests
   - _Requirements: 7.3, 7.4, 3.5_
 
 ## Requirement-to-task traceability

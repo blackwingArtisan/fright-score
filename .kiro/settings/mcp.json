@@ -10,6 +10,11 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp@4.5.0"],
       "timeout": 120000
+    },
+    "fright-score": {
+      "command": "npx",
+      "args": ["tsx", "scripts/mcp/fright-score-mcp.ts"],
+      "timeout": 120000
     }
   }
 }
