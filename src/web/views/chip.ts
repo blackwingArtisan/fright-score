@@ -64,6 +64,9 @@ export class ChipView {
     const trackCount = this.score?.tracks.length ?? 1;
     const live = frames !== undefined && trackIndex !== undefined;
     const idx = frame * trackCount + (trackIndex ?? 0);
+    // Channels with nothing sounding sink back into the board, so the playing ones stand out.
+    const idle = live && frames.voices[idx] === 0;
+    ctx.globalAlpha = idle ? 0.5 : 1;
     drawOperatorRow(ctx, {
       y0: row * ROW_H + 4,
       labelW,
@@ -81,6 +84,7 @@ export class ChipView {
       readout: live ? { voices: frames.voices[idx], midi: frames.notes[idx] } : undefined,
       accent: track?.role === 'stinger' ? COLORS.blood : COLORS.copper,
     });
+    ctx.globalAlpha = 1;
   }
 }
 

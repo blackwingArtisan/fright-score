@@ -481,9 +481,21 @@ function checkStings(pos: number): void {
   lastPos = pos;
 }
 
+let dreadShown = -1;
+/** Tie the page's atmosphere (--dread, 0..1) to the intensity of the section under the playhead. */
+function updateDread(pos: number): void {
+  const sections = current?.score.plan.sections ?? [];
+  const section = player.playing ? sections.find((s) => pos >= s.startSec && pos < s.endSec) : undefined;
+  const dread = Math.round((section?.intensity ?? 0.25) * 20) / 20;
+  if (dread === dreadShown) return;
+  dreadShown = dread;
+  document.documentElement.style.setProperty('--dread', String(dread));
+}
+
 function frame(): void {
   const pos = player.position;
   checkStings(pos);
+  updateDread(pos);
   timeline.draw(pos, performance.now() < scareUntil);
   chip.draw(pos);
   scope.draw(player.analyser, player.playing || live.latest.voices > 0);

@@ -26,6 +26,8 @@
   --step-5: clamp(3rem, 2rem + 5vw, 5.5rem);
 
   --gutter: clamp(16px, 3vw, 32px);
+  /* 0..1, follows the intensity of the section under the playhead while a cue plays. */
+  --dread: 0.25;
   color-scheme: dark;
 }
 
@@ -51,6 +53,25 @@ body {
     linear-gradient(0deg, transparent 0 calc(100% - 1px), rgb(201 137 74 / 0.05) calc(100% - 1px)),
     radial-gradient(circle at 18% -10%, #17463a 0, transparent 55%);
   background-size: 48px 48px, 48px 48px, 100% 100%;
+}
+
+/* Atmosphere: a vignette that closes in as the dread rises, and a fixed film grain. Neither moves on
+   its own, so both stay under reduced motion; neither takes clicks. */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+body::before {
+  background: radial-gradient(ellipse 85% 80% at 50% 40%, transparent 55%, rgb(3 10 8 / calc(0.25 + var(--dread) * 0.35)) 100%);
+}
+body::after {
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='160'%20height='160'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.9'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3C/filter%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .skip {

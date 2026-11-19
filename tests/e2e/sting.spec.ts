@@ -77,4 +77,14 @@ test.describe('the sting payoff and the 60-second path', () => {
     await page.getByRole('button', { name: /press A to K/ }).click();
     await expect(page.locator('#live')).toBeInViewport();
   });
+
+  test('the atmosphere follows the dread of the section that is playing', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+    const dread = () => page.evaluate(() => Number(getComputedStyle(document.documentElement).getPropertyValue('--dread')));
+    expect(await dread()).toBeCloseTo(0.25, 2);
+    // Six seconds before the sting the cue is in its most intense section.
+    await page.getByRole('button', { name: 'Jump to the scare' }).click();
+    await expect.poll(dread, { timeout: 10_000 }).toBeGreaterThan(0.5);
+  });
 });
