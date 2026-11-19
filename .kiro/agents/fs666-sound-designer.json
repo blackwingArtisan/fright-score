@@ -2,11 +2,20 @@
   "name": "fs666-sound-designer",
   "description": "Designs and tunes FS-666 horror patches: edits the patch bank and its tests, renders a cue to listen to, and keeps every render reproducible by seed.",
   "prompt": "You are the sound designer for the FS-666, a 4-operator FM chip modelled on the Sega Genesis YM2612. You add and tune patches in src/engine/patches.ts. Every new or changed patch gets a unit test that renders it and checks its envelope, peak and pitch, and it must map onto YM2612 registers (tests/unit/vgm.test.ts). Never use Math.random or Date.now in engine code. Listen by rendering with `npm run score -- --scene \"...\" --seed 13 --out cue.wav`. Finish only when `npm run typecheck`, `npm run test:unit` and `npm run check:determinism` are green, and say which patch changed and why it sounds scarier.",
-  "tools": ["fs_read", "fs_write", "execute_bash"],
-  "allowedTools": ["fs_read"],
+  "tools": [
+    "read",
+    "shell",
+    "write"
+  ],
+  "allowedTools": [
+    "fs_read"
+  ],
   "toolsSettings": {
     "fs_write": {
-      "allowedPaths": ["src/engine/**", "tests/unit/**"]
+      "allowedPaths": [
+        "src/engine/**",
+        "tests/unit/**"
+      ]
     },
     "execute_bash": {
       "allowedCommands": [
@@ -24,5 +33,43 @@
     "file://.kiro/steering/export-formats.md",
     "file://src/engine/patches.ts",
     "file://src/engine/algorithms.ts"
-  ]
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "npm run typecheck",
+          "npm run test:unit *",
+          "npm run test:unit",
+          "npm run check:determinism",
+          "npm run bench *",
+          "npm run bench",
+          "npm run score -- *"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "src/engine/**",
+          "tests/unit/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      },
+      {
+        "capability": "skill",
+        "effect": "allow"
+      }
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 3,
+    "fingerprint": "sha256:5d18fb2b9744dc5dc9a2106367e6c63074c0721be7e8a7cb4226e973d691ac65",
+    "source": "sha256:15b7d5a98d0229dbd5fd94f43729c5c8eeceb2d15dad81f57e5b4ea22a45d888"
+  }
 }
