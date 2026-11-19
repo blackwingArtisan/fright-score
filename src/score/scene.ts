@@ -2,7 +2,7 @@ import { MOODS, type Mood } from './schema';
 
 /**
  * Rule-based reader for scene descriptions such as
- * "creeping dread, 90 seconds, builds to a sting at 0:70".
+ * "creeping dread, 90 seconds, builds to a sting at 1:10".
  * It pulls out a mood, a length, cue times and the overall shape of the cue.
  */
 

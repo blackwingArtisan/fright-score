@@ -18,7 +18,8 @@
     "test": "npm run typecheck && npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "check:determinism": "node scripts/check-determinism.mjs"
+    "check:determinism": "node scripts/check-determinism.mjs",
+    "bench": "tsx scripts/bench.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.1",
