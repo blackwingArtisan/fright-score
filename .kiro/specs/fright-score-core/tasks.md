@@ -5,7 +5,7 @@
 - [x] 2. ScorePlan and Score zod schemas with field-level error messages
   - _Requirements: 1.7, 2.1, 2.2_
 - [x] 3. Scene reader: moods, lengths, sting and hit times, shape words, scene nouns
-  - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.6_
+  - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.6, 1.9_
 - [x] 4. Local director: mood profiles, sections, intensity curve, layers, Markov motif, director's notes
   - _Requirements: 1.4, 1.7, 3.1_
 - [x] 5. reconcilePlan so any director honors the requested length and stings
@@ -25,7 +25,7 @@
 - [x] 12. Director adapters: local, Bedrock (Converse with one repair round), remote; factory by env var
   - _Requirements: 9.1, 9.2, 9.3, 9.4_
 - [x] 13. CLI `npm run score` with scene, mood, length, stings, seed, JSON output and clear errors
-  - _Requirements: 7.1, 7.2, 7.3_
+  - _Requirements: 7.1, 7.2, 7.3, 7.4_
 - [x] 14. Web app: form with live scene reading, worker render, timeline, FS-666 channel view, scope, exports
   - _Requirements: 1.8, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
 - [x] 15. Tests: unit suite, CLI test, Playwright end-to-end including browser-equals-CLI bytes
@@ -38,3 +38,62 @@
   - _Requirements: 10.4_
 - [x] 19. BS.1770 integrated loudness and per-mood loudness ceilings in the renderer; LUFS in CLI and web stats
   - _Requirements: 6.7_
+
+## Pass 2 — spec review gaps (unchecked)
+
+The criteria above were tightened into strict EARS form, one testable behavior per criterion (multi-behavior
+criteria were split with sub-letters so existing task references stay valid; new criteria were appended at
+the end of a requirement). Every task 1-19 keeps its [x]: each has both code and an exercising test. The
+tasks below close the gaps the review found between the spec and the code — behaviors that are implemented
+(or now specified) but not yet pinned by a test, plus the two spec-completeness gaps (1.9 hit cue, 7.4
+quiet/help flags) whose criteria were added above. Each carries its requirement numbers.
+
+- [ ] 20. Add a composer/scene test that explicit mood, length and sting times override the values read from the scene
+  - _Requirements: 1.4_
+- [ ] 21. Add a composer test that a keyword-less, mood-less scene yields a plan with mood "dread"
+  - _Requirements: 1.6_
+- [ ] 22. Add a composer test asserting the jump-scare sting lands near 80% of the cue and is snapped to a bar line
+  - _Requirements: 1.5_
+- [ ] 23. Add a schema test that a section whose endSec is at or before its startSec is rejected naming the section
+  - _Requirements: 2.2_
+- [ ] 24. Add an arranger test asserting the stinger is a tritone brass cluster and that the boom falls in pitch
+  - _Requirements: 3.2_
+- [ ] 25. Add an arranger test that the heartbeat pulse and bass accelerate toward double time during a riser
+  - _Requirements: 3.5_
+- [ ] 26. Add an operator test covering self-feedback levels 0 through 7 and the clamp at 7
+  - _Requirements: 5.2_
+- [ ] 27. Add a voice test that a patch LFO applies vibrato and tremolo
+  - _Requirements: 5.4_
+- [ ] 28. Add a renderer test asserting the per-track polyphony limit and that the oldest released voice is stolen first
+  - _Requirements: 5.6_
+- [ ] 29. Add a render test that the fade-out does not start before a late sting has landed
+  - _Requirements: 6.4_
+- [ ] 30. Add unit tests for the stereo reverb send, the DC blocker and the output low-pass
+  - _Requirements: 6.6_
+- [ ] 31. Add a render test that the frame count is exactly durationSec × 44,100 for a non-integer-frame duration (guard the Math.ceil rounding)
+  - _Requirements: 6.2_
+- [ ] 32. Add a CLI test asserting the score command prints the render stats line (note count, voices, dBTP, LUFS)
+  - _Requirements: 7.1_
+- [ ] 33. Add a CLI test asserting the process exits non-zero on invalid arguments
+  - _Requirements: 7.3_
+- [ ] 34. Add a CLI test asserting --quiet prints only the output path and --help prints the usage text
+  - _Requirements: 7.4_
+- [ ] 35. Add an e2e assertion that rendering progress is shown to the user
+  - _Requirements: 8.1_
+- [ ] 36. Add an e2e test that clicking the timeline moves the playhead there
+  - _Requirements: 8.4_
+- [ ] 37. Add a loop test asserting intensity stays steady across the whole loop
+  - _Requirements: 10.1_
+- [ ] 38. Add a loop test asserting the output filters are warmed with the loop's end so the wrap point is seamless
+  - _Requirements: 10.2_
+
+## Pass 2 — cursed datasheet look
+
+The cursed 1990s datasheet look: presentation only (CSS and inline SVG in index.html + src/web/styles.css).
+No engine, score or director code changed; no new dependencies; no image file over 20 KB. Element ids, button
+and heading accessible names, and the Playwright-asserted strings are unchanged.
+
+- [x] 39. Cursed datasheet look: candle-flicker masthead glow (off under prefers-reduced-motion), blood-red and ectoplasm datasheet accents, a torn blood-touched rule at the masthead foot, water-stained panels, and spookier empty-state microcopy — all WCAG AA and no wider than 360 px
+  - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
+- [x] 40. Playwright assertion that the masthead flicker is on by default and disabled under prefers-reduced-motion
+  - _Requirements: 11.1, 11.2_

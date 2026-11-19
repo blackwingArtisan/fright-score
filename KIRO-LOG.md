@@ -100,3 +100,90 @@ available again, the next Kiro step is to run the spec's remaining tasks from th
 
 Call 2 used the same prompt with two changes: "The directory .kiro/specs/fright-score-core/ already
 exists" and "Using only the file write tool (no shell commands)".
+
+## Kiro pass 2 (kiro-cli v3, bonus credits)
+
+- **When:** 2026-11-19, 01:23 to 01:40 UTC (16 min 49 s wall time, under a 25-minute cap; exit code 0).
+- **Command** (repo root, stdin closed):
+  `kiro-cli chat --v3 --no-interactive --trust-workspace --trust-tools=fs_read,fs_write,run_command "<prompt>" </dev/null`
+- **Credits used:** 29.38 of the 4,000 `kiroween2026` bonus credits (`/usage` read 0.00 before the call and 29.38 after).
+- **What Kiro did:** read the steering files, ran two sub-agents to audit each spec against the code, edited the
+  specs, wrote the theme changes and the new Playwright test, ran `npm run typecheck`, `npm run test:unit`,
+  `npm run build` and the determinism script itself, and looked up the hook schema in the Kiro docs.
+- **After the call (operator):** the full suite was run, including the Playwright tests Kiro did not run:
+  Vitest 140 of 140, Playwright 10 of 10 (the new reduced-motion test passes, and the 360 px no-horizontal-scroll
+  check passes against the new styles). Nothing needed fixing.
+
+### Exact prompt
+
+> You are working in the Fright Score repository (TypeScript, Vite, vanilla DOM, Vitest, Playwright). Read .kiro/steering/product.md, tech.md and structure.md first and follow them. Work only inside this repository. Do not add, remove or upgrade any npm dependency, do not run npm install, do not use git, and do not deploy or call any network service. Keep wording professional and use invented sample data only.
+>
+> Do these four jobs in order.
+>
+> 1. Spec review. For each spec in .kiro/specs/ (fright-score-core and live-chip), read requirements.md, design.md and tasks.md and compare them with the code under src/ and the tests under tests/. Tighten every acceptance criterion into strict EARS form (WHEN / WHILE / IF ... THEN / WHERE ... THE SYSTEM SHALL ...), one testable behavior per criterion, keeping the existing numbering so task references stay valid (append new criteria at the end of a requirement). Mark a task [x] only if the code and a test really implement it. Add a new unchecked task for every gap you find between the spec and the code, with its requirement numbers.
+>
+> 2. Implement real work: make the theme spookier. Add a requirement for it to .kiro/specs/fright-score-core/requirements.md (EARS criteria), a short design note to design.md, and tasks to tasks.md; then implement them in index.html, src/web/styles.css and, only if needed, src/web/main.ts. Scope: copy and visuals only, using CSS, inline SVG and the fonts already installed (Pirata One, IBM Plex Mono). No new dependencies, no image files over 20 KB, no changes to the audio engine, score or director code. Ideas that fit the "cursed 1993 chip datasheet" look in product.md: a faint flicker or candle glow on the masthead that is fully disabled under prefers-reduced-motion, blood-red or ectoplasm accents on the datasheet rules, a torn or water-stained edge on panels, spookier microcopy in empty states and helper text. Keep text contrast at WCAG AA, keep the layout working at 360 px wide with no horizontal scroll, and do NOT change any element id, any button or heading accessible name, or these exact strings that the Playwright tests assert: "Summon the score", "Download WAV", "Play", "Pause", "Ready: press Play", "Paused", "No cue yet", "Demo cue", "Seamless loop", "in real time", "5 to 300 seconds", "BPM", "Fright Score" (the h1), "Music box", "Patch". Add or extend a test under tests/ for at least one new behavior you add (for example a Vitest test of any helper you write, or a Playwright assertion in tests/e2e/app.spec.ts that the reduced-motion rule turns the flicker off). Check the tasks off when done.
+>
+> 3. Hooks. Kiro's current hook format is .kiro/hooks/<name>.json with "version": "v1" and a "hooks" array (fields: name, description, trigger in PascalCase such as PostFileSave or Stop, matcher regex, action with type "command" + command or type "agent" + prompt, timeout in seconds, enabled). Check the three files in .kiro/hooks/ against that format and fix anything that is not valid or that refers to a script or npm script that does not exist in package.json. Keep the steering files accurate: if anything you changed makes tech.md, structure.md or product.md wrong, update it.
+>
+> 4. Append a new section "## Kiro pass 2 (kiro-cli v3, bonus credits)" to KIRO-LOG.md that lists: each spec change (criteria tightened, tasks checked, tasks added), each source and test file you changed and why, the hook changes, and anything you could not do. Leave a line "Credits used: TO BE FILLED" for the operator to fill in.
+>
+> If run_command is available, run `npm run typecheck` and `npm run test:unit` when you finish and fix any failures you caused. Do not run the Playwright suite yourself; the operator will.
+
+### Spec changes
+
+- `fright-score-core/requirements.md`: every acceptance criterion rewritten in strict EARS form with one
+  testable behavior each. Criteria that bundled several behaviors were split into lettered sub-criteria
+  (for example 1.3.a/b, 6.4.a-d, 8.3.a-d) so existing numbers and task references stay valid. Bare
+  "THE SYSTEM SHALL" criteria gained a WHEN, IF or WHERE condition.
+- New criteria appended at the end of a requirement: 1.9 (hit cue), 7.4 (`--quiet`, `--help`), and a new
+  Requirement 11 (cursed datasheet look, 11.1 to 11.6). 1.9 and 7.4 describe behavior that already existed
+  in code but was not in the spec.
+- `live-chip/requirements.md`: same treatment. Criteria 1.1 to 1.6 and 2.1, 2.2, 2.4 split into sub-criteria; 1.6.b
+  (no worklet before the first key press) added.
+- `fright-score-core/design.md`: added a "Cursed datasheet look" section.
+- Tasks checked: no existing task was unchecked or newly checked. Each of core tasks 1-19 and live-chip
+  tasks 1-9 has code and at least one test, although several sub-behaviors are untested (see below).
+  New tasks 39 and 40 (theme, reduced-motion test) were added already checked.
+- Tasks added, unchecked: core 20-38 (test gaps for 1.4, 1.5, 1.6, 2.2, 3.2, 3.5, 5.2, 5.4, 5.6, 6.2, 6.4, 6.6,
+  7.1, 7.3, 7.4, 8.1, 8.4, 10.1, 10.2) and live-chip 10-17 (1.3, 1.4, 1.5, 1.6, 1.7, 2.3, 2.4). All are
+  implemented behaviors that no test pins down. The audit found no behavior the spec requires that the code lacks.
+- Task references updated: core task 3 now cites 1.9, task 13 cites 7.4.
+
+### Source and test files changed
+
+- `index.html`: spookier text in three empty states (`#cue-meta`, `#director-notes`, `#live-status`) and one
+  helper sentence in the chip panel. Ids, headings, button names and the strings the Playwright tests assert
+  are unchanged.
+- `src/web/styles.css`: `--ectoplasm` colors, a candle-flicker keyframe animation on the `h1` (the existing
+  global `prefers-reduced-motion` rule disables it), a blood-red rule on the spec table, a torn blood-touched
+  SVG strip at the masthead foot (inline data URI, under 1 KB), water-stain gradients on the direction form,
+  chip panel and live panel, and an ectoplasm tint on the scope seam. No layout widths changed. `src/web/main.ts`
+  was not touched.
+- `tests/e2e/app.spec.ts`: new test that the `h1` animation is on by default and `none` under emulated
+  reduced motion.
+
+### Hook changes
+
+- `determinism-guard.json`: description corrected. The script also rejects `Date.now`, not only `Math.random`.
+- `test-on-save.json` and `spec-task-sync.json`: checked against the v1 format and left as they were. Every script
+  they call exists in `package.json` or `scripts/`. `Stop` has no matcher, which the docs say is correct.
+- Steering files: no edits. The change is presentation only, so tech.md, structure.md and product.md remain accurate.
+
+### Verification
+
+- `npm run typecheck`: passes. `npm run test:unit`: 19 files, 140 tests pass. `npm run build`: passes.
+- `node scripts/check-determinism.mjs`: passes.
+
+### Could not do
+
+- Did not run the Playwright suite (as instructed), so the new reduced-motion test and the 360 px no-scroll
+  check against the new styles are unrun.
+- Did not write the 27 new test tasks (core 20-38, live-chip 10-17); they are listed unchecked.
+- Torn edge: only the masthead has a torn rule. Panels got water-stain gradients, not torn borders.
+- WCAG AA contrast was checked by reasoning, not with a tool. Text colors are unchanged; the new colors are
+  used only for borders, glows and backgrounds behind the existing text.
+- `structure.md` omits some existing files (`src/server`, `functions/`, `scripts/`, `score/moods.ts`,
+  `score/pipeline.ts`). That predates this pass and was left alone.
+- Several statements in the spec rely on reading the code, for example the `Math.ceil` frame count (6.2) is
+  exact only for durations with at most two decimals. Task 31 covers it.

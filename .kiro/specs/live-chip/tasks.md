@@ -18,3 +18,28 @@
   - _Requirements: 2.4_
 - [x] 9. Tests: core unit tests and Playwright end-to-end for the demo cue and the live chip
   - _Requirements: 1.1, 1.2, 1.4, 2.1, 2.2, 2.4_
+
+## Pass 2 — spec review gaps (unchecked)
+
+The criteria above were tightened into strict EARS form, one testable behavior per criterion (multi-behavior
+criteria were split with sub-letters so existing task references stay valid; new criteria were appended at
+the end of a requirement). Every task 1-9 keeps its [x]: each has both code and an exercising test. The tasks
+below close the gaps the review found between the spec and the code — behaviors that are implemented but not
+yet pinned by a test. Each carries its requirement numbers.
+
+- [ ] 10. Add a live-chip e2e test that pressing Z and X shifts the keyboard down and up one octave
+  - _Requirements: 1.3_
+- [ ] 11. Add a live-chip e2e test that the octave buttons shift the keyboard by one octave
+  - _Requirements: 1.3_
+- [ ] 12. Add a LiveChipCore unit test asserting voice stealing removes the oldest released voice first
+  - _Requirements: 1.4_
+- [ ] 13. Add a unit/e2e test asserting the worklet reports live envelope levels about 30 times a second and that the history covers three seconds
+  - _Requirements: 1.5_
+- [ ] 14. Add a live-chip e2e test asserting the AudioWorklet is not loaded before the first key press
+  - _Requirements: 1.6_
+- [ ] 15. Add a live-chip e2e test that losing page focus while keys are held releases every voice
+  - _Requirements: 1.7_
+- [ ] 16. Add a live-chip e2e test that summoning a new cue cancels a render still in progress
+  - _Requirements: 2.4_
+- [ ] 17. Add a live-chip e2e test that the Play button stops beckoning after the first play
+  - _Requirements: 2.3_

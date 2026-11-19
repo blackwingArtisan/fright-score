@@ -72,7 +72,7 @@
         <div class="stage__head">
           <div>
             <h2 id="cue-title" class="cue-title">No cue yet</h2>
-            <p id="cue-meta" class="cue-meta">Describe a scene or pick a mood, then summon the score.</p>
+            <p id="cue-meta" class="cue-meta">The board is dark and silent. Describe a scene or pick a mood, then summon the score.</p>
           </div>
           <p id="status" class="status" data-state="idle" role="status" aria-live="polite">Idle</p>
         </div>
@@ -94,7 +94,7 @@
         <div class="chip-wrap">
           <div class="chip-label">
             <h3>FS-666 channels</h3>
-            <p>Each row is one instrument. Square pads are modulators, round pads are carriers; copper traces show the algorithm. Pads glow with the envelope levels the renderer recorded for every frame of the cue.</p>
+            <p>Each row is one instrument. Square pads are modulators, round pads are carriers; copper traces show the algorithm. Pads glow with the envelope levels the renderer recorded for every frame of the cue, so you can watch the machine breathe.</p>
           </div>
           <canvas id="chip" aria-label="Live view of the FM chip operators and envelopes"></canvas>
           <canvas id="scope" height="72" aria-label="Output waveform"></canvas>
@@ -119,12 +119,12 @@
           </div>
           <canvas id="live-ops" aria-label="Live operator envelopes of the patch you are playing"></canvas>
           <div id="keys" class="keys" role="group" aria-label="FS-666 keyboard"></div>
-          <p id="live-status" class="live__status" data-frames="0" data-voices="0" data-peak="0">Asleep. Press a key to wake the chip.</p>
+          <p id="live-status" class="live__status" data-frames="0" data-voices="0" data-peak="0">Dormant. Press a key to wake the chip.</p>
         </section>
 
         <section class="notes" aria-labelledby="notes-title">
           <h3 id="notes-title">Director's notes</h3>
-          <p id="director-notes">The director explains the key, tempo, and where the scares land.</p>
+          <p id="director-notes">The director waits in the dark. It will explain the key, the tempo, and where the scares land.</p>
           <p id="render-stats" class="render-stats"></p>
         </section>
       </section>

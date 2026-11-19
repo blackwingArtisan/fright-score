@@ -3,7 +3,7 @@
   "hooks": [
     {
       "name": "Determinism guard",
-      "description": "Blocks unseeded randomness in the engine and composer: fails if Math.random appears in src/engine, src/score or src/director.",
+      "description": "Guards reproducibility by seed: fails if Math.random or Date.now appears in src/engine, src/score or src/director.",
       "trigger": "PostFileSave",
       "matcher": "src/(engine|score|director)/.*\\.ts$",
       "action": { "type": "command", "command": "node scripts/check-determinism.mjs" },

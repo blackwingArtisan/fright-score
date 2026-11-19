@@ -113,3 +113,25 @@ three-second envelope history) and an oscilloscope from an AnalyserNode.
 - CLI (Vitest): runs the real `npm run score` and parses the WAV; checks byte-identical reruns and errors.
 - End to end (Playwright on the built app): scene to ready, play moves the playhead, WAV and JSON export are
   valid, browser export equals the CLI export byte for byte, invalid input explained, phone width.
+
+## Cursed datasheet look
+
+The look is pure presentation (CSS and inline SVG in `index.html` + `src/web/styles.css`); no engine, score or
+director code is touched, no new dependencies are added, and no image file exceeds 20 KB.
+
+- Candle-flicker: a faint `@keyframes` glow animates the masthead `h1` text-shadow (a warm candle wash with a
+  flicker of blood). It is the only motion added; the existing global
+  `@media (prefers-reduced-motion: reduce) { * { animation: none !important } }` rule turns it off, so a
+  reduced-motion device sees a steady glow. A Playwright test asserts the computed `animationName` is the
+  flicker by default and `none` under emulated reduced motion.
+- Accents: the datasheet spec table gains a blood-red top rule; the chip oscilloscope seam and the live-panel
+  seams take an ectoplasm (sickly green) tint. These are border/box-shadow colors only — text stays on the
+  existing high-contrast silk-on-mask palette, so WCAG AA holds.
+- Torn and water-stained edges: the masthead foot is a jagged torn rule (an inline-SVG background strip in
+  the padding band, no layout impact); the panels (direction form, chip wrap, live panel) get faint
+  water-stain radial gradients layered behind their content as additional `background-image` layers.
+- Microcopy: the pre-cue empty states (`#cue-meta`, `#director-notes`, `#live-status`) use spookier wording
+  without changing any protected string, element id, heading or button accessible name.
+- Constraints: no fixed widths are added; the 360 px no-horizontal-scroll guarantee (Req 8.7) is preserved
+  because every addition is a background layer, a color, or a thin strip in padding — none affect layout
+  box width.

@@ -76,4 +76,15 @@ test.describe('Fright Score in the browser', () => {
     await expect(page.locator('#status')).toHaveAttribute('data-state', 'error');
     await expect(page.locator('#status')).toContainText('5 to 300 seconds');
   });
+
+  test('candle-flickers the masthead and disables it under prefers-reduced-motion', async ({ page }) => {
+    await page.goto('/');
+    // By default the cursed masthead title carries the candle-flicker animation.
+    const onName = await page.locator('h1').evaluate((el) => getComputedStyle(el).animationName);
+    expect(onName).not.toBe('none');
+    // Under reduced motion the global reduced-motion rule turns the flicker off.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const offName = await page.locator('h1').evaluate((el) => getComputedStyle(el).animationName);
+    expect(offName).toBe('none');
+  });
 });
