@@ -4,12 +4,13 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runCli } from '../../src/cli/score';
 import { parseWav } from '../../src/wav/wav';
+import { DEMO_SCENE, DEMO_SEED, DEMO_WAV_SHA256, sha256Hex } from '../../src/web/demo';
 
 const dir = mkdtempSync(join(tmpdir(), 'fright-score-samples-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 describe('committed samples', () => {
-  it('the Genesis sample is exactly what the CLI exports today (scripts/make-samples.sh)', async () => {
+  it('the Genesis sample and the demo hash are exactly what the CLI exports today (scripts/make-samples.sh)', async () => {
     const vgm = join(dir, 'cellar.vgm');
     await runCli(
       ['--scene', 'Creeping dread in the cellar, 90 seconds, builds to a sting at 1:10', '--seed', '13', '--out', join(dir, 'cellar.wav'), '--vgm', vgm, '--quiet'],
@@ -17,6 +18,10 @@ describe('committed samples', () => {
       () => {},
     );
     expect(readFileSync(vgm).equals(readFileSync(join(__dirname, '../../samples/cellar-dread-genesis.vgm')))).toBe(true);
+    // The page checks its live render of the demo against this published hash.
+    expect(DEMO_SCENE).toBe('Creeping dread in the cellar, 90 seconds, builds to a sting at 1:10');
+    expect(DEMO_SEED).toBe(13);
+    expect(await sha256Hex(readFileSync(join(dir, 'cellar.wav')))).toBe(DEMO_WAV_SHA256);
   });
 
   it('the Godot example ships the exact loop and sting the CLI exports, with loop points in the loop', async () => {

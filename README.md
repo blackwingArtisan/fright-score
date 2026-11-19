@@ -62,7 +62,9 @@ days. Most of these games come from solo developers and small jam teams with no 
 ## The 60-second tour
 
 1. Open the app. The demo cue, "Creeping dread in the cellar, 90 seconds, builds to a sting at 1:10", is
-   already rendered. Press **Listen** on the timeline.
+   ready to hear within about a second, from a pre-rendered preview. Press **Listen** on the timeline. In the
+   background the chip renders the same cue live, and the page shows "Live render matches the published demo,
+   byte for byte" with its sha256 when it finishes.
 2. Press **Jump to the scare**. In six seconds you hear the riser climb, the board go silent for 0.6 s and
    the sting land. The page flashes blood red, the timeline shakes and the chip's pads flare.
 3. Watch **The stitch**: the director's plan as JSON on the left, the Sega Genesis sound-chip register
@@ -162,8 +164,10 @@ or $10 a month for Suno Pro):
 <details>
 <summary>Every feature, in detail</summary>
 
-- The page opens on a real cue: the "Cellar dread" demo is rendered and ready to play, with a **Listen**
-  button that names when the scare lands and a **Jump to the scare** button that starts six seconds before it.
+- The page opens on a real cue: the "Cellar dread" demo plays at once from a pre-rendered preview, with a
+  **Listen** button that names when the scare lands and a **Jump to the scare** button that starts six seconds
+  before it. The live render finishes in the background, playback carries on in it from the same spot, and the
+  page checks its sha256 against the published hash (a unit test checks that the CLI renders exactly that hash).
 - Type a scene ("Creeping dread in the cellar, 90 seconds, builds to a sting at 1:10") or pick one of five
   moods: dread, stalker, chase, lullaby, ritual. The app shows what it understood as you type.
 - The director turns it into a plan you can read: key and mode (Phrygian, Locrian, octatonic and more), tempo,

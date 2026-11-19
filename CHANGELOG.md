@@ -4,6 +4,9 @@
 
 ### Added
 
+- **Instant first load:** the demo cue plays from a pre-rendered preview in about a second while the live
+  render runs; when it lands, playback carries on in the exact render and the page shows that its sha256
+  matches the published demo hash. The masthead's explainer folds into one line.
 - **Godot add-on:** a `FrightScoreCue` node lands a sting on a game event. In the example, opening the cellar
   door cuts the loop to silence and the hit lands 0.6 s later; `verify_scare.gd` times it headless.
 - **Loading states:** while a cue renders, the stitch panel shows what the director and the chip are doing,

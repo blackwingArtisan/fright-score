@@ -157,10 +157,26 @@ h3 {
   color: var(--silk);
 }
 .masthead__sub {
+  margin: 10px 0 0;
   max-width: 62ch;
-  margin: 8px 0 0;
-  font-size: var(--step--1);
   color: var(--silk-dim);
+}
+.masthead__sub > summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--silk);
+  text-decoration: underline dotted var(--edge);
+  text-underline-offset: 4px;
+}
+.masthead__sub > p {
+  margin: 8px 0 0;
+}
+.render-proof {
+  margin: -6px 0 0;
+  min-height: 1.4em;
+  font-size: var(--step--1);
+  color: var(--ectoplasm);
+  font-variant-numeric: tabular-nums;
 }
 .masthead__spec {
   display: grid;
@@ -552,6 +568,7 @@ input::placeholder {
   animation: blink 0.8s steps(2) infinite;
 }
 .status[data-state='ready']::before,
+.status[data-state='preview']::before,
 .status[data-state='playing']::before {
   background: #6fd39b;
 }

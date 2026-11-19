@@ -10,6 +10,8 @@ import { scoreFromRequest } from '../score/pipeline';
 import { parseTimePhrase, readScene } from '../score/scene';
 import { MOODS, type Mood, type Score } from '../score/schema';
 import { MODE_LABELS, formatTime, midiToName } from '../score/theory';
+import demoPreviewUrl from '../../samples/cellar-dread-sting-at-1m10s.mp3?url';
+import { DEMO_SCENE, DEMO_SEED, DEMO_WAV_SHA256, sha256Hex, shortHash } from './demo';
 import { createWebDirector } from './director';
 import { LiveChip } from './live/live-chip';
 import { Player } from './player';
@@ -23,7 +25,7 @@ import { TimelineView } from './views/timeline';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 const EXAMPLES: { label: string; scene: string }[] = [
-  { label: 'Cellar dread', scene: 'Creeping dread in the cellar, 90 seconds, builds to a sting at 1:10' },
+  { label: 'Cellar dread', scene: DEMO_SCENE },
   { label: 'Music box', scene: 'A music box winds down in the nursery, 45 seconds, jump scare at 0:40' },
   { label: 'Corn maze chase', scene: 'They chase us through the corn maze, 40 seconds' },
   { label: 'The ritual', scene: 'Cult chanting around the altar by candlelight, 75 seconds, it answers at 1:05' },
@@ -76,10 +78,11 @@ const els = {
   board: document.querySelector<HTMLElement>('.board')!,
   transport: document.querySelector<HTMLElement>('.transport')!,
   writeCta: $<HTMLAnchorElement>('write-cta'),
+  proof: $<HTMLParagraphElement>('render-proof'),
 };
 
 /** The cue rendered on first load, so the board shows a real score before anyone clicks. */
-const DEMO_REQUEST = { seed: 13, scene: EXAMPLES[0].scene } as const;
+const DEMO_REQUEST = { seed: DEMO_SEED, scene: DEMO_SCENE } as const;
 
 const director = createWebDirector(import.meta.env.VITE_FRIGHT_DIRECTOR);
 const player = new Player();
@@ -106,13 +109,17 @@ interface Rendered {
 }
 
 let current: Rendered | undefined;
+/** The cue loaded in the player: the demo's pre-rendered preview, or the live render once it is ready. */
+let playable: Score | undefined;
+/** True while the player holds the demo preview and the live render is still running. */
+let previewing = false;
 /** Length shown on the clock while a new cue renders, before `current` is set. */
 let clockDurationSec = 0;
 let renderId = 0;
 let pending: { reject: (error: Error) => void } | undefined;
 let hasPlayed = false;
 
-type State = 'idle' | 'composing' | 'rendering' | 'ready' | 'playing' | 'error';
+type State = 'idle' | 'composing' | 'rendering' | 'preview' | 'ready' | 'playing' | 'error';
 
 function setStatus(state: State, text: string): void {
   els.status.dataset.state = state;
@@ -243,14 +250,21 @@ const JUMP_LEAD_SEC = 6;
 /** How long the stage reacts when a sting lands. */
 const STING_FLASH_MS = 600;
 
-function setReady(enabled: boolean): void {
-  const stings = stingTimes(current?.score);
+/** Enable or disable Play, Listen and Jump to the scare for the cue in the player. */
+function setPlayable(score: Score | undefined): void {
+  playable = score;
+  const enabled = score !== undefined;
+  const stings = stingTimes(score);
   els.jump.disabled = !enabled || stings.length === 0;
   els.listen.hidden = !enabled || hasPlayed;
   if (enabled) {
     els.listenHint.textContent = stings.length ? `The scare lands at ${formatTime(stings[0]).replace(/\.0$/, '')}` : 'Hear the cue';
   }
   els.play.disabled = !enabled;
+}
+
+function setReady(enabled: boolean): void {
+  setPlayable(enabled ? current?.score : undefined);
   els.exportWav.disabled = !enabled;
   els.exportJson.disabled = !enabled;
   els.exportVgm.disabled = !enabled;
@@ -336,7 +350,8 @@ function render(score: Score): Promise<RenderedAudio> {
       if (msg.type === 'progress') {
         els.progress.style.width = `${Math.round(msg.fraction * 100)}%`;
         timeline.setProgress(msg.fraction);
-        setStatus('rendering', `Rendering ${Math.round(msg.fraction * 100)}%`);
+        if (!previewing) setStatus('rendering', `Rendering ${Math.round(msg.fraction * 100)}%`);
+        else if (!player.playing) setStatus('preview', `Preview ready. Exact render ${Math.round(msg.fraction * 100)}%`);
         return;
       }
       w.removeEventListener('message', onMessage);
@@ -396,7 +411,10 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
   player.stop();
   // Reset the transport for the new cue: a disabled Play, the clock at zero, ghost panels while it renders.
   current = undefined;
+  previewing = false;
   clockDurationSec = 0;
+  els.proof.textContent = '';
+  delete els.proof.dataset.sha256;
   lastPos = 0;
   els.play.textContent = 'Play';
   closeExportMenu();
@@ -418,9 +436,17 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
     chip.set(score, undefined);
     stitch.set(score, undefined);
     setStatus('rendering', 'Rendering 0%');
+    if (demo) void startPreview(score, token);
     const rendered = await render(score);
     if (token !== summonToken) return;
+    // If the demo preview is playing, carry on from the same spot in the exact render.
+    const resumeAt = previewing ? player.position : 0;
+    const wasPlaying = previewing && player.playing;
+    previewing = false;
     player.load(rendered.left, rendered.right, 44_100, score.plan.loop === true);
+    if (resumeAt > 0) await player.seek(resumeAt);
+    if (wasPlaying) await player.play();
+    lastPos = player.position;
     timeline.setScore(score, rendered.left, rendered.right);
     current = { score, vgm: rendered.vgm, wav: rendered.wav, frames: rendered.frames, stats: rendered.stats };
     stitch.set(score, rendered.vgm);
@@ -429,7 +455,9 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
     els.stats.textContent = `${s.noteCount} notes on ${score.tracks.length} channels, up to ${s.maxVoices} voices at once. True peak ${s.truePeakDb.toFixed(1)} dBTP, ${s.loudnessLufs.toFixed(1)} LUFS. Rendered in ${(s.renderMs / 1000).toFixed(1)} s in your browser.`;
     els.progress.style.width = '100%';
     setReady(true);
-    setStatus('ready', demo ? 'Ready: press Play' : 'Ready');
+    if (wasPlaying) setStatus('playing', 'Playing');
+    else setStatus('ready', demo ? 'Ready: press Play' : 'Ready');
+    void showProof(rendered.wav, demo, token);
     els.play.classList.toggle('btn--beckon', !hasPlayed);
     lastRequest = request;
     if (!demo) history.replaceState(null, '', `?${shareParams(request).toString()}`);
@@ -443,12 +471,53 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
   }
 }
 
+/**
+ * Load the demo's pre-rendered preview (the same cue, encoded as MP3) so Listen works within a second, while
+ * the exact render finishes in the background. Any failure just leaves the live render to arrive as usual.
+ */
+async function startPreview(score: Score, token: number): Promise<void> {
+  try {
+    const response = await fetch(demoPreviewUrl);
+    if (!response.ok) return;
+    const audio = await player.audio().ctx.decodeAudioData(await response.arrayBuffer());
+    if (token !== summonToken || current) return;
+    const left = audio.getChannelData(0);
+    const right = audio.numberOfChannels > 1 ? audio.getChannelData(1) : left;
+    player.load(left, right, audio.sampleRate, false);
+    timeline.setScore(score, left, right);
+    previewing = true;
+    setPlayable(score);
+    els.play.classList.toggle('btn--beckon', !hasPlayed);
+    setStatus('preview', 'Preview ready: press Listen');
+  } catch {
+    // No preview: the live render still lands in a few seconds.
+  }
+}
+
+/** Show the sha256 of the rendered WAV; for the demo, check it against the published hash. */
+async function showProof(wav: Uint8Array, demo: boolean, token: number): Promise<void> {
+  if (!globalThis.crypto?.subtle) return;
+  const hex = await sha256Hex(wav);
+  if (token !== summonToken) return;
+  els.proof.dataset.sha256 = hex;
+  els.proof.title = `sha256 ${hex}`;
+  if (demo) {
+    els.proof.dataset.match = String(hex === DEMO_WAV_SHA256);
+    els.proof.textContent =
+      hex === DEMO_WAV_SHA256
+        ? `Live render matches the published demo, byte for byte: sha256 ${shortHash(hex)}`
+        : `Live render finished: sha256 ${shortHash(hex)}, which differs from the published demo.`;
+  } else {
+    els.proof.textContent = `sha256 ${shortHash(hex)}. The same request and seed give this hash on any machine.`;
+  }
+}
+
 async function togglePlay(): Promise<void> {
-  if (!current) return;
+  if (!playable) return;
   if (player.playing) {
     player.pause();
     els.play.textContent = 'Play';
-    setStatus('ready', 'Paused');
+    setStatus(previewing ? 'preview' : 'ready', 'Paused');
   } else {
     await player.play();
     hasPlayed = true;
@@ -463,7 +532,7 @@ async function togglePlay(): Promise<void> {
 player.onEnded = () => {
   lastPos = 0;
   els.play.textContent = 'Play';
-  setStatus('ready', 'Ready');
+  setStatus(previewing ? 'preview' : 'ready', previewing ? 'Preview ended' : 'Ready');
 };
 
 let sliderAt = 0;
@@ -472,7 +541,7 @@ function updateTimelineValue(pos: number, force = false): void {
   const t = performance.now();
   if (!force && t - sliderAt < 250) return;
   sliderAt = t;
-  const dur = current?.score.durationSec ?? 0;
+  const dur = playable?.durationSec ?? 0;
   const short = (sec: number) => formatTime(sec).replace(/\.\d$/, '');
   els.timeline.setAttribute('aria-valuemax', dur.toFixed(1));
   els.timeline.setAttribute('aria-valuenow', pos.toFixed(1));
@@ -500,7 +569,7 @@ function landSting(): void {
 /** Fire `landSting` for every sting the playhead passed since the last frame (not across a seek or loop wrap). */
 function checkStings(pos: number): void {
   if (player.playing && pos >= lastPos && pos - lastPos < 0.5) {
-    for (const t of stingTimes(current?.score)) if (lastPos < t && t <= pos) landSting();
+    for (const t of stingTimes(playable)) if (lastPos < t && t <= pos) landSting();
   }
   lastPos = pos;
 }
@@ -508,7 +577,7 @@ function checkStings(pos: number): void {
 let dreadShown = -1;
 /** Tie the page's atmosphere (--dread, 0..1) to the intensity of the section under the playhead. */
 function updateDread(pos: number): void {
-  const sections = current?.score.plan.sections ?? [];
+  const sections = playable?.plan.sections ?? [];
   const section = player.playing ? sections.find((s) => pos >= s.startSec && pos < s.endSec) : undefined;
   const dread = Math.round((section?.intensity ?? 0.25) * 20) / 20;
   if (dread === dreadShown) return;
@@ -703,7 +772,7 @@ async function seekTo(sec: number): Promise<void> {
 }
 
 els.jump.addEventListener('click', async () => {
-  const first = stingTimes(current?.score)[0];
+  const first = stingTimes(playable)[0];
   if (first === undefined) return;
   await seekTo(Math.max(0, first - JUMP_LEAD_SEC));
   if (!player.playing) await togglePlay();
@@ -715,14 +784,14 @@ els.tryLive.addEventListener('click', () => {
   els.live.classList.add('live--beckon');
 });
 els.timeline.addEventListener('click', (e) => {
-  if (!current) return;
+  if (!playable) return;
   const rect = els.timeline.getBoundingClientRect();
   void seekTo(timeline.timeAt(e.clientX - rect.left));
 });
 /** Scrub with the keyboard: arrows move 1 s (5 s with Shift), Page keys 10 s, Home and End jump to the ends. */
 els.timeline.addEventListener('keydown', (e) => {
-  if (!current) return;
-  const dur = current.score.durationSec;
+  if (!playable) return;
+  const dur = playable.durationSec;
   const pos = player.position;
   const step = e.shiftKey ? 5 : 1;
   const target: Record<string, number> = {
@@ -778,7 +847,7 @@ els.exportJson.addEventListener('click', () => {
   download(JSON.stringify(current.score, null, 2), 'application/json', `fright-score-${slug(current.score.plan.title)}-seed${current.score.seed}.json`);
 });
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space' && current && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLButtonElement)) {
+  if (e.code === 'Space' && playable && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLButtonElement)) {
     e.preventDefault();
     void togglePlay();
   }
