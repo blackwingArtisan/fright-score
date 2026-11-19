@@ -28,6 +28,7 @@ export class StitchView {
     this.shownIndex = -2;
     this.shownSection = -2;
     this.renderPlan(score);
+    this.renderWrites(-1);
     if (vgm) {
       const s = vgm.stats;
       this.countEl.textContent = `${s.registerWrites.toLocaleString('en-US')} register writes. ${s.notes - s.dropped} of ${s.notes} notes fit on the chip's six FM channels; the sting always gets all six.`;
@@ -69,6 +70,14 @@ export class StitchView {
   }
 
   private renderWrites(index: number): void {
+    if (index < 0) {
+      const li = document.createElement('li');
+      li.className = 'stitch__ghost';
+      li.textContent = this.writes.length ? 'Waiting for the first KEY ON…' : 'The chip is translating the plan into register writes…';
+      this.listEl.replaceChildren(li);
+      this.listEl.dataset.index = String(index);
+      return;
+    }
     const from = Math.max(0, index - VISIBLE_WRITES + 1);
     const rows: HTMLLIElement[] = [];
     for (let i = from; i <= index; i++) {
@@ -92,7 +101,10 @@ export class StitchView {
   private renderPlan(score: Score | undefined): void {
     this.sectionEls = [];
     if (!score) {
-      this.planEl.textContent = '';
+      const ghost = document.createElement('span');
+      ghost.className = 'stitch__ghost';
+      ghost.textContent = 'The director is writing the plan…';
+      this.planEl.replaceChildren(ghost);
       return;
     }
     const p = score.plan;

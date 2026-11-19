@@ -37,10 +37,11 @@ export class ChipView {
     const { labelW, padsX, readoutX, ribbonX, ribbonW } = rowLayout(width);
 
     if (!this.score || !this.frames) {
-      for (let r = 0; r < rows; r++) this.drawRow(ctx, r, labelW, padsX, readoutX, ribbonX, ribbonW, undefined, 0);
+      // While a cue renders, its channels already show the patches they will play; before any cue, blank rows.
+      for (let r = 0; r < rows; r++) this.drawRow(ctx, r, labelW, padsX, readoutX, ribbonX, ribbonW, this.score ? r : undefined, 0);
       ctx.fillStyle = COLORS.tin;
       ctx.font = `12px ${FONT_SILK}`;
-      ctx.fillText('Channels light up here when a cue plays.', 4, rows * ROW_H + 22);
+      ctx.fillText(this.score ? 'Patches loaded. The chip wakes when the render finishes.' : 'Channels light up here when a cue plays.', 4, rows * ROW_H + 22);
       return;
     }
     const frame = Math.min(this.frames.frameCount - 1, Math.max(0, Math.floor(positionSec * this.frames.frameRate)));
@@ -75,8 +76,8 @@ export class ChipView {
       ribbonX,
       ribbonW,
       patch,
-      title: patch ? patch.name : 'Channel',
-      subtitle: track ? `${track.id}, algorithm ${getAlgorithm(patch!.algorithm).id}` : 'idle',
+      title: patch ? patch.name : 'Empty channel',
+      subtitle: track ? `${track.id}, algorithm ${getAlgorithm(patch!.algorithm).id}` : 'waiting for a cue',
       level: (op, ago = 0) => {
         const f = frame - ago;
         return live && f >= 0 ? frames.envelopes[(f * trackCount + trackIndex) * 4 + op] : 0;

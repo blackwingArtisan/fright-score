@@ -95,10 +95,15 @@
           <button type="button" id="jump" class="btn btn--scare" disabled>Jump to the scare</button>
           <span id="clock" class="clock" aria-live="off">0:00.0 / 0:00.0</span>
           <span class="transport__spacer"></span>
-          <button type="button" id="export-wav" class="btn" disabled>Download WAV</button>
+          <button type="button" id="export-wav" class="btn btn--primary" disabled>Download WAV</button>
           <button type="button" id="export-vgm" class="btn btn--genesis" disabled title="The same cue arranged for the Yamaha YM2612 sound chip, as a VGM file any Genesis emulator or VGM player can play">Download for Sega Genesis</button>
-          <button type="button" id="export-json" class="btn btn--ghost" disabled>Download score JSON</button>
-          <button type="button" id="share" class="btn btn--ghost" disabled>Copy share link</button>
+          <details id="export-menu" class="export-menu is-disabled">
+            <summary class="btn btn--ghost">More</summary>
+            <div class="export-menu__list" role="group" aria-label="More exports">
+              <button type="button" id="export-json" class="btn btn--ghost" disabled>Download score JSON</button>
+              <button type="button" id="share" class="btn btn--ghost" disabled>Copy share link</button>
+            </div>
+          </details>
         </div>
 
         <button type="button" id="try-live" class="try-live">

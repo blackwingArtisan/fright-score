@@ -49,6 +49,7 @@ const els = {
   progress: $<HTMLDivElement>('progress-bar'),
   timeline: $<HTMLCanvasElement>('timeline'),
   play: $<HTMLButtonElement>('play'),
+  exportMenu: $<HTMLDetailsElement>('export-menu'),
   clock: $<HTMLSpanElement>('clock'),
   exportWav: $<HTMLButtonElement>('export-wav'),
   exportJson: $<HTMLButtonElement>('export-json'),
@@ -105,6 +106,8 @@ interface Rendered {
 }
 
 let current: Rendered | undefined;
+/** Length shown on the clock while a new cue renders, before `current` is set. */
+let clockDurationSec = 0;
 let renderId = 0;
 let pending: { reject: (error: Error) => void } | undefined;
 let hasPlayed = false;
@@ -252,6 +255,8 @@ function setReady(enabled: boolean): void {
   els.exportJson.disabled = !enabled;
   els.exportVgm.disabled = !enabled;
   els.share.disabled = !enabled;
+  els.exportMenu.classList.toggle('is-disabled', !enabled);
+  if (!enabled) closeExportMenu();
 }
 
 /** The request behind the current cue, as URL parameters. Same parameters, same cue, on any machine. */
@@ -298,6 +303,11 @@ function describe(score: Score): string {
   const moodLabel = MOOD_PROFILES[p.mood].label;
   const loop = p.loop ? ' Seamless loop.' : '';
   return `${moodLabel}. ${p.key.root} ${MODE_LABELS[p.key.mode]}, ${p.tempoBpm} BPM in ${p.beatsPerBar}/4, ${formatTime(p.durationSec)}. Seed ${score.seed}.${loop}`;
+}
+
+/** The More menu holds the score JSON and the share link; it closes on Escape, outside clicks and a new cue. */
+function closeExportMenu(): void {
+  els.exportMenu.open = false;
 }
 
 /** Stop a render that is still running, so a newer request starts at once and cannot be overwritten. */
@@ -384,6 +394,14 @@ async function summon(event: Event): Promise<void> {
 /** Compose and render a request, then show it on the board. Stale results (an older token) are dropped. */
 async function summonCue(request: CueRequestLike, token: number, { demo }: { demo: boolean }): Promise<void> {
   player.stop();
+  // Reset the transport for the new cue: a disabled Play, the clock at zero, ghost panels while it renders.
+  current = undefined;
+  clockDurationSec = 0;
+  lastPos = 0;
+  els.play.textContent = 'Play';
+  closeExportMenu();
+  chip.set(undefined, undefined);
+  stitch.set(undefined, undefined);
   setReady(false);
   els.summon.disabled = true;
   els.progress.style.width = '0%';
@@ -396,7 +414,9 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
     els.notes.textContent = score.plan.directorNotes ?? '';
     timeline.setScore(score);
     timeline.setProgress(0);
+    clockDurationSec = score.durationSec;
     chip.set(score, undefined);
+    stitch.set(score, undefined);
     setStatus('rendering', 'Rendering 0%');
     const rendered = await render(score);
     if (token !== summonToken) return;
@@ -509,7 +529,7 @@ function frame(): void {
   }
   liveView.draw();
   updateLiveStatus();
-  els.clock.textContent = `${formatTime(pos)} / ${formatTime(current?.score.durationSec ?? 0)}`;
+  els.clock.textContent = `${formatTime(pos)} / ${formatTime(current?.score.durationSec ?? clockDurationSec)}`;
   els.clock.dataset.position = pos.toFixed(2);
   updateTimelineValue(pos);
   requestAnimationFrame(frame);
@@ -564,6 +584,11 @@ function releaseKey(index: number, source: string): void {
   live.noteOff(`${source}:${index}`);
 }
 
+function focusKey(index: number): void {
+  keyButtons.forEach((k, j) => (k.tabIndex = j === index ? 0 : -1));
+  keyButtons[index]?.focus();
+}
+
 function buildLiveChip(): void {
   for (const id of PATCH_IDS) {
     const option = document.createElement('option');
@@ -593,10 +618,18 @@ function buildLiveChip(): void {
     const up = (e: PointerEvent) => releaseKey(i, `p${e.pointerId}`);
     b.addEventListener('pointerup', up);
     b.addEventListener('pointercancel', up);
+    b.tabIndex = i === 0 ? 0 : -1;
     b.addEventListener('keydown', (e) => {
       if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
         e.preventDefault();
         pressKey(i, 'kb-focus');
+        return;
+      }
+      // One tab stop for the whole keyboard; arrow keys, Home and End move between keys.
+      const move: Record<string, number> = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: KEY_MAP.length - 1 };
+      if (e.key in move) {
+        e.preventDefault();
+        focusKey(Math.max(0, Math.min(KEY_MAP.length - 1, move[e.key])));
       }
     });
     b.addEventListener('keyup', (e) => {
@@ -727,6 +760,18 @@ els.share.addEventListener('click', async () => {
 els.exportVgm.addEventListener('click', () => {
   if (!current) return;
   download(current.vgm.bytes, 'audio/x-vgm', `fright-score-${slug(current.score.plan.title)}-seed${current.score.seed}.vgm`);
+});
+els.exportMenu.querySelector('summary')!.addEventListener('click', (e) => {
+  if (!current) e.preventDefault();
+});
+document.addEventListener('click', (e) => {
+  if (els.exportMenu.open && !els.exportMenu.contains(e.target as Node)) closeExportMenu();
+});
+els.exportMenu.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && els.exportMenu.open) {
+    closeExportMenu();
+    els.exportMenu.querySelector('summary')?.focus();
+  }
 });
 els.exportJson.addEventListener('click', () => {
   if (!current) return;

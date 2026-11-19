@@ -412,6 +412,78 @@ input::placeholder {
   box-shadow: none;
   cursor: not-allowed;
 }
+/* The one primary action on the transport. */
+.btn--primary {
+  color: var(--mask-deep);
+  font-weight: 700;
+  background: linear-gradient(180deg, #e0a466, var(--copper));
+  border-color: #e0a466;
+}
+.btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ebb377, #d39456);
+}
+
+/* More exports: a disclosure that opens in line, so it never spills off the panel. */
+.export-menu {
+  position: relative;
+}
+.export-menu > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.export-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.export-menu > summary::after {
+  content: '';
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  rotate: 45deg;
+  translate: 0 -0.15em;
+}
+.export-menu[open] > summary::after {
+  rotate: 225deg;
+  translate: 0 0.1em;
+}
+.export-menu.is-disabled > summary {
+  color: var(--tin);
+  border-style: dashed;
+  border-color: rgb(143 154 150 / 0.55);
+  cursor: not-allowed;
+}
+.export-menu__list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.export-menu__list .btn {
+  text-align: left;
+}
+
+/* Loading placeholders in the stitch panel. */
+.stitch__ghost {
+  display: block;
+  padding: 2px 10px;
+  color: var(--tin);
+  font-style: italic;
+  animation: ghostPulse 1.6s ease-in-out infinite;
+}
+@keyframes ghostPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .btn--summon {
   font-family: var(--font-gothic);
   font-size: var(--step-2);
@@ -814,6 +886,12 @@ canvas {
 .key__cap {
   pointer-events: none;
 }
+/* Gold focus rings vanish on the bone keys, so keys take a blood-red inner ring. */
+.key:focus-visible {
+  z-index: 2;
+  outline: 3px solid var(--blood);
+  outline-offset: -5px;
+}
 .key--down,
 .key:active {
   background: linear-gradient(180deg, #f0b678, var(--copper));
@@ -1072,11 +1150,32 @@ canvas {
   .stage__head {
     flex-direction: column;
   }
-  .transport .btn {
+  .transport .btn,
+  .export-menu {
     flex: 1 1 auto;
+  }
+  .export-menu > summary {
+    display: flex;
+    justify-content: center;
+  }
+  .export-menu__list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 10px 0 0;
   }
   .keys {
     height: 112px;
+  }
+}
+
+/* Windows high contrast: canvases keep their own colors, framed so their edges stay visible. */
+@media (forced-colors: active) {
+  canvas {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+  }
+  .stage__scare {
+    display: none;
   }
 }
 

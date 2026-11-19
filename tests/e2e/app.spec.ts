@@ -42,6 +42,7 @@ test.describe('Fright Score in the browser', () => {
     expect(peak).toBeGreaterThan(10_000);
     expect(peak).toBeLessThan(32_767);
 
+    await page.locator('#export-menu > summary').click();
     const [jsonDownload] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download score JSON' }).click()]);
     const score = JSON.parse(readFileSync((await jsonDownload.path())!, 'utf8'));
     expect(score.seed).toBe(7);

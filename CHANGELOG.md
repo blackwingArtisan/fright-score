@@ -4,6 +4,12 @@
 
 ### Added
 
+- **Loading states:** while a cue renders, the stitch panel shows what the director and the chip are doing,
+  the channel rows show the incoming patch names, Play resets and the clock shows the new length.
+- **A calmer transport:** Download WAV is the one primary button, Download for Sega Genesis stays beside it,
+  and the score JSON and the share link sit in a More menu.
+- **Piano keyboard access:** one tab stop with arrow keys, Home and End between keys, a visible focus ring on
+  the bone keys, and framed canvases under Windows high contrast.
 - **Layout:** on wide screens the Direction form follows the scroll, so Summon the score stays in reach. On
   phones the form sits right after the transport, and a pinned Write your scene button jumps to it.
 - **The sting lands on screen.** When the playhead crosses a sting, the page flashes a blood vignette, the
