@@ -40,15 +40,16 @@ sessions is not counted.
 |---|---|---|---|
 | Steering, always | `.kiro/steering/product.md`, `tech.md`, `structure.md` | The developer | Loaded in every transcript; Kiro checked them in pass 2 |
 | Steering, fileMatch and manual | `.kiro/steering/engine-dsp.md`, `export-formats.md` | The developer | `tests/unit/kiro-config.test.ts` checks the patterns point at real folders |
-| Spec `fright-score-core` | `.kiro/specs/fright-score-core/` | The developer first; Kiro rewrote the criteria in pass 2 and added Requirements 12 to 14 in session 7 | Pass 2 and session 7 transcripts |
+| Spec `fright-score-core` | `.kiro/specs/fright-score-core/` | The developer first; Kiro rewrote the criteria in pass 2 and added Requirements 12 to 17 in sessions 7, 10 and 11 | Pass 2 and sessions 7, 10 and 11 |
 | Spec `live-chip` | `.kiro/specs/live-chip/` | The developer first; Kiro rewrote the criteria in pass 2 | Pass 2 |
 | Spec `director-tools` | `.kiro/specs/director-tools/` | Kiro, sessions 3 to 5 | Sessions 3 to 5 |
-| Spec `door-scene` | `.kiro/specs/door-scene/` | Kiro, session 7 | Session 7 |
-| kiro-cli hooks | `.kiro/hooks/*.json` | The developer; Kiro validated them in pass 2 | The `Stop` hook's second turn appears in sessions 4 to 7 |
+| Spec `door-scene` | `.kiro/specs/door-scene/` | Kiro, spec in session 7, built in session 8 | Sessions 7 and 8 |
+| Spec `agent-scoring` | `.kiro/specs/agent-scoring/` | Kiro, spec in session 8, built in sessions 9 and 9b | Sessions 8, 9 and 9b |
+| kiro-cli hooks | `.kiro/hooks/*.json` | The developer; Kiro validated them in pass 2 | The `Stop` hook's second turn appears in sessions 4 to 8, 9b, 10, 11 and 12 |
 | IDE hooks | `.kiro/hooks/*.kiro.hook` | Kiro, session 7 | Written and tested for shape; not yet recorded firing in the Kiro IDE |
-| Custom agent | `.kiro/agents/fs666-sound-designer.json` | The developer; kiro-cli upgraded its format | `tests/unit/kiro-config.test.ts` |
-| MCP servers | `.kiro/settings/mcp.json` | The developer (aws-docs, context7); Kiro (the `fright-score` entry) | aws-docs in session 3, context7 in session 5, `fright-score` in session 6 |
-| Own MCP server | `scripts/mcp/` | Kiro, session 5 | Called from Kiro in session 6 |
+| Custom agent | `.kiro/agents/fs666-sound-designer.json` | The developer; kiro-cli upgraded its format | `tests/unit/kiro-config.test.ts`; run headless in session 12 to design `theremin-lead` |
+| MCP servers | `.kiro/settings/mcp.json` | The developer (aws-docs, context7); Kiro (the `fright-score` entry) | aws-docs in session 3, context7 in sessions 5, 9 and 9b, `fright-score` in sessions 6 and 10 |
+| Own MCP server | `scripts/mcp/` | Kiro, session 5; `score_level`, `verify_cue`, a prompt and a resource in sessions 9 and 9b | Called from Kiro in sessions 6 and 10 |
 | Count guard | `tests/unit/kiro-counts.test.ts` | Kiro, session 7 | Fails if the counts sentence disagrees with `.kiro/` |
 
 ## Kiro pass 3: the director tools, specced and built by Kiro (2026-11-19)
