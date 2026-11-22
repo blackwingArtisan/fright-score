@@ -1,5 +1,10 @@
 # Requirements: Fright Score core
 
+> **Who wrote this spec.** The first version was written by hand by the developer on 2026-11-16, from the
+> prompt Kiro could not complete (both calls were throttled; see KIRO-LOG.md). Kiro reviewed it against the
+> code in pass 2 on 2026-11-19 and rewrote every acceptance criterion in strict EARS form, and Kiro added
+> Requirements 12 to 14 in session 7 on 2026-11-22.
+
 ## Introduction
 
 Fright Score turns a mood or a scene description into an original, royalty-free horror cue. A director

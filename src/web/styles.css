@@ -535,6 +535,33 @@ input::placeholder {
 .cue-title {
   font-size: var(--step-3);
   color: var(--silk);
+  letter-spacing: 0.01em;
+  text-shadow: 0 0 18px rgba(224, 52, 63, 0.28), 0 2px 0 #050d0a;
+}
+
+/* "Inside the chip": the stitch, the live keyboard and the notes, grouped under one divider. */
+.inside {
+  display: grid;
+  gap: 16px;
+  margin-top: 8px;
+}
+.inside__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-family: var(--font-gothic);
+  font-size: var(--step-1);
+  color: var(--copper);
+  letter-spacing: 0.04em;
+}
+.inside__title::before,
+.inside__title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--copper) 50%, transparent);
+  opacity: 0.7;
 }
 .cue-meta {
   margin: 6px 0 0;

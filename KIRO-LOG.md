@@ -1,10 +1,49 @@
 # Kiro log
 
-A record of every Kiro call made while building Fright Score: what was asked, what Kiro produced,
-and the credits it used. The first two calls ran on the free plan; later passes used the
-`kiroween2026` bonus credits.
+A record of every Kiro call made while building Fright Score: what was asked, what Kiro produced, the credits
+it used and who wrote which lines. Kiro work runs headless through `kiro-cli`; the developer runs the shell,
+reviews the diffs, reruns every check from a clean clone and commits. Lines are counted with
+`git show --numstat` per commit.
 
 **Kiro by the numbers:** 4 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
+
+## Summary
+
+Every Kiro call, oldest first. "Kiro lines" are lines Kiro added in that session's commit, from
+`git show --numstat`, leaving out the session transcript and any line the developer wrote. "Fix lines" are lines
+the developer changed afterwards to get Kiro's work green.
+
+| Date | Session | What Kiro did | Time | Credits | Kiro lines | Fix lines | Transcript |
+|---|---|---|---|---|---|---|---|
+| 2026-11-16 | Call 1 | Asked to write the core spec; every write denied (untrusted workspace), then throttled | 5 min 21 s | none shown | 0 | n/a | [below](#calls-1-and-2-2026-11-16-free-plan-throttled-no-files) |
+| 2026-11-16 | Call 2 | Same prompt; throttled before any tool call | 22 s | none shown | 0 | n/a | [below](#calls-1-and-2-2026-11-16-free-plan-throttled-no-files) |
+| 2026-11-19 | Pass 2 | Audited both specs with two sub-agents, rewrote every criterion in EARS form, added 27 test tasks, built the candlelit theme and its reduced-motion test | 16 min 49 s | 29.38 | 338 | 0 | [pass 2](#kiro-pass-2-spec-audit-and-the-candlelit-theme-2026-11-19) |
+| 2026-11-19 | 3 | Wrote the `director-tools` spec, using the aws-docs MCP server | 4 min 38 s | 7.80 | 628 | 0 | [session 3](docs/kiro-sessions/session-3-director-tools-spec.md) |
+| 2026-11-19 | 4 | Bedrock director answers through a forced `score_cue` tool call; 18 tests | 3 min 18 s | 3.41 | 340 | 0 | [session 4](docs/kiro-sessions/session-4-bedrock-tool-use.md) |
+| 2026-11-19 | 5 | The stdio MCP server, checked against the MCP spec with context7; 23 tests | 4 min 44 s | 7.03 | 676 | 0 | [session 5](docs/kiro-sessions/session-5-mcp-server.md) |
+| 2026-11-19 | 6 | Called its own MCP server from a new session; the hash matched the README | 23 s | under 0.01 | 2 | 0 | [session 6](docs/kiro-sessions/session-6-mcp-from-kiro.md) |
+| 2026-11-22 | 7 | Count guard test, phone first screen, IDE hooks, `door-scene` spec | 9 min 42 s | 15.14 | 722 | 0 | [session 7](docs/kiro-sessions/session-7-counts-phone-hooks.md) |
+| | **Total** | | | **62.76** | **2,706** | **0** | |
+
+Credits are read with `kiro-cli /usage` before and after each session, so other use of the account between
+sessions is not counted.
+
+## Who wrote each Kiro feature
+
+| Kiro feature | Files | Who wrote it | Evidence |
+|---|---|---|---|
+| Steering, always | `.kiro/steering/product.md`, `tech.md`, `structure.md` | The developer | Loaded in every transcript; Kiro checked them in pass 2 |
+| Steering, fileMatch and manual | `.kiro/steering/engine-dsp.md`, `export-formats.md` | The developer | `tests/unit/kiro-config.test.ts` checks the patterns point at real folders |
+| Spec `fright-score-core` | `.kiro/specs/fright-score-core/` | The developer first; Kiro rewrote the criteria in pass 2 and added Requirements 12 to 14 in session 7 | Pass 2 and session 7 transcripts |
+| Spec `live-chip` | `.kiro/specs/live-chip/` | The developer first; Kiro rewrote the criteria in pass 2 | Pass 2 |
+| Spec `director-tools` | `.kiro/specs/director-tools/` | Kiro, sessions 3 to 5 | Sessions 3 to 5 |
+| Spec `door-scene` | `.kiro/specs/door-scene/` | Kiro, session 7 | Session 7 |
+| kiro-cli hooks | `.kiro/hooks/*.json` | The developer; Kiro validated them in pass 2 | The `Stop` hook's second turn appears in sessions 4 to 7 |
+| IDE hooks | `.kiro/hooks/*.kiro.hook` | Kiro, session 7 | Written and tested for shape; not yet recorded firing in the Kiro IDE |
+| Custom agent | `.kiro/agents/fs666-sound-designer.json` | The developer; kiro-cli upgraded its format | `tests/unit/kiro-config.test.ts` |
+| MCP servers | `.kiro/settings/mcp.json` | The developer (aws-docs, context7); Kiro (the `fright-score` entry) | aws-docs in session 3, context7 in session 5, `fright-score` in session 6 |
+| Own MCP server | `scripts/mcp/` | Kiro, session 5 | Called from Kiro in session 6 |
+| Count guard | `tests/unit/kiro-counts.test.ts` | Kiro, session 7 | Fails if the counts sentence disagrees with `.kiro/` |
 
 ## Kiro pass 3: the director tools, specced and built by Kiro (2026-11-19)
 
@@ -42,32 +81,56 @@ needed a fix.
   cache entry. Clearing it fixed the load; session 5 used it.
 - **Open:** the Bedrock path is still tested only with a fake client. No live Bedrock call was made.
 
+## Kiro pass 4: the scare on the event, agent scoring and polish (2026-11-22)
+
+Sessions 7 onward ran through the same `kiro-cli` command, with `E2E_PORT` set so Kiro's own Playwright runs
+used a free port. Each session's exact prompt and Kiro's output are in its transcript; the summary table above
+has the time, credits and lines.
+
+- **Session 7.** Kiro wrote `tests/unit/kiro-counts.test.ts` (the counts sentence at the top of this log and in
+  the README must match the `.kiro` folder), fixed the phone first screen so nothing covers **Jump to the scare**
+  (new Playwright tests at 390x844 and 375x667), wrote the three IDE hooks and wrote the `door-scene` spec. It
+  checked the Kiro hooks page with `web_fetch` first; that page documents only the v1 `.json` format, so the
+  `.kiro.hook` files follow the IDE's `when`/`then` format without a docs page to confirm it. Kiro's checks:
+  Vitest 204 of 204, Playwright 30 of 30. The `Stop` hook's second turn ran `npm test` again.
+
 ## How Kiro is used in this repo
 
-- `.kiro/steering/` holds the project's rules (product, tech, structure). Kiro loads these
-  automatically (`inclusion: always`) for every chat and spec task.
-- `.kiro/specs/fright-score-core/` holds the main spec: EARS requirements, design and the task plan
-  the implementation followed. Tasks are checked off as they land.
-- `.kiro/specs/live-chip/` holds the follow-up spec for the real-time AudioWorklet keyboard and the demo
-  cue on first load, written in the same format after review feedback on the first build.
-- `.kiro/specs/director-tools/` holds the spec Kiro wrote and built in pass 3: Bedrock tool use and the
-  Fright Score MCP server.
-- `.kiro/settings/mcp.json` registers three MCP servers: aws-docs and context7 (pinned versions) and the
-  project's own `fright-score` server.
-- `.kiro/hooks/` holds three hook files in the Kiro v1 hook format, one hook each:
-  - `test-on-save.json`: `PostFileSave` on engine, score, director, WAV or live-chip modules runs
-    `npm run test:unit`.
-  - `determinism-guard.json`: `PostFileSave` runs `scripts/check-determinism.mjs`, which fails if
-    `Math.random` or `Date.now` shows up in engine, score or director code (every cue must be
-    reproducible by seed).
-  - `spec-task-sync.json`: a `Stop` agent hook that checks off finished tasks in any spec's `tasks.md`
-    and asks for a green `npm test` before the agent stops.
-- The hooks are written to the Kiro hook format but have not yet been run inside the Kiro IDE; the same
-  commands run in `npm test` and `npm run check:determinism`.
+- **Steering** (`.kiro/steering/`, 5 files, all three inclusion modes): `product.md`, `tech.md` and `structure.md`
+  load for every chat and spec task (`inclusion: always`); `engine-dsp.md` loads only when engine or live-chip
+  files are in context (`fileMatch`); `export-formats.md` is pulled in by hand for WAV `smpl` and VGM work (`manual`).
+- **Specs** (`.kiro/specs/`): `fright-score-core` (the main vertical slice), `live-chip` (the real-time keyboard
+  and the first-load demo), `director-tools` (Bedrock tool use and the MCP server, written and built by Kiro),
+  `door-scene` (the browser scene where the sting lands on the event, written and built by Kiro) and any later
+  spec listed in the summary above. Each has EARS requirements, a design, a task list and a
+  requirement-to-test table.
+- **kiro-cli hooks** (`.kiro/hooks/*.json`, Kiro v1 hook format, 4 files):
+  - `test-on-save.json`: `PostFileSave` on engine, score, director, WAV or live-chip modules runs `npm run test:unit`.
+  - `determinism-guard.json`: `PostFileSave` runs `scripts/check-determinism.mjs`, which fails if `Math.random`
+    or `Date.now` shows up in engine, score or director code (every cue must be reproducible by seed).
+  - `spec-task-sync.json`: a `Stop` agent hook that checks off finished tasks and asks for a green `npm test`
+    before the agent stops. Its second turn shows up in the session transcripts after Kiro's summary.
+  - `render-bench.json`: a `UserTriggered` hook that times the demo render after an engine change.
+- **IDE hooks** (`.kiro/hooks/*.kiro.hook`, 3 files, written by Kiro in session 7): test-on-save and the
+  determinism guard for the Kiro IDE, plus `mcp-golden-cue`, which asks the agent to score the README's golden
+  cue through the project's MCP server after an engine edit. The IDE hooks are written but not yet recorded
+  firing in the Kiro IDE; the same commands run in `npm test` and `npm run check:determinism`.
+- **Custom agent** (`.kiro/agents/fs666-sound-designer.json`): may write only engine code and unit tests and
+  run only the typecheck, tests, determinism check, benchmark and CLI.
+- **MCP** (`.kiro/settings/mcp.json`, 3 servers): aws-docs and context7 (pinned versions) and the project's own
+  `fright-score` server.
+- **Guards:** `tests/unit/kiro-config.test.ts` keeps every hook, steering file and agent resource pointing at
+  files and scripts that exist, and `tests/unit/kiro-counts.test.ts` fails if the counts sentence at the top of
+  this log or the README disagrees with the `.kiro` folder.
 
-## Calls
+## Earlier passes
 
-### Call 1: generate the spec (kiro-cli 3.1.0)
+<details>
+<summary>Calls 1 and 2 (2026-11-16): the spec request that was throttled, and why the first spec was written by hand</summary>
+
+### Calls 1 and 2 (2026-11-16, free plan): throttled, no files
+
+#### Call 1: generate the spec (kiro-cli 3.1.0)
 
 Command, run from the repo root with stdin closed:
 
@@ -96,7 +159,7 @@ What happened (5 min 21 s wall time):
   `Error: Internal error (code -32603): Encountered an error in the response stream: The request was throttled by the service (request_id: 1845638e-8f26-4a08-9358-94587da2d4a1)`
 - Files produced: none. Credit or usage numbers printed: none.
 
-### Call 2: same prompt, folder pre-created
+#### Call 2: same prompt, folder pre-created
 
 Fix applied: created `.kiro/specs/fright-score-core/` first (files inside an existing spec folder follow
 the ordinary `fs_write` rule) and told Kiro to use only the file write tool.
@@ -108,17 +171,15 @@ Result after 22 s, before any tool call:
 - The account was throttled (the free-plan credits are shared with other builds running at the same
   time), and the two-call budget was spent.
 
-### Outcome
+#### Outcome
 
-No further Kiro calls were made after these two: the two-call budget for this entry was spent.
+On 2026-11-16 no further Kiro calls were made after these two: the two-call budget on the free plan was spent. Kiro work resumed on 2026-11-19 with the `kiroween2026` bonus credits (pass 2 onward).
 
 The spec in `.kiro/specs/fright-score-core/` was written by hand from the same prompt, following the
 steering files and Kiro's spec format (EARS requirements, design, task list), and the implementation
-follows its tasks. The steering files and hooks are hand-written project rules. When credits are
-available again, the next Kiro step is to run the spec's remaining tasks from the Kiro IDE
-("Start task") so Kiro implements and checks them off against the same files.
+follows its tasks. The steering files and hooks are hand-written project rules. Kiro reviewed and rewrote that spec in pass 2.
 
-## Full prompt (call 1)
+#### Full prompt (call 1)
 
 > Read the steering files in .kiro/steering/ (product.md, tech.md, structure.md). Then write the spec for
 > the feature 'fright-score-core' as three files: .kiro/specs/fright-score-core/requirements.md,
@@ -143,7 +204,9 @@ available again, the next Kiro step is to run the spec's remaining tasks from th
 Call 2 used the same prompt with two changes: "The directory .kiro/specs/fright-score-core/ already
 exists" and "Using only the file write tool (no shell commands)".
 
-## Kiro pass 2 (kiro-cli v3, bonus credits)
+</details>
+
+## Kiro pass 2: spec audit and the candlelit theme (2026-11-19)
 
 - **When:** 2026-11-19, 01:23 to 01:40 UTC (16 min 49 s wall time, under a 25-minute cap; exit code 0).
 - **Command** (repo root, stdin closed):
@@ -152,11 +215,11 @@ exists" and "Using only the file write tool (no shell commands)".
 - **What Kiro did:** read the steering files, ran two sub-agents to audit each spec against the code, edited the
   specs, wrote the theme changes and the new Playwright test, ran `npm run typecheck`, `npm run test:unit`,
   `npm run build` and the determinism script itself, and looked up the hook schema in the Kiro docs.
-- **After the call (operator):** the full suite was run, including the Playwright tests Kiro did not run:
+- **After the call (developer):** the full suite was run, including the Playwright tests Kiro did not run:
   Vitest 140 of 140, Playwright 10 of 10 (the new reduced-motion test passes, and the 360 px no-horizontal-scroll
   check passes against the new styles). Nothing needed fixing.
 
-### Exact prompt
+#### Exact prompt
 
 > You are working in the Fright Score repository (TypeScript, Vite, vanilla DOM, Vitest, Playwright). Read .kiro/steering/product.md, tech.md and structure.md first and follow them. Work only inside this repository. Do not add, remove or upgrade any npm dependency, do not run npm install, do not use git, and do not deploy or call any network service. Keep wording professional and use invented sample data only.
 >
@@ -168,11 +231,11 @@ exists" and "Using only the file write tool (no shell commands)".
 >
 > 3. Hooks. Kiro's current hook format is .kiro/hooks/<name>.json with "version": "v1" and a "hooks" array (fields: name, description, trigger in PascalCase such as PostFileSave or Stop, matcher regex, action with type "command" + command or type "agent" + prompt, timeout in seconds, enabled). Check the three files in .kiro/hooks/ against that format and fix anything that is not valid or that refers to a script or npm script that does not exist in package.json. Keep the steering files accurate: if anything you changed makes tech.md, structure.md or product.md wrong, update it.
 >
-> 4. Append a new section "## Kiro pass 2 (kiro-cli v3, bonus credits)" to KIRO-LOG.md that lists: each spec change (criteria tightened, tasks checked, tasks added), each source and test file you changed and why, the hook changes, and anything you could not do. Leave a line "Credits used: TO BE FILLED" for the operator to fill in.
+> 4. Append a new section "## Kiro pass 2: spec audit and the candlelit theme (2026-11-19)" to KIRO-LOG.md that lists: each spec change (criteria tightened, tasks checked, tasks added), each source and test file you changed and why, the hook changes, and anything you could not do. Leave a line "Credits used: TO BE FILLED" for the operator to fill in.
 >
 > If run_command is available, run `npm run typecheck` and `npm run test:unit` when you finish and fix any failures you caused. Do not run the Playwright suite yourself; the operator will.
 
-### Spec changes
+#### Spec changes
 
 - `fright-score-core/requirements.md`: every acceptance criterion rewritten in strict EARS form with one
   testable behavior each. Criteria that bundled several behaviors were split into lettered sub-criteria
@@ -192,7 +255,7 @@ exists" and "Using only the file write tool (no shell commands)".
   implemented behaviors that no test pins down. The audit found no behavior the spec requires that the code lacks.
 - Task references updated: core task 3 now cites 1.9, task 13 cites 7.4.
 
-### Source and test files changed
+#### Source and test files changed
 
 - `index.html`: spookier text in three empty states (`#cue-meta`, `#director-notes`, `#live-status`) and one
   helper sentence in the chip panel. Ids, headings, button names and the strings the Playwright tests assert
@@ -205,19 +268,19 @@ exists" and "Using only the file write tool (no shell commands)".
 - `tests/e2e/app.spec.ts`: new test that the `h1` animation is on by default and `none` under emulated
   reduced motion.
 
-### Hook changes
+#### Hook changes
 
 - `determinism-guard.json`: description corrected. The script also rejects `Date.now`, not only `Math.random`.
 - `test-on-save.json` and `spec-task-sync.json`: checked against the v1 format and left as they were. Every script
   they call exists in `package.json` or `scripts/`. `Stop` has no matcher, which the docs say is correct.
 - Steering files: no edits. The change is presentation only, so tech.md, structure.md and product.md remain accurate.
 
-### Verification
+#### Verification
 
 - `npm run typecheck`: passes. `npm run test:unit`: 19 files, 140 tests pass. `npm run build`: passes.
 - `node scripts/check-determinism.mjs`: passes.
 
-### Could not do
+#### Could not do
 
 - Did not run the Playwright suite (as instructed), so the new reduced-motion test and the 360 px no-scroll
   check against the new styles are unrun.
