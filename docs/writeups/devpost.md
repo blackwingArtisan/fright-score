@@ -84,7 +84,7 @@ for each session in `docs/kiro-sessions/`.
 - A `.vgm` that an independent emulator (Game_Music_Emu's YM2612 core) plays with the hit at 70.04 s against
   70.00 s in the plan.
 - Kiro specced and built features end to end, then called the project's own MCP server as a tool.
-- 294 Vitest tests and 56 Playwright tests, green from a clean checkout, plus a smoke test against the live site.
+- 295 Vitest tests and 56 Playwright tests, green from a clean checkout, plus a smoke test against the live site.
 
 ## What we learned
 

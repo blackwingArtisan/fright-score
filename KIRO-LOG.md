@@ -147,6 +147,10 @@ has the time, credits and lines.
   headless runner trusts `fs_write` and `run_command` for every session, and that trust is not narrowed by the
   agent's allow rules. The developer updated the docs that still said ten patches.
 
+- **Checks for pass 4**, from a fresh clone before each push: typecheck clean, the determinism check, Vitest
+  204 to 295 tests and Playwright 30 to 56. A timing test that raced under heavy machine load was rerun alone
+  and passed each time.
+
 ## How Kiro is used in this repo
 
 - **Steering** (`.kiro/steering/`, 5 files, all three inclusion modes): `product.md`, `tech.md` and `structure.md`
