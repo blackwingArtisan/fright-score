@@ -23,7 +23,7 @@ With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue aroun
 5. Kiro: 5 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
    See [Built with Kiro](#built-with-kiro).
 
-**Kiro by the numbers:** 9 logged Kiro calls, 84.44 credits, 4,067 lines written by Kiro with 0 lines fixed, and
+**Kiro by the numbers:** 11 logged Kiro calls, 120.73 credits, 5,532 lines written by Kiro with 0 lines fixed, and
 Fright Score's own MCP server called from a Kiro session. Every call is in the [Kiro log](KIRO-LOG.md#summary).
 
 To run it locally instead: `npm install && npm run dev`, then open http://localhost:3120.
@@ -285,11 +285,15 @@ Register it in `.kiro/settings/mcp.json`, next to any other servers:
 }
 ```
 
-The server has two tools:
+The server has four tools, one prompt and one resource:
 
 - `list_patches` takes no arguments and returns the ten FS-666 instruments (`id`, `name`, `blurb`, `algorithm`,
   `feedback`) in library order.
 - `score_cue` renders a cue and returns the plan, the second each sting lands, and the SHA-256 of the WAV.
+- `score_level` renders a whole game level: one seamless loop per room and one sting per event (see below).
+- `verify_cue` measures a rendered `.wav` and reports where each sting lands (see below).
+- The prompt `score_scene_for_game` walks an agent through the job, and the resource `fright-score://moods` lists
+  every mood with its tempo range and loudness ceiling.
 
 | `score_cue` argument | Meaning |
 |---|---|
@@ -317,6 +321,51 @@ here):
 
 `sha256` equals the hash of the file `npm run score -- --mood chase --seconds 30 --sting 24 --seed 3` writes. Bad
 arguments come back as a tool result with `isError: true`, so the agent can read the message and retry.
+
+#### Score a whole level
+
+The agent plans the rooms and events; the local director writes each score and the FS-666 makes every sound.
+`score_level` renders, for 1 to 8 rooms, one seamless loop per room and one 5 s sting file per event. The same
+arguments and seed always give the same hashes, and a file does not change when other rooms or events are added.
+
+| `score_level` argument | Meaning |
+|---|---|
+| `rooms` | 1 to 8 rooms, each `{ id, mood, loopSec, events }`. `id` is lower case letters, digits and underscores, starting with a letter (up to 32 characters). `mood` is one of the moods in `fright-score://moods`. `loopSec` is 4 to 60. `events` has up to 8 entries, each `{ id, scene? }` with a scene of up to 500 characters. Ids must be unique (event ids within a room). |
+| `seed` | Integer, 0 to 4,294,967,295. Default 13. |
+| `writeDir` | Optional. A new folder inside the server's working folder. The server saves `<room>.loop.wav`, `<room>.<event>.sting.wav` and `manifest.json` there, and refuses a folder that exists or lies outside the working folder. |
+
+Every sting file puts its hit at `hitSec` (1 s). Play it from `startFromSec` (0.4 s) and the hit sounds 0.6 s
+later (`hitAfterStartSec`). A sting time written in a scene text does not move the hit. A sample result (hashes
+shortened):
+
+```json
+{
+  "director": "local",
+  "seed": 7,
+  "rooms": [
+    {
+      "id": "hallway",
+      "mood": "stalker",
+      "loop": { "sha256": "444b98aa...", "wavBytes": 1210216, "durationSec": 6.86, "loopStartSample": 0, "loopEndSample": 302525 },
+      "events": [
+        { "id": "door_opened", "sha256": "2aa89466...", "wavBytes": 882044, "durationSec": 5, "hitSec": 1, "startFromSec": 0.4, "hitAfterStartSec": 0.6 }
+      ]
+    }
+  ]
+}
+```
+
+`verify_cue` reads a 16-bit PCM `.wav` inside the working folder (at most 64 MB) and takes `wavPath`,
+`expectedHitSec` (1 to 16 times) and `toleranceMs` (1 to 1000, default 50). It finds each onset, a sharp rise in
+short-window level over the 0.5 s of quiet before it (a rendered cue has a quiet reverb tail, not digital silence),
+and pairs every expected time with the nearest onset within 0.5 s. Each result has `measuredSec`, `errorMs` and
+`pass`; `measuredSec` is `null` when no onset is near. The golden cue above measures 24 s within 50 ms.
+
+The prompt `score_scene_for_game` takes the optional string arguments `game` and `writeDir` (up to 200 characters
+each) and tells the agent to read `fright-score://moods`, call `score_level`, then call `verify_cue` on every
+written sting. The resource `fright-score://moods` is JSON with one entry per mood: `id`, `label`, `tagline`,
+`tempoBpm` (`min`, `max`) and `loudnessCeilingLufs`. `examples/godot/level.json` and `level-manifest.json` show a
+two-room level and its manifest.
 
 </details>
 

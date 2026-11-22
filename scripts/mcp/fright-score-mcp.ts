@@ -5,6 +5,8 @@
 import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { z } from 'zod';
+import { PROMPT_DEFINITION, getPrompt } from './prompts';
+import { MOODS_RESOURCE, MOODS_URI, readMoods } from './resources';
 import { TOOLS } from './tools';
 
 /** Supported protocol revisions with the `initialize` handshake, newest first. */
@@ -15,6 +17,7 @@ const INVALID_REQUEST = -32600;
 const METHOD_NOT_FOUND = -32601;
 const INVALID_PARAMS = -32602;
 const INTERNAL_ERROR = -32603;
+const RESOURCE_NOT_FOUND = -32002;
 
 type Id = string | number | null;
 type Reply = Record<string, unknown>;
@@ -56,7 +59,7 @@ export async function handleMessage(message: unknown): Promise<Reply | undefined
       case 'initialize': {
         const asked = (params as { protocolVersion?: unknown } | undefined)?.protocolVersion;
         const protocolVersion = typeof asked === 'string' && PROTOCOL_VERSIONS.includes(asked) ? asked : PROTOCOL_VERSIONS[0];
-        return success(id, { protocolVersion, capabilities: { tools: {} }, serverInfo: { name: 'fright-score', version } });
+        return success(id, { protocolVersion, capabilities: { tools: {}, prompts: {}, resources: {} }, serverInfo: { name: 'fright-score', version } });
       }
       case 'ping':
         return success(id, {});
@@ -64,6 +67,23 @@ export async function handleMessage(message: unknown): Promise<Reply | undefined
         return success(id, { tools: listed });
       case 'tools/call':
         return await callTool(id, params);
+      case 'prompts/list':
+        return success(id, { prompts: [PROMPT_DEFINITION] });
+      case 'prompts/get': {
+        const { name, arguments: args } = (params ?? {}) as { name?: unknown; arguments?: unknown };
+        const prompt = getPrompt(name, args);
+        return 'error' in prompt ? failure(id, INVALID_PARAMS, prompt.error) : success(id, prompt);
+      }
+      case 'resources/list':
+        return success(id, { resources: [MOODS_RESOURCE] });
+      case 'resources/read': {
+        const uri = (params as { uri?: unknown } | undefined)?.uri;
+        if (typeof uri !== 'string') return failure(id, INVALID_PARAMS, 'resources/read needs a uri');
+        if (uri !== MOODS_URI) return { jsonrpc: '2.0', id, error: { code: RESOURCE_NOT_FOUND, message: 'Resource not found', data: { uri } } };
+        return success(id, { contents: [{ uri, mimeType: MOODS_RESOURCE.mimeType, text: readMoods() }] });
+      }
+      case 'resources/templates/list':
+        return success(id, { resourceTemplates: [] });
       default:
         return failure(id, METHOD_NOT_FOUND, `Method not found: ${method}`);
     }

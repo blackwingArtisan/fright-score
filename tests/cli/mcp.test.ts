@@ -1,114 +1,22 @@
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { runCli } from '../../src/cli/score';
 import { PATCHES, PATCH_IDS } from '../../src/engine/patches';
-
-const root = join(__dirname, '../..');
-const script = join(root, 'scripts/mcp/fright-score-mcp.ts');
-// `--import tsx`, written as the loader's absolute URL because the server runs from a temporary folder.
-const tsxLoader = pathToFileURL(join(root, 'node_modules/tsx/dist/loader.mjs')).href;
+import { Client, makeTempDir, root, type Reply } from './mcp-client';
 
 // The server's working folder (writeWavTo is relative to it) and a second folder for the CLI's file.
-const work = realpathSync(mkdtempSync(join(tmpdir(), 'fright-score-mcp-')));
-const cliDir = realpathSync(mkdtempSync(join(tmpdir(), 'fright-score-mcp-cli-')));
+const work = makeTempDir('fright-score-mcp-');
+const cliDir = makeTempDir('fright-score-mcp-cli-');
 afterAll(() => {
   rmSync(work, { recursive: true, force: true });
   rmSync(cliDir, { recursive: true, force: true });
 });
 
-interface Reply {
-  jsonrpc: string;
-  id: number | null;
-  result?: Record<string, any>;
-  error?: { code: number; message: string };
-}
-
-/** A minimal MCP client: one JSON line per message, replies matched by id. */
-class Client {
-  readonly child: ChildProcessWithoutNullStreams;
-  readonly stdoutLines: string[] = [];
-  stderr = '';
-  readonly exited: Promise<number | null>;
-  private buffer = '';
-  private nextId = 1;
-  private waiting = new Map<number | null, (reply: Reply) => void>();
-  private nullIdReplies: Reply[] = [];
-
-  constructor() {
-    // No AWS_* variables, and a Bedrock request that the server must ignore.
-    const env = { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '', FRIGHT_DIRECTOR: 'bedrock' };
-    this.child = spawn(process.execPath, ['--import', tsxLoader, script], { cwd: work, env });
-    this.child.stderr.on('data', (d: Buffer) => (this.stderr += d.toString()));
-    this.child.stdout.on('data', (d: Buffer) => {
-      this.buffer += d.toString();
-      let at: number;
-      while ((at = this.buffer.indexOf('\n')) >= 0) {
-        const line = this.buffer.slice(0, at);
-        this.buffer = this.buffer.slice(at + 1);
-        this.stdoutLines.push(line);
-        const reply = JSON.parse(line) as Reply;
-        const waiter = this.waiting.get(reply.id);
-        if (waiter) {
-          this.waiting.delete(reply.id);
-          waiter(reply);
-        } else if (reply.id === null) this.nullIdReplies.push(reply);
-      }
-    });
-    this.exited = new Promise((resolve) => this.child.on('close', (code) => resolve(code)));
-  }
-
-  raw(line: string): void {
-    this.child.stdin.write(`${line}\n`);
-  }
-
-  private wait(id: number | null): Promise<Reply> {
-    return new Promise((resolve, reject) => {
-      const queued = id === null ? this.nullIdReplies.shift() : undefined;
-      if (queued) return resolve(queued);
-      const timer = setTimeout(() => reject(new Error(`no reply for id ${id}; stderr: ${this.stderr}`)), 50_000);
-      this.waiting.set(id, (reply) => {
-        clearTimeout(timer);
-        resolve(reply);
-      });
-    });
-  }
-
-  request(method: string, params?: unknown): Promise<Reply> {
-    const id = this.nextId++;
-    const reply = this.wait(id);
-    this.raw(JSON.stringify({ jsonrpc: '2.0', id, method, ...(params === undefined ? {} : { params }) }));
-    return reply;
-  }
-
-  notify(method: string): void {
-    this.raw(JSON.stringify({ jsonrpc: '2.0', method }));
-  }
-
-  /** The reply to a line that is not valid JSON carries `id: null`. */
-  garbage(line: string): Promise<Reply> {
-    const reply = this.wait(null);
-    this.raw(line);
-    return reply;
-  }
-
-  async call(name: string, args?: unknown): Promise<Reply> {
-    return this.request('tools/call', { name, ...(args === undefined ? {} : { arguments: args }) });
-  }
-
-  async close(): Promise<number | null> {
-    this.child.stdin.end();
-    return this.exited;
-  }
-}
-
 let client: Client;
 beforeAll(async () => {
-  client = new Client();
+  client = new Client(work);
   await client.request('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'test', version: '0' } });
   client.notify('notifications/initialized');
 });
@@ -120,11 +28,11 @@ const sha = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('he
 const cue = { mood: 'chase', durationSec: 5, stingAtSec: [3], seed: 3 };
 
 describe('MCP server protocol over stdio', () => {
-  it('answers initialize with a supported version, the tools capability and the server name (Req 4.2a, 7.2a)', async () => {
-    const probe = new Client();
+  it('answers initialize with a supported version, the tools, prompts and resources capabilities and the server name (Req 4.2a, 7.2a)', async () => {
+    const probe = new Client(work);
     try {
       const asked = await probe.request('initialize', { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 't', version: '0' } });
-      expect(asked.result).toMatchObject({ protocolVersion: '2025-03-26', capabilities: { tools: {} }, serverInfo: { name: 'fright-score' } });
+      expect(asked.result).toMatchObject({ protocolVersion: '2025-03-26', capabilities: { tools: {}, prompts: {}, resources: {} }, serverInfo: { name: 'fright-score' } });
       const unknown = await probe.request('initialize', { protocolVersion: '1999-01-01', capabilities: {}, clientInfo: { name: 't', version: '0' } });
       expect(unknown.result?.protocolVersion).toBe('2025-11-25');
     } finally {
@@ -132,10 +40,10 @@ describe('MCP server protocol over stdio', () => {
     }
   });
 
-  it('lists score_cue and list_patches with object input schemas from zod (Req 4.2b, 7.2a)', async () => {
+  it('lists the four tools in order with object input schemas from zod (Req 4.2b, 7.2a)', async () => {
     const reply = await client.request('tools/list');
     const tools = reply.result!.tools as { name: string; description: string; inputSchema: Record<string, any> }[];
-    expect(tools.map((t) => t.name)).toEqual(['score_cue', 'list_patches']);
+    expect(tools.map((t) => t.name)).toEqual(['score_cue', 'list_patches', 'score_level', 'verify_cue']);
     for (const t of tools) {
       expect(t.description.length).toBeGreaterThan(20);
       expect(t.inputSchema.type).toBe('object');
@@ -159,7 +67,7 @@ describe('MCP server protocol over stdio', () => {
   });
 
   it('answers an unknown method with -32601 (Req 4.3a, 7.2c)', async () => {
-    const reply = await client.request('resources/list');
+    const reply = await client.request('logging/setLevel');
     expect(reply.error?.code).toBe(-32601);
     expect((await client.request('server/discover')).error?.code).toBe(-32601);
   });
@@ -182,7 +90,7 @@ describe('MCP server protocol over stdio', () => {
   });
 
   it('exits with code 0 when stdin closes (Req 4.4)', async () => {
-    const probe = new Client();
+    const probe = new Client(work);
     await probe.request('ping');
     expect(await probe.close()).toBe(0);
   });

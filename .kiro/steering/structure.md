@@ -44,7 +44,14 @@ scripts/
   check-determinism.mjs  fails on Math.random or Date.now in engine, score, director or export code
   bench.ts           `npm run bench`: times the demo cue from request to WAV
   make-samples.sh    renders the README samples in samples/
-  mcp/               MCP server over stdio (fright-score-mcp.ts) and its tools score_cue and list_patches (tools.ts); uses the local director
+  mcp/               MCP server over stdio (fright-score-mcp.ts); uses the local director
+                     tools.ts      the tools score_cue, list_patches, score_level and verify_cue
+                     level.ts      score_level: a loop per room and a sting per event, plus the manifest
+                     onsets.ts     verify_cue: onset finder and pairing with expected hit times
+                     sting.ts      the second each sting lands, read from the realized score
+                     paths.ts      checks for the paths an agent gives (new file, new folder, readable WAV)
+                     prompts.ts    the score_scene_for_game prompt
+                     resources.ts  the fright-score://moods resource
 samples/             listening samples (MP3) and a Genesis VGM
 examples/godot/      Godot 4 project that loops an export with no code, plus a headless check
 docs/                README images

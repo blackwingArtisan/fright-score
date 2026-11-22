@@ -24,7 +24,9 @@ the developer changed afterwards to get Kiro's work green.
 | 2026-11-19 | 6 | Called its own MCP server from a new session; the hash matched the README | 23 s | under 0.01 | 2 | 0 | [session 6](docs/kiro-sessions/session-6-mcp-from-kiro.md) |
 | 2026-11-22 | 7 | Count guard test, phone first screen, IDE hooks, `door-scene` spec | 9 min 42 s | 15.14 | 722 | 0 | [session 7](docs/kiro-sessions/session-7-counts-phone-hooks.md) |
 | 2026-11-22 | 8 | Built the door scene (view, timing helper, 9 Playwright and 5 Vitest tests); wrote the `agent-scoring` spec | 12 min 6 s | 21.68 | 1,361 | 0 | [session 8](docs/kiro-sessions/session-8-door-scene-agent-scoring-spec.md) |
-| | **Total** | | | **84.44** | **4,067** | **0** | |
+| 2026-11-22 | 9 | Started the `agent-scoring` build: `score_level`, `verify_cue`, the onset detector, the prompt and resource modules and the tests that spawn the server, with 2 context7 MCP calls; stopped by a service throttling error before ticking any task | 9 min 48 s | 21.49 | 1,239 | 0 | [session 9](docs/kiro-sessions/session-9-agent-scoring-build.md) |
+| 2026-11-22 | 9b | Finished the `agent-scoring` build: checked session 9's work, added the prompt and resource tests, the steering line, the Godot level example notes and the README MCP section; all 28 tasks ticked | 9 min 36 s | 14.80 | 226 | 0 | [session 9b](docs/kiro-sessions/session-9b-agent-scoring-finish.md) |
+| | **Total** | | | **120.73** | **5,532** | **0** | |
 
 Credits are read with `kiro-cli /usage` before and after each session, so other use of the account between
 sessions is not counted.
@@ -100,6 +102,14 @@ has the time, credits and lines.
   gesture; the browser plays the same bytes as the Godot WAVs; 360 px; reduced motion). It then wrote the
   `agent-scoring` spec (8 requirements, 28 tasks). The developer wrote the README paragraph that task 20 asked
   for and ticked it. Kiro's checks: Vitest 209 of 209, Playwright 39 of 39.
+
+- **Session 9.** Kiro started building the `agent-scoring` spec (`score_level`, `verify_cue`, an onset detector that
+  reads a level rise over the quiet reverb tail, the `score_scene_for_game` prompt and the `fright-score://moods`
+  resource). The model service throttled the session after 9 minutes, with the work on disk and no task ticked.
+
+- **Session 9b.** A new session finished the build: it reran the tests on session 9's files, added 8 tests for the
+  prompt and the resource, documented the tools, and ticked all 28 tasks. The golden cue still returns the README hash,
+  `verify_cue` measures its sting at 24 s within 50 ms, and nothing under `src/` changed.
 
 ## How Kiro is used in this repo
 

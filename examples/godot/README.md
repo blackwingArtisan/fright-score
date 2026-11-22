@@ -57,3 +57,18 @@ PASS
 
 The hit lands within one frame of 0.6 s after the event, a second open of the door is ignored, and the
 loop comes back to full level.
+
+## Score a whole level with an agent
+
+`level.json` describes a two-room level in the arguments of the `score_level` tool of the Fright Score MCP
+server: a `hallway` (stalker, 8 s loop, a `door_opened` sting) and a `cellar` (dread, 12 s loop, a `lights_out`
+sting), seed 7. To get the files, ask an agent connected to the server to run the `score_scene_for_game` prompt, or
+call `score_level` with the contents of `level.json` and a new `writeDir`. The agent plans the rooms and events;
+the local director writes the score and the FS-666 makes every sound. The call writes one loop and one sting per
+event, and a `manifest.json`.
+
+`level-manifest.json` is that manifest, committed. It pins the SHA-256, size and duration of every file, the loop
+points of each loop, and for each sting the second the hit lands and the second to start playback so the hit
+sounds 0.6 s later. No WAV from `score_level` is committed, and `tests/cli/mcp-level.test.ts` regenerates the
+manifest and compares it byte for byte. The Godot project, its audio and its checks are unchanged.
+

@@ -27,3 +27,13 @@ Loaded only when a file in the FM engine or the live chip is in context.
 - `LiveChipCore` must stay sample-for-sample equal to the offline voice (`tests/unit/live-core.test.ts`).
 - Any change to the sound changes bytes: rerun `bash scripts/make-samples.sh`, update the Godot audio and the
   demo hash in `src/web/demo.ts`, and say so in the commit.
+
+## Check an audio change through the MCP server
+After any change to the engine, call `score_cue` through the `fright-score` MCP server on the README's golden cue
+(`{ "mood": "chase", "durationSec": 30, "stingAtSec": [24], "seed": 3, "writeWavTo": "golden-check.wav" }`), then call
+`verify_cue` on the written file with `expectedHitSec: [24]`, and delete the file afterwards. The sting must measure
+within 50 ms of 24 s. The `sha256` the first call returns should equal the README's
+`3e289fecc70aa4e968ef6ebf59ed8683fe41d2c40749af73aa63e98900d6908d`. A different hash means the sound changed: that is
+expected only when the change was meant to alter audio, and then the README hash, the samples, the Godot audio and
+`examples/godot/level-manifest.json` are regenerated and the new hash is stated in the commit. An unexpected change
+is a bug, and a sting that misses 24 s is a timing bug.

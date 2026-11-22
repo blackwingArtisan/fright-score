@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "director": "local",
+  "seed": 7,
+  "rooms": [
+    {
+      "id": "hallway",
+      "mood": "stalker",
+      "loop": {
+        "file": "hallway.loop.wav",
+        "sha256": "444b98aacafbabbd38d0b692be274e346287f6a28db79e9d2be7e411be3e151e",
+        "wavBytes": 1210216,
+        "durationSec": 6.86,
+        "loopStartSample": 0,
+        "loopEndSample": 302525
+      },
+      "events": [
+        {
+          "id": "door_opened",
+          "file": "hallway.door_opened.sting.wav",
+          "sha256": "2aa89466bcf0fc97a01754d18a43d2e2dee2ee57227af69695bdf78f610f6380",
+          "wavBytes": 882044,
+          "durationSec": 5,
+          "hitSec": 1,
+          "startFromSec": 0.4,
+          "hitAfterStartSec": 0.6
+        }
+      ]
+    },
+    {
+      "id": "cellar",
+      "mood": "dread",
+      "loop": {
+        "file": "cellar.loop.wav",
+        "sha256": "37f0c04aa30180d9263fe84b727a82908062d18188c40ea42950ce5950b95adb",
+        "wavBytes": 2395624,
+        "durationSec": 13.58,
+        "loopStartSample": 0,
+        "loopEndSample": 598877
+      },
+      "events": [
+        {
+          "id": "lights_out",
+          "file": "cellar.lights_out.sting.wav",
+          "sha256": "a17591dbefb668a3f7a9dc3ed834a13d39c6fe052fef4fad6872fe4f21998a01",
+          "wavBytes": 882044,
+          "durationSec": 5,
+          "hitSec": 1,
+          "startFromSec": 0.4,
+          "hitAfterStartSec": 0.6
+        }
+      ]
+    }
+  ]
+}

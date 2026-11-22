@@ -1,0 +1,17 @@
+{
+  "seed": 7,
+  "rooms": [
+    {
+      "id": "hallway",
+      "mood": "stalker",
+      "loopSec": 8,
+      "events": [{ "id": "door_opened", "scene": "A door opens slowly behind you in the hallway" }]
+    },
+    {
+      "id": "cellar",
+      "mood": "dread",
+      "loopSec": 12,
+      "events": [{ "id": "lights_out", "scene": "The lights go out in the cellar" }]
+    }
+  ]
+}

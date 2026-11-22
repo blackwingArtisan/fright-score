@@ -59,6 +59,11 @@ Task 1 checks these rows against the current specification with the context7 ser
 to confirm there: that `-32002` is the code for a missing resource, and whether `prompts/get` arguments must be
 strings.
 
+Checked with the context7 server against the 2025-11-25 specification: every row above is correct. `-32002` with
+message `Resource not found` and `data: { uri }` is the documented reply for a missing resource, `prompts/get`
+arguments are a map of strings (so a number is `-32602` here), and `resources/templates/list` returns
+`{ resourceTemplates }`.
+
 Neither `prompts/list` nor `resources/list` takes a cursor here, because each list has one entry. A request
 carrying a `cursor` gets the same single page.
 
@@ -214,6 +219,16 @@ noise, and the refinement to the first loud frame inside the window removes the 
 quantization. Task 6 checks all three constants against the golden cue and a `score_level` sting, and the test
 asserts the 10 ms accuracy of requirement 2.6. If the golden cue's reverb tail before its sting stays above
 -50 dBFS for the whole 0.6 s, the threshold is the first thing to adjust, and the change goes into this table.
+
+**Measured change (task 6).** Rendered cues have no digital silence before a sting: the release and reverb tails sit at
+about -24 to -42 dBFS in the planned-silence window, and the hit is near -11 dBFS, so "below -50 dBFS for 0.5 s"
+never holds on a real render. `findOnsets` therefore uses a relative rule. A 2 ms window starts an onset when its
+RMS is at least -50 dBFS and at least 20 dB (`JUMP_DB`) above the RMS of the 0.5 s (`QUIET_SEC`) before it, and no
+onset was found in that 0.5 s. The onset time is the first frame from the previous window onward whose absolute
+value reaches the same threshold. The constants live at the top of `onsets.ts`; the golden cue gives 24 s within
+50 ms and a `score_level` sting gives 1.0 s within 10 ms (`tests/cli/mcp-verify.test.ts`). The `score_level`
+sting additionally clears everything before the hit (see `renderStingScore` in `level.ts`) so the 1.0 s hit
+follows a quiet stretch.
 
 Pairing: sort the expected times. For each, take the unused onset with the smallest absolute difference and
 accept it if the difference is at most 500 ms; otherwise the entry has `measuredSec: null`. A greedy pass in
