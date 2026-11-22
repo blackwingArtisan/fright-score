@@ -5,7 +5,7 @@ it used and who wrote which lines. Kiro work runs headless through `kiro-cli`; t
 reviews the diffs, reruns every check from a clean clone and commits. Lines are counted with
 `git show --numstat` per commit.
 
-**Kiro by the numbers:** 4 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
+**Kiro by the numbers:** 5 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
 
 ## Summary
 
@@ -23,7 +23,8 @@ the developer changed afterwards to get Kiro's work green.
 | 2026-11-19 | 5 | The stdio MCP server, checked against the MCP spec with context7; 23 tests | 4 min 44 s | 7.03 | 676 | 0 | [session 5](docs/kiro-sessions/session-5-mcp-server.md) |
 | 2026-11-19 | 6 | Called its own MCP server from a new session; the hash matched the README | 23 s | under 0.01 | 2 | 0 | [session 6](docs/kiro-sessions/session-6-mcp-from-kiro.md) |
 | 2026-11-22 | 7 | Count guard test, phone first screen, IDE hooks, `door-scene` spec | 9 min 42 s | 15.14 | 722 | 0 | [session 7](docs/kiro-sessions/session-7-counts-phone-hooks.md) |
-| | **Total** | | | **62.76** | **2,706** | **0** | |
+| 2026-11-22 | 8 | Built the door scene (view, timing helper, 9 Playwright and 5 Vitest tests); wrote the `agent-scoring` spec | 12 min 6 s | 21.68 | 1,361 | 0 | [session 8](docs/kiro-sessions/session-8-door-scene-agent-scoring-spec.md) |
+| | **Total** | | | **84.44** | **4,067** | **0** | |
 
 Credits are read with `kiro-cli /usage` before and after each session, so other use of the account between
 sessions is not counted.
@@ -93,6 +94,12 @@ has the time, credits and lines.
   checked the Kiro hooks page with `web_fetch` first; that page documents only the v1 `.json` format, so the
   `.kiro.hook` files follow the IDE's `when`/`then` format without a docs page to confirm it. Kiro's checks:
   Vitest 204 of 204, Playwright 30 of 30. The `Stop` hook's second turn ran `npm test` again.
+
+- **Session 8.** Kiro built the door scene from its spec: `src/web/views/door.ts`, a pure timing helper with
+  its unit test, and 9 Playwright tests (the measured offset is 0.600 s, by click and by E; no audio before a
+  gesture; the browser plays the same bytes as the Godot WAVs; 360 px; reduced motion). It then wrote the
+  `agent-scoring` spec (8 requirements, 28 tasks). The developer wrote the README paragraph that task 20 asked
+  for and ticked it. Kiro's checks: Vitest 209 of 209, Playwright 39 of 39.
 
 ## How Kiro is used in this repo
 

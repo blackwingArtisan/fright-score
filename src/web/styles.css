@@ -1375,10 +1375,156 @@ canvas {
   }
 }
 
+/* Door scene: a rendered-file scene. The swing, the lamp flicker and the hit flash are removed under
+   prefers-reduced-motion (see the override at the end of this file); the door then changes state instantly. */
+.door {
+  position: relative;
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  border: 1px solid var(--edge);
+  background: var(--mask-raised);
+  padding: 16px;
+  overflow: hidden;
+}
+.door__head h2 {
+  font-family: var(--font-gothic);
+  font-weight: 400;
+  font-size: var(--step-2);
+  margin: 0 0 6px;
+}
+.door__lede,
+.door__hint,
+.door__note {
+  margin: 0;
+  max-width: 70ch;
+  color: var(--silk-dim);
+  font-size: var(--step--1);
+  line-height: 1.5;
+}
+.door__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.door__button[aria-disabled='true'] {
+  color: var(--tin);
+  border-style: dashed;
+  border-color: rgb(143 154 150 / 0.55);
+  cursor: not-allowed;
+}
+.door__art {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  border: 1px solid var(--edge);
+  background: var(--mask-deep);
+}
+.door__wall {
+  fill: var(--mask-deep);
+}
+.door__floor {
+  fill: #0e2a22;
+}
+.door__edge {
+  fill: none;
+  stroke: var(--copper-dim);
+  stroke-width: 1.5;
+}
+.door__frame {
+  cursor: pointer;
+}
+.door__frame rect {
+  fill: #09130f;
+  stroke: var(--copper);
+  stroke-width: 1.5;
+}
+.door__frame .door__leaf {
+  fill: #1a3a30;
+  stroke: var(--copper-dim);
+  transform-box: fill-box;
+  transform-origin: left center;
+  transition: transform 0.35s ease-out;
+}
+.door.is-open .door__leaf {
+  transform: scaleX(0.25);
+}
+.door__knob {
+  fill: var(--copper);
+}
+.door__lamp {
+  fill: var(--focus);
+  opacity: 0.85;
+  animation: doorLamp 3.2s steps(1, end) infinite;
+}
+@keyframes doorLamp {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  46% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  72% {
+    opacity: 0.55;
+  }
+}
+.door::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--blood);
+  opacity: 0;
+  pointer-events: none;
+}
+.door.is-open::after {
+  animation: doorFlash 0.5s 0.6s ease-out 1;
+}
+@keyframes doorFlash {
+  0% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.door__offset {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ectoplasm);
+}
+/* Visually hidden, still read by screen readers. */
+.door__announce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 480px) {
+  .door__controls .btn {
+    flex: 1 1 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
     transition: none !important;
+  }
+  /* Pseudo-elements are not matched by *: the door's hit flash is switched off here. */
+  .door::after {
+    animation: none !important;
+    opacity: 0;
   }
   /* No sweep, shake, glitch or dimming fade: a still red frame and a still crack while the sting lands. */
   .stage--sting .timeline::after {

@@ -17,6 +17,7 @@ import { LiveChip } from './live/live-chip';
 import { Player } from './player';
 import type { RenderRequestMessage, WorkerMessage } from './protocol';
 import { ChipView } from './views/chip';
+import { mountDoorScene } from './views/door';
 import { LiveView } from './views/live';
 import { ScopeView } from './views/scope';
 import { StitchView } from './views/stitch';
@@ -775,6 +776,7 @@ function updateLiveStatus(): void {
       : `Chip awake and listening. ${seconds} s synthesized in real time so far.`;
 }
 
+mountDoorScene($<HTMLElement>('door-scene'));
 buildMoods();
 buildExamples();
 els.directorName.textContent = `Director: ${director.label}`;

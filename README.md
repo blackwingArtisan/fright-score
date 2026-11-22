@@ -16,10 +16,15 @@ With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue aroun
 1. Open [fright-score.pages.dev](https://fright-score.pages.dev/). The demo cue is already on the board.
 2. Turn the sound on and press **Jump to the scare**: six seconds of riser, 0.6 s of silence, then the sting,
    with the blood flash, on 1:10.
-3. Press **Download for Sega Genesis** and open the `.vgm` in any VGM player: the same cue as real YM2612
+3. Scroll to **The scare lands on the event**, press **Enter the hallway**, then open the door (click it or
+   press E): the loop cuts, and the page reports "Sting landed 0.600 s after the door opened".
+4. Press **Download for Sega Genesis** and open the `.vgm` in any VGM player: the same cue as real YM2612
    register writes. [Hear it played by an independent Genesis emulator](#hear-it).
-4. Kiro: 4 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
+5. Kiro: 5 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
    See [Built with Kiro](#built-with-kiro).
+
+**Kiro by the numbers:** 9 logged Kiro calls, 84.44 credits, 4,067 lines written by Kiro with 0 lines fixed, and
+Fright Score's own MCP server called from a Kiro session. Every call is in the [Kiro log](KIRO-LOG.md#summary).
 
 To run it locally instead: `npm install && npm run dev`, then open http://localhost:3120.
 
@@ -62,8 +67,12 @@ knows which one wrote it.
 
 ## In a game: the scare lands on the event
 
-A jam game does not know at which second the player opens the door. The [Godot add-on](examples/godot)
-handles that: `$Door.opened.connect($Cue.scare)`. The hallway loop cuts to silence, the sting file starts at
+A jam game does not know at which second the player opens the door. Try it in the browser: the scene **The scare lands
+on the event** plays a hallway loop until you open the door, then cuts to silence and lands the sting 0.6 s
+later, and shows the offset it measured on the audio clock. Both sounds are rendered cues played back from files,
+the same two WAVs the Godot example uses (a test checks the bytes match); only the keyboard is synthesized live.
+
+In Godot, the [add-on](examples/godot) does the same: `$Door.opened.connect($Cue.scare)`. The hallway loop cuts to silence, the sting file starts at
 the top of its 0.6 s pre-silence, and the hit lands 0.6 s after the door opens. A headless Godot check
 measures it: the hit lands 0.598 s after the event, within one frame.
 
