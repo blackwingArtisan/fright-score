@@ -12,7 +12,7 @@ YM2612 family) renders it to audio in the browser or offline from a CLI.
 The one-line rule for every piece of copy: the AI writes the sheet music, never the sound.
 
 ## Who it is for
-- Retro and PSX-style horror developers (itch.io lists 5,268 games tagged Horror and PSX), for whom
+- Retro and PSX-style horror developers (itch.io lists 5,324 games tagged Horror and PSX, November 2026), for whom
   a Genesis-era FM chip is the period-correct sound.
 - Indie game developers who need a creepy loop or a stinger tonight, without licensing risk.
 - Video creators, streamers and podcasters scoring a short horror segment or a trailer.
@@ -22,8 +22,9 @@ The one-line rule for every piece of copy: the AI writes the sheet music, never 
 
 ## Price anchor
 One horror track on AudioJungle is $9 to $39 and a stinger $3; Suno's cheapest plan with commercial
-rights is $10 a month. Fright Score is free; a future Pro tier (stems, game-event stings, Bedrock
-cues) is priced at $4 a month, under both.
+rights is $10 a month. Fright Score's core is free forever. Planned paid pieces: a one-time $9 Engine Pack
+(Unity and FMOD plugins, stems, game-event sting sets) and metered per-cue MCP pricing for AI
+game-building platforms.
 
 ## Core promises
 1. Original: every cue is generated from rules and a seed, never sampled from existing music.

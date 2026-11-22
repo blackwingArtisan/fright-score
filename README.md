@@ -1,84 +1,50 @@
 # Fright Score
 
-**Live: [fright-score.pages.dev](https://fright-score.pages.dev/)** (runs entirely in your browser with the free local director; the optional Bedrock director is not deployed there).
+**The AI writes the sheet music, never the sound.** A score director plans a horror cue, a recreated Sega Genesis
+FM chip performs it, and the scare lands on the exact second you ask for.
 
-**Horror music for your game jam, tonight: a director writes the score, a haunted 1990s FM synth chip
-performs it, and the scare lands on the exact second you ask for.**
+Offline rules by default, Amazon Bedrock optional. Free, in your browser, with no account.
 
-Type a scene, such as "A music box winds down in the nursery, 45 seconds, jump scare at 0:40". Fright Score
-writes an original horror cue for it and renders the cue in your browser on the FS-666, a recreated
-four-operator FM chip. You get a royalty-free WAV, a seamless game loop or a Sega Genesis file. The sting
-lands within 50 ms of the time you typed.
-
-**The AI writes the sheet music, never the sound.** The director only produces a score plan: key, tempo,
-sections and cue points. By default that director is a rule-based scene reader with a seeded Markov
-composer, so it runs offline in your browser for free; switch on Amazon Bedrock and a language model writes
-the same plan instead. Either way, every sound comes from an FM chip recreation that has never heard a
-recording.
+**Live: [fright-score.pages.dev](https://fright-score.pages.dev/)** · [Judges: 60 seconds](#judges-60-seconds) · [Hear it](#hear-it) · [Built with Kiro](#built-with-kiro) · [Run it](#run-it) · MIT licensed
 
 ![The demo cue: the riser climbs, the board drops toward black in the planned silence, and the sting lands at 1:10 with a blood flash and a glitch on the title](docs/sting.gif)
 
-With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue around the sting, the screen capture
-muxed with the exact WAV the CLI renders (the hit lands 6.5 s in).
-
-[Judges: 60 seconds](#judges-60-seconds) · [Hear the samples](#hear-it) · [Run it](#run-it) · [Built with Kiro](#built-with-kiro) · MIT licensed
+With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue around the sting (the hit lands 6.5 s in).
 
 ## Judges: 60 seconds
 
-1. Open [fright-score.pages.dev](https://fright-score.pages.dev/) (or run it: `npm install && npm run dev`, then
-   open http://localhost:3120). The demo cue is already on the board.
+1. Open [fright-score.pages.dev](https://fright-score.pages.dev/). The demo cue is already on the board.
 2. Turn the sound on and press **Jump to the scare**: six seconds of riser, 0.6 s of silence, then the sting,
    with the blood flash, on 1:10.
 3. Press **Download for Sega Genesis** and open the `.vgm` in any VGM player: the same cue as real YM2612
-   register writes.
+   register writes. [Hear it played by an independent Genesis emulator](#hear-it).
 4. Kiro: 4 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
    See [Built with Kiro](#built-with-kiro).
 
+To run it locally instead: `npm install && npm run dev`, then open http://localhost:3120.
+
 ## The problem
 
-It is hour 60 of a 72-hour horror game jam. The cellar level needs a creeping loop, and the door slam needs
-a jump-scare sting that hits on cue, tonight. The track you found on a video site has unclear rights. Stock
-libraries sell music and stingers one at a time. An AI song generator returns a song with no control over
-when the scare lands, and Suno's free plan carries no commercial rights.
+A solo developer is at hour 60 of a 72-hour horror jam. The cellar level needs a creeping loop, and the cellar
+door needs a jump-scare sting that hits when the player opens it.
 
-What that costs today: on AudioJungle, a horror music track is
-[$9](https://audiojungle.net/item/retro-slasher-stalks/25742921) to
-[$39](https://audiojungle.net/item/horror-rising/23767370) under its standard license, and a single stinger
-sound effect is [$3](https://audiojungle.net/item/horror-stinger/54366456), so one loop and three stingers come to
-about **$18 to $48**. Suno's cheapest plan with commercial rights is [Pro, at $10 a month](https://suno.com/pricing).
-Fright Score is **$0**, with no account. (Prices checked November 18, 2026.)
+| | The stock route | The free CC0 route | With Fright Score |
+|---|---|---|---|
+| What you do | Search AudioJungle, buy a loop and three stingers, trim them in Audacity, line the sting up by hand | Search OpenGameArt, Freesound and itch.io, hope a loop and a sting fit together, cut and line them up in Audacity | `npm run score -- --mood dread --seconds 16 --loop --out cellar-loop.wav`, then `npm run score -- --mood chase --seconds 5 --sting 0:01 --out door-sting.wav`, then drop both into the [Godot add-on](examples/godot) and connect one signal |
+| Cost | About **$18 to $48** ([$9](https://audiojungle.net/item/retro-slasher-stalks/25742921) to [$39](https://audiojungle.net/item/horror-rising/23767370) a track, [$3](https://audiojungle.net/item/horror-stinger/54366456) a stinger) | $0, license checked file by file | **$0**, the cues are yours |
+| Time to the two files | Search, checkout and editing time | Search and editing time | About **2 seconds** for both commands (1.15 s for the loop, 0.86 s for the sting, wall time on an Apple M4 Max) |
+| The sting lands | Where you place it by hand | Where you place it by hand | 0.6 s after the door opens, out of planned silence, measured in Godot at 0.598 s |
 
-Horror is one of the biggest genres in indie games: **itch.io lists [112,036 games tagged Horror](https://itch.io/games/tag-horror)**
-(November 2026), and a single jam such as [GMTK 2025](https://itch.io/jam/gmtk-2025/results) drew 9,513 entries in four
-days. Most of these games come from solo developers and small jam teams with no audio budget.
+Suno's cheapest plan with commercial rights is [Pro, at $10 a month](https://suno.com/pricing), and its free plan has
+no commercial rights. Prices checked November 22, 2026.
 
-## Who it is for
+Horror is one of the biggest genres in indie games: **itch.io lists [113,442 games tagged Horror](https://itch.io/games/tag-horror)**,
+and [5,324 tagged both Horror and PSX](https://itch.io/games/tag-horror/tag-psx), whose low-poly look calls for exactly
+this era of sound (checked November 22, 2026). A single jam such as [GMTK 2025](https://itch.io/jam/gmtk-2025) drew
+9,513 entries in four days.
 
-- **Retro and PSX-style horror developers.** itch.io lists
-  [5,268 games tagged both Horror and PSX](https://itch.io/games/tag-horror/tag-psx) (November 2026). Their low-poly,
-  low-fidelity look calls for period-correct sound, and an FM chip from the Sega Genesis era is exactly that.
-  The `.vgm` export goes one step further, to homebrew Genesis games.
-- **Game jam teams** who need a creeping loop and a sting that lands on cue before the deadline.
-- **Horror tabletop and escape-room game masters** who run a session every week and need a cue that builds
-  and hits at an exact second, such as the lights dying at 0:32 when the players open the cellar. A new seed
-  gives a new cue each week; the share link brings back last week's cue byte for byte.
-- **Video creators and streamers** scoring a short horror segment or a trailer.
-
-## The 60-second tour
-
-1. Open the app. The demo cue, "Creeping dread in the cellar, 90 seconds, builds to a sting at 1:10", is
-   ready to hear within about a second, from a pre-rendered preview. Press **Listen** on the timeline. In the
-   background the chip renders the same cue live, and the page shows "Live render matches the published demo,
-   byte for byte" with its sha256 when it finishes.
-2. Press **Jump to the scare**. In six seconds you hear the riser climb, the board go silent for 0.6 s and
-   the sting land. The page flashes blood red, the timeline shakes and the chip's pads flare.
-3. Watch **The stitch**: the director's plan as JSON on the left, the Sega Genesis sound-chip register
-   writes it becomes on the right, scrolling with the playhead.
-4. Type your own scene, or pick a mood (dread, stalker, chase, lullaby, ritual), and press **Summon the
-   score**. The render sweeps across the timeline in a few seconds.
-5. Press **Download WAV**, tick **Seamless loop for games** for a loop with loop points, or press
-   **Download for Sega Genesis**.
-6. Press A to K on your keyboard to play the chip yourself, live.
+Also for: horror tabletop and escape-room game masters who need a cue that hits at an exact second every week
+(the share link brings last week's cue back byte for byte), and video creators scoring a short horror segment.
 
 ## Why it's a Frankenstein
 
@@ -93,32 +59,6 @@ What runs today: the default director is a rule-based scene reader plus a seeded
 free. The Amazon Bedrock director (Converse API, answering through a typed `score_cue` tool call whose input is
 validated with zod) is written, tested with a fake client and switched on with `FRIGHT_DIRECTOR=bedrock`. Both write the same ScorePlan, and the chip never
 knows which one wrote it.
-
-## Why now
-
-In June 2024 the major record labels sued Suno and Udio over the recordings used to train their models
-([RIAA](https://www.riaa.com/record-companies-bring-landmark-cases-for-responsible-ai-againstsuno-and-udio-in-boston-and-new-york-federal-courts-respectively/)).
-Fright Score has no training data. Every cue comes from music-theory rules, a seeded Markov composer and an
-FM synthesizer. The same request and seed give the same file, byte for byte, on any machine. Anyone can
-re-render a cue from its share link and check where it came from.
-
-## How it compares
-
-AI music tools are good, and some already give you real structure: Soundraw sets the energy of each block,
-Beatoven.ai sets the mood of each section, and ElevenLabs Music takes a composition plan with a duration for
-every section. Use them when you want polished, realistic instruments. Fright Score is for the moment the
-scare has to land on a set second and the loop has to sit in a game engine.
-
-| | Fright Score | Song generators (Suno, Udio) | Score generators (Beatoven.ai, Soundraw, ElevenLabs Music) | Stock libraries (AudioJungle, Pond5) |
-|---|---|---|---|---|
-| Set the length and the shape of the sections | Yes | Length only, roughly | Yes | No, you edit the track |
-| A sting on the exact second, out of a planned silence | Yes, within 50 ms, after a 0.6 s pre-silence | No | Section durations (3 s minimum on ElevenLabs), not a hit on a set second | No, you edit it in |
-| Seamless game loop with engine loop points in the WAV | Yes (`smpl` chunk; [Godot example](examples/godot)) | No | Loop points in the file not documented | Some loop versions, sold per track |
-| Re-render the exact same file later | Yes, byte for byte from the seed | No | No | Not applicable |
-| Sega Genesis export | Yes (`.vgm` of YM2612 register writes) | No | No | No |
-| Works offline, no account | Yes, in the browser or the CLI | No | No | Download per purchase |
-| Cost for commercial use | Free | Suno Pro, $10 a month | Paid plans | About $9 to $39 a track, $3 a stinger |
-| Where the sound comes from | An FM synth, no training data | Neural models trained on recordings (the subject of the 2024 label lawsuits) | Neural models trained on audio | Human composers |
 
 ## In a game: the scare lands on the event
 
@@ -137,6 +77,15 @@ Rendered with the CLI by [`scripts/make-samples.sh`](scripts/make-samples.sh):
 - [`cellar-dread-genesis.vgm`](samples/cellar-dread-genesis.vgm): the demo cue for the Sega Genesis (26 KB of
   YM2612 register writes). Open it in any VGM player or Genesis emulator.
 
+**AI-written sheet music, performed by a Sega Genesis sound chip.** The same `.vgm`, played by an independent
+emulator, [Game_Music_Emu](https://github.com/libgme/game-music-emu)'s YM2612 core, which knows nothing about Fright
+Score and only replays the register writes: [`docs/genesis-proof.mp3`](docs/genesis-proof.mp3) (10 s around the sting,
+[with a waveform](docs/genesis-proof.mp4)). The riser, the planned silence and the hit are all there; the hit sounds
+at 70.04 s in the emulator against 70.00 s in the plan. Rebuild it with
+[`scripts/genesis-proof/make-proof.sh`](scripts/genesis-proof/make-proof.sh).
+
+![Waveform of the Genesis clip: the riser, a clean gap of silence, then the sting and its decay](docs/genesis-proof.png)
+
 **Starter pack.** `bash scripts/make-starter-pack.sh` renders 5 seamless loops (one per mood) and 20 short
 stings, released under CC0, in under two minutes. [`samples/starter-pack-manifest.csv`](samples/starter-pack-manifest.csv)
 lists the request, seed and sha256 of every file, so anyone can rerun it and check they got the same bytes.
@@ -147,32 +96,86 @@ lists the request, seed and sha256 of every file, so anyone can rerun it and che
 |---|---|
 | ![The stitch panel: the director's plan with the silence, riser and sting cues on the left, and the YM2612 register writes in step with the playhead on the right, ending in KEY ON](docs/stitch.png) | ![The live keyboard with A, D and G held on the Tritone Brass patch: three voices, the operator pads lit and the envelope ribbon rising](docs/live-chip.png) |
 
-## Kiroween 2026
+<details>
+<summary>The 60-second tour of the app</summary>
 
-- **Category:** Frankenstein. A score director (rules by default, Amazon Bedrock when switched on) stitched to a
-  recreated 1990s FM chip, with a Sega Genesis export.
-- **Built with Kiro:** specs with EARS requirements, steering, hooks, a custom agent, MCP servers and a Kiro-built feature. See
-  [Built with Kiro](#built-with-kiro) and [`KIRO-LOG.md`](KIRO-LOG.md).
-- **AWS:** the director has an Amazon Bedrock adapter (Converse API, validated with zod) and a Cloudflare
-  Pages Function for it. The free local director is the default.
+1. Open the app. The demo cue, "Creeping dread in the cellar, 90 seconds, builds to a sting at 1:10", is
+   ready to hear within about a second, from a pre-rendered preview. Press **Listen** on the timeline. In the
+   background the chip renders the same cue live, and the page shows "Live render matches the published demo,
+   byte for byte" with its sha256 when it finishes.
+2. Press **Jump to the scare**. In six seconds you hear the riser climb, the board go silent for 0.6 s and
+   the sting land. The page flashes blood red, the timeline shakes and the chip's pads flare.
+3. Watch **The stitch**: the director's plan as JSON on the left, the Sega Genesis sound-chip register
+   writes it becomes on the right, scrolling with the playhead.
+4. Type your own scene, or pick a mood (dread, stalker, chase, lullaby, ritual), and press **Summon the
+   score**. The render sweeps across the timeline in a few seconds.
+5. Press **Download WAV**, tick **Seamless loop for games** for a loop with loop points, or press
+   **Download for Sega Genesis**.
+6. Press A to K on your keyboard to play the chip yourself, live.
 
-## Beyond Kiroween
+</details>
 
-Priced against what a jam team pays today (about $18 to $48 for one loop and three stingers on a stock site,
-or $10 a month for Suno Pro):
+<details>
+<summary>Why now: agents build whole jam games</summary>
 
-- **Free, forever:** the web app, the CLI, WAV, loop and Genesis exports, and the local director.
-- **Pro, $4 a month:** stems for each layer, game-event stings for engines, mood packs and Bedrock-directed
-  cues. Less than half of Suno Pro, and less than one stock track.
-- **Game master pack, $2 a month:** a saved weekly session, one loop and three stings per scene, each on its
-  own seed, re-rendered byte for byte whenever the group returns.
-- **Engine plugins:** the [Godot add-on](examples/godot) already loops an export with no code and lands the sting
-  when the player opens the door; Unity and FMOD next.
-- **Market:** 112,036 horror games on itch.io, 5,268 of them PSX-style, and jams of nearly 10,000 entries that
-  each need audio by the deadline.
-- **Retro scene:** VGM export opens the door to homebrew Genesis games and chiptune artists.
+AI coding agents now build complete games, and jams are where it shows. [Cursor Vibe Jam 2026](https://vibejam.com)
+required at least 90% of the code to be written by AI and drew 945 games; the [2025 Vibe Coding Game Jam](https://vibejam.com/2025/)
+drew over 1,000. itch.io's [AI Browser Game Jam](https://itch.io/jam/ai-jam-4) grew from 29 entries in its first round to
+121 in its fourth (all checked November 22, 2026).
 
-## What works today
+Those games still need audio an agent can trust: license-clean, timed to the game, and checkable. Fright Score is a score
+tool an agent can call. Its [MCP server](#use-it-from-an-agent-mcp) returns the plan, the second each sting lands and the
+sha256 of the file, and the same arguments always give the same bytes, so the agent can verify what it got.
+
+It also has no training data. In June 2024 the major record labels sued Suno and Udio over the recordings used to train
+their models ([RIAA](https://www.riaa.com/record-companies-bring-landmark-cases-for-responsible-ai-againstsuno-and-udio-in-boston-and-new-york-federal-courts-respectively/)).
+Every Fright Score cue comes from music-theory rules, a seeded Markov composer and an FM synthesizer, and anyone can
+re-render a cue from its share link and check where it came from.
+
+</details>
+
+<details>
+<summary>How it compares</summary>
+
+AI music tools are good, and some already give you real structure: Soundraw sets the energy of each block,
+Beatoven.ai sets the mood of each section, and ElevenLabs Music takes a composition plan with a duration for
+every section. Use them when you want polished, realistic instruments. Free CC0 libraries are the honest default for a jam: [OpenGameArt](https://opengameart.org/art-search-advanced) lists about 4,300 CC0 music
+entries, [Freesound](https://freesound.org/search/?q=horror+stinger) returns 250 sounds for "horror stinger", and itch.io lists
+[368 free horror music assets](https://itch.io/game-assets/free/tag-horror/tag-music) (all checked November 22, 2026). They are
+recordings: you cannot write a loop and a sting together in one key, land the hit on a set second out of planned silence, or
+re-render a file from a seed. Fright Score is for the moment the scare has to land on a set second and the loop has to sit in a
+game engine.
+
+| | Fright Score | Song generators (Suno, Udio) | Score generators (Beatoven.ai, Soundraw, ElevenLabs Music) | Stock libraries (AudioJungle, Pond5) | Free CC0 libraries (OpenGameArt, Freesound, itch.io) plus Audacity |
+|---|---|---|---|---|---|
+| Set the length and the shape of the sections | Yes | Length only, roughly | Yes | No, you edit the track | No, you cut and stretch recordings by hand |
+| A sting on the exact second, out of a planned silence | Yes, within 50 ms, after a 0.6 s pre-silence | No | Section durations (3 s minimum on ElevenLabs), not a hit on a set second | No, you edit it in | No, you line it up in an editor |
+| Seamless game loop with engine loop points in the WAV | Yes (`smpl` chunk; [Godot example](examples/godot)) | No | Loop points in the file not documented | Some loop versions, sold per track | Some files loop; you set loop points yourself |
+| Re-render the exact same file later | Yes, byte for byte from the seed | No | No | Not applicable | Not applicable, a fixed recording |
+| Sega Genesis export | Yes (`.vgm` of YM2612 register writes) | No | No | No | No |
+| Works offline, no account | Yes, in the browser or the CLI | No | No | Download per purchase | Download per file |
+| Cost for commercial use | Free | Suno Pro, $10 a month | Paid plans | About $9 to $39 a track, $3 a stinger | Free (check each file's license) |
+| Where the sound comes from | An FM synth, no training data | Neural models trained on recordings (the subject of the 2024 label lawsuits) | Neural models trained on audio | Human composers | Recordings by many contributors, each cut for someone else's project |
+
+</details>
+
+<details>
+<summary>Beyond Kiroween: pricing and market</summary>
+
+- **Free core, forever:** the web app, the CLI, WAV, loop and Genesis exports, the local director and the MCP server.
+- **Engine Pack, $9 once:** Unity and FMOD plugins (the [Godot add-on](examples/godot) is free and already lands the sting
+  on a game event), stems for each layer and game-event sting sets. Paid horror music packs on the Unity Asset Store run
+  from [$9.99](https://assetstore.unity.com/packages/package/405226) to [$68](https://assetstore.unity.com/packages/package/20994)
+  (checked November 22, 2026, during a sale).
+- **Per-cue API and MCP pricing for AI game-building platforms:** a metered, hosted version of the MCP server with the
+  Bedrock director, for platforms whose agents generate games.
+
+A bottom-up estimate from the numbers above, as an illustration rather than a forecast: if 1% of the developers behind
+itch.io's 113,442 horror games bought the Engine Pack once, that is about 1,130 sales, or about $10,200. On the agent side,
+a jam the size of Cursor Vibe Jam 2026 (945 games) at about five cues a game (a loop per level plus stings) is about 4,700
+cues; at $0.05 a cue that is about $240 a jam. The bet is the growth of agent-built games, not one jam.
+
+</details>
 
 <details>
 <summary>Every feature, in detail</summary>
@@ -254,6 +257,9 @@ M4 Max under heavy load (load average 67) it measured a median of 6.7 s, 13.5 ti
 
 ### Use it from an agent (MCP)
 
+<details>
+<summary>Register the server and call <code>score_cue</code></summary>
+
 Fright Score ships a Model Context Protocol server, so an agent such as a Kiro session can ask for a cue and
 check it. It speaks JSON-RPC over stdio, needs no account and no network, and always uses the local director
 (rules and a seeded Markov composer, not an AI model), whatever `FRIGHT_DIRECTOR` says. When the Bedrock director
@@ -303,13 +309,17 @@ here):
 `sha256` equals the hash of the file `npm run score -- --mood chase --seconds 30 --sting 24 --seed 3` writes. Bad
 arguments come back as a tool result with `isError: true`, so the agent can read the message and retry.
 
-## Test it
+</details>
+
+<details>
+<summary>Test it</summary>
 
 ```bash
 npx playwright install chromium   # once
 npm test                          # typecheck + unit + CLI + end-to-end
 npm run test:unit                 # Vitest: engine, score, director, WAV, Genesis export, CLI
 npm run test:e2e                  # Playwright against the built app (port 3122, or set E2E_PORT)
+npm run test:live                 # smoke test of the deployed site (set LIVE_URL for a preview deploy)
 ```
 
 The unit suite checks the FM math (sine table accuracy, envelope timing, operator pitch, FM sidebands,
@@ -328,7 +338,10 @@ share link in a fresh page and get the same file, export a loop with loop points
 the stitch panel at the sting, keyboard scrubbing, inline form errors, the phone layout, and play the live
 chip so the AudioWorklet reports voices and real output.
 
-## Architecture
+</details>
+
+<details>
+<summary>Architecture, adapters and deploy</summary>
 
 ```
  request ──> Director ──> ScorePlan ──> reconcile ──> Arranger ──> Score ──> FS-666 engine ──> master ──> WAV
@@ -358,7 +371,7 @@ chip so the AudioWorklet reports voices and real output.
 
 The engine has no DOM dependency, so the browser worker and the CLI run exactly the same code.
 
-## Adapters: local and real
+### Adapters: local and real
 
 | Service | Default (free, offline) | Real path (written and type-checked, not run by default) | Switch |
 |---|---|---|---|
@@ -369,12 +382,16 @@ Whatever the director returns, `reconcilePlan` forces the requested length and s
 schema validates it, so an AI plan can never break the renderer. Tests use fake clients; no test calls a
 paid service. See `.env.example`.
 
-## Deploy
+### Deploy
 
 Static hosting on **Cloudflare Pages** (free tier): build command `npm run build`, output folder `dist`.
 The optional `/api/compose` function in `functions/` needs AWS credentials as Pages secrets.
 
+</details>
+
 ## Built with Kiro
+
+**Kiro by the numbers:** see the [summary table at the top of KIRO-LOG.md](KIRO-LOG.md#summary).
 
 | Kiro feature | Files | What it does here |
 |---|---|---|
