@@ -4,6 +4,7 @@ import type { VizFrames } from '../../engine/render';
 import type { Score } from '../../score/schema';
 import { midiToName } from '../../score/theory';
 import { COLORS, FONT_SILK, fitCanvas } from './canvas';
+import { HEARTBEAT_BPM, beatShare, restingPulse } from './dread';
 
 const ROW_H = 58;
 const PAD = 22;
@@ -21,6 +22,9 @@ export class ChipView {
   private frames: VizFrames | undefined;
   /** Ectoplasm glow of resting pads for the current frame, 0..1. */
   private rest = 0.6;
+  /** Heartbeat level of resting pads, 0..1, or undefined while the cue plays (the pads then breathe in ectoplasm). */
+  private beat: number | undefined;
+  private resting = true;
   private readonly still = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : undefined;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
@@ -30,7 +34,21 @@ export class ChipView {
     this.frames = frames;
   }
 
+  /** True while nothing plays: the resting pads then idle in a slow red heartbeat tied to the drone. */
+  setResting(resting: boolean): void {
+    this.resting = resting;
+  }
+
   draw(positionSec: number): void {
+    const reduced = this.still?.matches ?? false;
+    this.beat = this.resting ? restingPulse(performance.now() / 1000, reduced) : undefined;
+    // The heartbeat is visible to tests: its rate and the level drawn this frame.
+    if (this.beat === undefined) {
+      delete this.canvas.dataset.heartbeatLevel;
+    } else {
+      this.canvas.dataset.heartbeatBpm = String(HEARTBEAT_BPM);
+      this.canvas.dataset.heartbeatLevel = this.beat.toFixed(3);
+    }
     // Resting pads breathe on a slow four-second cycle; under reduced motion they hold a steady glow.
     this.rest = this.still?.matches ? 0.6 : 0.5 + 0.4 * Math.sin((performance.now() / 4000) * Math.PI * 2);
     const rows = this.score?.tracks.length ?? 3;
@@ -90,6 +108,7 @@ export class ChipView {
       readout: live ? { voices: frames.voices[idx], midi: frames.notes[idx] } : undefined,
       accent: track?.role === 'stinger' ? COLORS.blood : COLORS.copper,
       rest: this.rest,
+      heartbeat: this.beat === undefined ? undefined : this.beat * beatShare(this.score ? track?.role : 'drone'),
       danger: track?.role === 'stinger',
     });
     ctx.globalAlpha = 1;
@@ -115,6 +134,8 @@ export interface OperatorRowSpec {
   accent: string;
   /** 0..1: the ectoplasm glow of pads at rest (the board breathes while nothing sounds). */
   rest?: number;
+  /** 0..1: the red heartbeat glow of pads at rest; when set it replaces the ectoplasm glow. */
+  heartbeat?: number;
   /** Tint the row blood red (the stinger and boom channels, both role "stinger"). */
   danger?: boolean;
 }
@@ -225,7 +246,20 @@ export function drawOperatorRow(ctx: CanvasRenderingContext2D, spec: OperatorRow
     ctx.fill();
     ctx.stroke();
     const rest = spec.rest ?? 0;
-    if (lv <= 0.002 && rest > 0) {
+    if (lv <= 0.002 && spec.heartbeat !== undefined) {
+      // Before anything plays the pads idle in a slow red heartbeat, as if the chip had a pulse.
+      const beat = spec.heartbeat;
+      ctx.save();
+      ctx.shadowColor = COLORS.blood;
+      ctx.shadowBlur = 3 + 14 * beat;
+      ctx.strokeStyle = `rgb(224 52 63 / ${0.3 + 0.6 * beat})`;
+      ctx.lineWidth = 1.25 + 0.75 * beat;
+      ctx.beginPath();
+      if (isCarrier) ctx.arc(cx, mid, PAD / 2 - 3, 0, Math.PI * 2);
+      else ctx.rect(cx - PAD / 2 + 3, mid - PAD / 2 + 3, PAD - 6, PAD - 6);
+      ctx.stroke();
+      ctx.restore();
+    } else if (lv <= 0.002 && rest > 0) {
       // At rest the pads hold a faint ectoplasm glow, as if something were still inside the chip.
       ctx.save();
       ctx.shadowColor = COLORS.ectoplasm;

@@ -3,7 +3,8 @@
 > **Who wrote this spec.** The first version was written by hand by the developer on 2026-11-16, from the
 > prompt Kiro could not complete (both calls were throttled; see KIRO-LOG.md). Kiro reviewed it against the
 > code in pass 2 on 2026-11-19 and rewrote every acceptance criterion in strict EARS form, and Kiro added
-> Requirements 12 to 14 in session 7 and Requirements 15 and 16 in session 10, both on 2026-11-22.
+> Requirements 12 to 14 in session 7, Requirements 15 and 16 in session 10 and Requirement 17 in session 11, all
+> on 2026-11-22.
 
 ## Introduction
 
@@ -349,3 +350,24 @@ the register writes, so that the machine feels haunted without any change to the
    `04352a45a32f7981b0647aefd434970bbe2d28b40e218bdcc935b8ec213c5c23`, and `samples/cellar-dread-genesis.vgm`
    is the CLI's export of the demo with the ghost note, pinned by sha256.
 
+## Requirement 17: Dread at rest
+
+**User story:** As a visitor who has not pressed Listen yet, I want the page to feel uneasy before anything
+plays, so that the silence already belongs to the cue.
+
+### Acceptance criteria
+
+1. WHILE nothing is playing THE SYSTEM SHALL idle the resting operator pads of the chip view in a slow red
+   heartbeat of 50 beats a minute, strongest on the drone channel, and expose its rate and current level on the
+   chip canvas.
+2. WHILE nothing is playing and no render sweep covers the timeline THE SYSTEM SHALL draw each sting of the
+   loaded cue as a pulsing blood-red line with a time tag, such as "1:10" for the demo, taken from the cue's own
+   sting time and never written into the code, and pulse it in step with the heartbeat.
+3. THE SYSTEM SHALL run a faint, flickering copper trace along the masthead rule.
+4. WHILE nothing is playing THE SYSTEM SHALL darken `--mask` to `#081a15` and close the vignette in further,
+   and WHEN a cue plays THE SYSTEM SHALL restore `--mask` to `#0c241d`, the heartbeat to the ectoplasm glow, and
+   the vignette to its playing strength.
+5. WHILE the visitor prefers reduced motion THE SYSTEM SHALL hold the heartbeat at one steady level, the sting
+   marker at one steady glow and the masthead trace at one steady opacity, and animate none of them.
+6. THE SYSTEM SHALL keep every element id, accessible name and tested string unchanged, add no horizontal scroll
+   at 360 px, 390 px or desktop width, and leave every WAV byte unchanged.

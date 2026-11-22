@@ -31,6 +31,12 @@
   color-scheme: dark;
 }
 
+/* Dread at rest: before anything plays (and whenever it is paused) the board sinks toward a darker green
+   and the vignette closes in. main.ts sets data-rest on the root; the page starts at rest. */
+:root[data-rest='true'] {
+  --mask: #081a15;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -47,6 +53,7 @@ body {
   font-size: var(--step-0);
   line-height: 1.55;
   background-color: var(--mask);
+  transition: background-color 600ms ease;
   /* Faint copper traces on the board. */
   background-image:
     linear-gradient(90deg, transparent 0 calc(100% - 1px), rgb(201 137 74 / 0.06) calc(100% - 1px)),
@@ -102,6 +109,10 @@ h3 {
   line-height: 1.05;
 }
 
+:root[data-rest='true'] body::before {
+  background: radial-gradient(ellipse 80% 75% at 50% 40%, transparent 42%, rgb(3 10 8 / calc(0.5 + var(--dread) * 0.35)) 100%);
+}
+
 /* Masthead */
 .masthead {
   position: relative;
@@ -111,6 +122,34 @@ h3 {
   align-items: end;
   padding: clamp(24px, 5vw, 56px) var(--gutter) 24px;
   border-bottom: 1px solid var(--copper-dim);
+}
+
+/* A faint copper trace along the masthead rule that flickers like a failing connection. The global
+   reduced-motion rule does not reach pseudo-elements, so the override at the end of this file holds it still. */
+.masthead::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--copper) 12%, var(--copper) 88%, transparent);
+  opacity: 0.45;
+  animation: traceFlicker 3.7s steps(1, end) infinite;
+}
+@keyframes traceFlicker {
+  0%, 100% { opacity: 0.45; }
+  7% { opacity: 0.12; }
+  9% { opacity: 0.55; }
+  31% { opacity: 0.3; }
+  33% { opacity: 0.08; }
+  36% { opacity: 0.5; }
+  62% { opacity: 0.38; }
+  64% { opacity: 0.15; }
+  66% { opacity: 0.45; }
+  88% { opacity: 0.22; }
+  90% { opacity: 0.5; }
 }
 
 /* A torn, blood-touched datasheet rule at the masthead foot (a thin inline-SVG strip in the padding band). */
@@ -1583,6 +1622,11 @@ canvas {
   * {
     animation: none !important;
     transition: none !important;
+  }
+  /* Dread at rest, held still: the masthead trace stops flickering and stays at one faint level. */
+  .masthead::before {
+    animation: none !important;
+    opacity: 0.4;
   }
   /* Pseudo-elements are not matched by *: the door's hit flash is switched off here. */
   .door::after {

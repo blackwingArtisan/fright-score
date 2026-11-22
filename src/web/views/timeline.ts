@@ -1,6 +1,7 @@
 import type { Score } from '../../score/schema';
 import { formatTime } from '../../score/theory';
 import { COLORS, FONT_GOTHIC, FONT_SILK, fitCanvas } from './canvas';
+import { HEARTBEAT_BPM, restingPulse, stingTag } from './dread';
 
 const HEIGHT = 260;
 const SECTION_H = 40;
@@ -21,6 +22,8 @@ export class TimelineView {
   private staticLayer: HTMLCanvasElement | undefined;
   private width = 0;
   private progress: number | undefined;
+  private resting = true;
+  private readonly still = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : undefined;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
@@ -46,6 +49,11 @@ export class TimelineView {
     return Math.max(0, Math.min(this.score.durationSec, (x / this.canvas.clientWidth) * this.score.durationSec));
   }
 
+  /** True while nothing plays: the sting marker then pulses in blood red at the heartbeat's rate. */
+  setResting(resting: boolean): void {
+    this.resting = resting;
+  }
+
   /** Draw the frame. `scare` turns the playhead blood red while a sting lands. */
   draw(playheadSec: number, scare = false): void {
     const { ctx, width } = fitCanvas(this.canvas, HEIGHT);
@@ -59,6 +67,12 @@ export class TimelineView {
       this.drawProgress(ctx, width, this.progress);
     } else {
       delete this.canvas.dataset.progressLabel;
+    }
+    if (this.progress === undefined && this.score && this.resting) {
+      this.drawStingMarkers(ctx, width, this.score);
+    } else {
+      delete this.canvas.dataset.stingTag;
+      delete this.canvas.dataset.stingPulse;
     }
     if (this.progress === undefined && this.score) {
       const x = (playheadSec / this.score.durationSec) * width;
@@ -75,6 +89,49 @@ export class TimelineView {
       ctx.lineTo(x, HEIGHT);
       ctx.stroke();
       ctx.shadowBlur = 0;
+    }
+  }
+
+  /**
+   * At rest, each sting is a pulsing blood-red line with a time tag ("1:10"), read from the cue. The pulse
+   * follows the chip's heartbeat; under reduced motion it holds still.
+   */
+  private drawStingMarkers(ctx: CanvasRenderingContext2D, width: number, score: Score): void {
+    const stings = score.plan.cues.filter((c) => c.kind === 'sting');
+    const pulse = restingPulse(performance.now() / 1000, this.still?.matches ?? false);
+    const data = this.canvas.dataset;
+    if (stings.length === 0) {
+      delete data.stingTag;
+      delete data.stingPulse;
+      return;
+    }
+    data.stingTag = stings.map((c) => stingTag(c.atSec)).join(' ');
+    data.stingPulse = pulse.toFixed(3);
+    data.heartbeatBpm = String(HEARTBEAT_BPM);
+    for (const cue of stings) {
+      const x = (cue.atSec / score.durationSec) * width;
+      ctx.save();
+      ctx.strokeStyle = `rgb(224 52 63 / ${0.55 + 0.45 * pulse})`;
+      ctx.lineWidth = 2 + 2 * pulse;
+      ctx.shadowColor = COLORS.blood;
+      ctx.shadowBlur = 4 + 14 * pulse;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, HEIGHT - RULER_H);
+      ctx.stroke();
+      ctx.restore();
+      const tag = stingTag(cue.atSec);
+      ctx.font = `bold 12px ${FONT_SILK}`;
+      const w = ctx.measureText(tag).width + 12;
+      const lx = Math.max(2, Math.min(width - w - 2, x - w / 2));
+      const ly = HEIGHT - RULER_H - 24;
+      ctx.fillStyle = COLORS.maskDeep;
+      ctx.fillRect(lx, ly, w, 18);
+      ctx.strokeStyle = `rgb(224 52 63 / ${0.6 + 0.4 * pulse})`;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(lx + 0.5, ly + 0.5, w - 1, 17);
+      ctx.fillStyle = COLORS.blood;
+      ctx.fillText(tag, lx + 6, ly + 13);
     }
   }
 

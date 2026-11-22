@@ -696,8 +696,20 @@ function updateDread(pos: number): void {
   document.documentElement.style.setProperty('--dread', String(dread));
 }
 
+let restShown: boolean | undefined;
+/** Dread at rest: while nothing plays the board is darker, and the chip and the sting marker beat. */
+function updateRest(): void {
+  const resting = !player.playing;
+  if (resting === restShown) return;
+  restShown = resting;
+  document.documentElement.dataset.rest = String(resting);
+  timeline.setResting(resting);
+  chip.setResting(resting);
+}
+
 function frame(): void {
   const pos = player.position;
+  updateRest();
   setHush(inSilence(pos));
   checkStings(pos);
   updateDread(pos);

@@ -133,6 +133,14 @@ and heading accessible names, and the Playwright-asserted strings are unchanged.
   - _Requirements: 16.5, 16.6_
 - [x] 55. Add `tests/unit/ghost.test.ts` and `tests/e2e/possessed-chip.spec.ts`
   - _Requirements: 16.1 to 16.6_
+- [x] 56. Add `src/web/views/dread.ts` (the 50 bpm heartbeat, the drone share, the sting tag) and `tests/unit/dread.test.ts`
+  - _Requirements: 17.1, 17.2, 17.5_
+- [x] 57. Idle the chip's resting pads in the red heartbeat (`ChipView.setResting`, `heartbeat` on `drawOperatorRow`) and draw the pulsing sting line and tag on the timeline (`TimelineView.setResting`), both exposed as `data-` attributes on their canvases
+  - _Requirements: 17.1, 17.2, 17.5_
+- [x] 58. Add the flickering masthead trace, the darker `--mask` and stronger vignette under `html[data-rest]` (set from `main.ts`, lifted while a cue plays), and the reduced-motion overrides
+  - _Requirements: 17.3, 17.4, 17.5_
+- [x] 59. Add `tests/e2e/dread-at-rest.spec.ts`: animated by default, static under reduced motion, the tag reads the cue, the mask lifts on play, no horizontal scroll at 360, 390 and 1360 px
+  - _Requirements: 17.1 to 17.6_
 
 ## Requirement-to-test traceability
 
@@ -157,6 +165,7 @@ CLI tests run under Vitest (`npm run test:unit`); `e2e/` tests run under Playwri
 | 14. Kiro IDE hooks | `unit/kiro-config.test.ts` (every `.kiro.hook` parses, known trigger, npm scripts exist) | none |
 | 15. Demo render and form polish | `e2e/form-polish.spec.ts` (all errors at once, buttons enabled and the queued WAV during the demo render, Summon restarts it, label position, hint); `e2e/mobile.spec.ts` (Listen overlay small, lower left, fades); `unit/ghost.test.ts` (`progressLabelBox`); `e2e/first-load.spec.ts` (Download WAV enabled, 15.8) | none |
 | 16. The possessed chip | `unit/ghost.test.ts` (message from the seed, GD3 ghost note, pinned VGM sha256, WAV hash unchanged); `e2e/possessed-chip.spec.ts` (flicker, `aria-hidden` rows, one announcement, still under reduced motion); `cli/samples.test.ts` (the sample is the CLI's export) | none |
+| 17. Dread at rest | `unit/dread.test.ts` (50 bpm, beat shape, still level, drone share, the demo's tag from the cue); `e2e/dread-at-rest.spec.ts` (heartbeat and trace animate, static under reduced motion, tag reads the cue, `--mask` darker at rest, no horizontal scroll at 360, 390 and 1360 px) | none |
 
 Tasks 26 and 34 were re-checked against the current suite and stay open: `unit/operator.test.ts` covers
 feedback levels 0, 2 and 5 but not 0 through 7 or the clamp at 7, and `cli/score.test.ts` runs `--quiet` and

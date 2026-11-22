@@ -27,7 +27,8 @@ the developer changed afterwards to get Kiro's work green.
 | 2026-11-22 | 9 | Started the `agent-scoring` build: `score_level`, `verify_cue`, the onset detector, the prompt and resource modules and the tests that spawn the server, with 2 context7 MCP calls; stopped by a service throttling error before ticking any task | 9 min 48 s | 21.49 | 1,239 | 0 | [session 9](docs/kiro-sessions/session-9-agent-scoring-build.md) |
 | 2026-11-22 | 9b | Finished the `agent-scoring` build: checked session 9's work, added the prompt and resource tests, the steering line, the Godot level example notes and the README MCP section; all 28 tasks ticked | 9 min 36 s | 14.80 | 226 | 0 | [session 9b](docs/kiro-sessions/session-9b-agent-scoring-finish.md) |
 | 2026-11-22 | 10 | Called its own MCP tools (`score_level`, 3 `verify_cue`, 2 `score_cue`) to score the example level and the video soundtrack; built Requirement 15 (timeline label, phone overlay, all field errors at once, buttons live during the demo render) and Requirement 16 (the possessed-chip easter egg and a GD3 ghost note) | 23 min 12 s | 22.56 | 743 | 0 | [session 10](docs/kiro-sessions/session-10-mcp-use-overlays-egg.md) |
-| | **Total** | | | **143.29** | **6,275** | **0** | |
+| 2026-11-22 | 11 | Built Requirement 17, dread at rest: a 50 bpm heartbeat on the idle chip pads, a pulsing sting marker tagged from the cue, a copper trace on the masthead and a darker mask, all static under reduced motion (7 Vitest and 7 Playwright tests) | 8 min 48 s | 4.58 | 377 | 0 | [session 11](docs/kiro-sessions/session-11-dread-at-rest.md) |
+| | **Total** | | | **147.87** | **6,652** | **0** | |
 
 Credits are read with `kiro-cli /usage` before and after each session, so other use of the account between
 sessions is not counted.
@@ -129,6 +130,11 @@ has the time, credits and lines.
     `f7dc0c42efcf69105b4fb59449b573e94221d7b14889d30f14d5015ea946afc6`.
   - End card: "This video's soundtrack was written by Kiro through Fright Score's MCP server and performed by a
     1988-style sound chip. Re-render it byte for byte."
+
+- **Session 11.** Kiro added Requirement 17 to `fright-score-core` and built it, so the page feels uneasy before
+  anything plays: the idle chip pads beat a red heartbeat at 50 bpm (the drone strongest), the timeline shows each
+  sting as a pulsing blood-red line tagged from the cue ("1:10" for the demo), a copper trace flickers along the
+  masthead rule, and the mask darkens at rest. Everything holds still under reduced motion.
 
 ## How Kiro is used in this repo
 
