@@ -31,8 +31,8 @@ muxed with the exact WAV the CLI renders (the hit lands 6.5 s in).
    with the blood flash, on 1:10.
 3. Press **Download for Sega Genesis** and open the `.vgm` in any VGM player: the same cue as real YM2612
    register writes.
-4. Kiro: two specs with EARS requirements, three steering files, three hooks and a logged Kiro CLI agent pass
-   with sub-agents. See [Built with Kiro](#built-with-kiro).
+4. Kiro: 4 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
+   See [Built with Kiro](#built-with-kiro).
 
 ## The problem
 

@@ -31,6 +31,9 @@ test('on a phone the form sits right after the transport, and a pinned button ju
   expect(form.y).toBeLessThan(chip.y);
 
   const cta = page.getByRole('link', { name: 'Write your scene' });
+  // The button stays hidden while the transport is on screen, and shows once the transport scrolls away.
+  await expect(cta).toBeHidden();
+  await page.evaluate(() => window.scrollTo(0, document.querySelector('.chip-wrap')!.getBoundingClientRect().top + window.scrollY));
   await expect(cta).toBeInViewport();
   await cta.click();
   await expect(page.getByLabel('Describe the scene')).toBeFocused();

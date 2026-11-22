@@ -229,3 +229,61 @@ horror mood is set before a single note plays.
 5. WHEN an empty state or helper text is shown THE SYSTEM SHALL use spookier microcopy.
 6. WHEN the cursed look is applied THE SYSTEM SHALL keep every text color at WCAG AA contrast against its
    background.
+
+## Requirement 12: Kiro workspace counts stay true
+
+**User story:** As a reviewer reading the README, I want the numbers about the Kiro workspace to match the
+`.kiro` folder, so that no claim about specs, steering, hooks, agents or MCP servers can go stale.
+
+### Acceptance criteria
+
+1. a. WHEN the test suite runs THE SYSTEM SHALL count the spec folders under `.kiro/specs` that hold
+   requirements.md, design.md and tasks.md, the steering `.md` files, the kiro-cli hooks (`.json` files in
+   `.kiro/hooks`), the IDE hooks (`.kiro.hook` files in `.kiro/hooks`), the agents (`.json` files in
+   `.kiro/agents`) and the MCP servers in `.kiro/settings/mcp.json`.
+   b. THE SYSTEM SHALL check that the steering inclusion modes named in the counts sentence are exactly the
+   set the steering files use.
+   c. THE SYSTEM SHALL check that one MCP server runs `scripts/mcp/fright-score-mcp.ts`.
+2. a. THE SYSTEM SHALL find the counts sentence in README.md, in KIRO-LOG.md and, when the file exists, in
+   docs/writeups/devpost.md, with one regular expression.
+   b. IF a number in the sentence differs from the count THEN THE SYSTEM SHALL fail with a message that names
+   the file, the number it states and the number the folder holds.
+
+## Requirement 13: Phone first screen
+
+**User story:** As a visitor on a phone, I want Play and Jump to the scare in the first screen and nothing
+laid over them, so that a tap on a button does what its label says.
+
+### Acceptance criteria
+
+1. WHILE the transport is in view THE SYSTEM SHALL hide the "Write your scene" button.
+2. WHILE the transport is out of view and the form is not in view THE SYSTEM SHALL show the "Write your
+   scene" button.
+3. WHEN the viewport is 900 px wide or narrower THE SYSTEM SHALL place the transport directly under the
+   timeline.
+4. WHEN the viewport is narrower than 520 px THE SYSTEM SHALL use a compact masthead and stage head so that
+   Play and Jump to the scare sit inside the first viewport at 375 x 667.
+5. WHEN a visible Jump to the scare button is tapped at its center THE SYSTEM SHALL deliver the tap to that
+   button, at 390 x 844 and at 375 x 667.
+6. THE SYSTEM SHALL keep every element id, accessible name and tested string unchanged.
+
+## Requirement 14: Kiro IDE hooks
+
+**User story:** As a developer opening the repository in the Kiro IDE, I want the same guards as the CLI
+hooks to run there, so that a broken engine edit is caught in either tool.
+
+### Acceptance criteria
+
+1. THE SYSTEM SHALL keep the four kiro-cli `.json` hooks in `.kiro/hooks` as they are.
+2. a. THE SYSTEM SHALL provide `test-on-save.kiro.hook`, which runs `npm run test:unit` when an engine,
+   score, director, WAV or web/live TypeScript file is edited.
+   b. THE SYSTEM SHALL provide `determinism-guard.kiro.hook`, which runs `npm run check:determinism` when an
+   engine, score or director TypeScript file is edited.
+   c. THE SYSTEM SHALL provide `mcp-golden-cue.kiro.hook`, which asks the agent to call the `score_cue` tool
+   of the fright-score MCP server for the README's golden cue when an engine file is edited and to report a
+   different `stingLandingSec` or `sha256` as a regression.
+3. WHEN the test suite runs THE SYSTEM SHALL check that every `.kiro.hook` file parses, has a known
+   `when.type` with non-empty patterns and a `then.type` of askAgent or runCommand.
+4. WHEN the test suite runs THE SYSTEM SHALL check that every runCommand names an npm script that exists in
+   package.json.
+

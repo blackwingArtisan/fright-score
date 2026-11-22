@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "MCP golden cue",
+  "description": "After an engine edit, scores the README's golden cue through the fright-score MCP server and checks the sting position and the hash, so a change to the sound shows up as a regression.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/engine/**/*.ts"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Call the fright-score MCP tool `score_cue` with {\"mood\":\"chase\",\"durationSec\":30,\"stingAtSec\":[24],\"seed\":3}. Confirm that `stingLandingSec` is [24] and that `sha256` is 3e289fecc70aa4e968ef6ebf59ed8683fe41d2c40749af73aa63e98900d6908d, the README's golden cue. Report any mismatch as a regression, with the value you got."
+  }
+}

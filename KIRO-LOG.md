@@ -4,6 +4,8 @@ A record of every Kiro call made while building Fright Score: what was asked, wh
 and the credits it used. The first two calls ran on the free plan; later passes used the
 `kiroween2026` bonus credits.
 
+**Kiro by the numbers:** 4 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
+
 ## Kiro pass 3: the director tools, specced and built by Kiro (2026-11-19)
 
 Kiro wrote the spec `.kiro/specs/director-tools/` and then built all 24 of its tasks over three

@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Determinism guard",
+  "description": "Guards reproducibility by seed: fails if Math.random or Date.now appears in src/engine, src/score or src/director.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/engine/**/*.ts", "src/score/**/*.ts", "src/director/**/*.ts"]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npm run check:determinism"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Unit tests on engine save",
+  "description": "Runs the Vitest suite whenever an engine, score, director, WAV or live-chip module is edited, so a broken operator or envelope is caught immediately.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/engine/**/*.ts",
+      "src/score/**/*.ts",
+      "src/director/**/*.ts",
+      "src/wav/**/*.ts",
+      "src/web/live/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npm run test:unit"
+  }
+}

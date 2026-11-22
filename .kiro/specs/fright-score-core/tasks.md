@@ -98,6 +98,19 @@ and heading accessible names, and the Playwright-asserted strings are unchanged.
 - [x] 40. Playwright assertion that the masthead flicker is on by default and disabled under prefers-reduced-motion
   - _Requirements: 11.1, 11.2_
 
+## Pass 3 — Kiro workspace, phone first screen and IDE hooks
+
+- [x] 41. Add `tests/unit/kiro-counts.test.ts`: count specs, steering files and their inclusion modes, kiro-cli hooks, IDE hooks, agents and MCP servers from `.kiro`, check the fright-score MCP entry, and match the counts sentence in README.md, KIRO-LOG.md and (when present) docs/writeups/devpost.md with one regular expression
+  - _Requirements: 12.1, 12.2_
+- [x] 42. Hide `#write-cta` while `.transport` is in view (IntersectionObserver), keep the transport under the timeline, and compact the masthead and stage head below 520 px
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.6_
+- [x] 43. Add `tests/e2e/phone-fold.spec.ts`: at 390x844 and 375x667 the `#jump` and `#write-cta` boxes do not overlap, `elementFromPoint` at the center of `#jump` is `#jump`, and `#jump` sits inside the first viewport at 375x667
+  - _Requirements: 13.4, 13.5_
+- [x] 44. Add `test-on-save.kiro.hook`, `determinism-guard.kiro.hook` and `mcp-golden-cue.kiro.hook` beside the kiro-cli hooks, and update the IDE hook count in the counts sentence
+  - _Requirements: 14.1, 14.2_
+- [x] 45. Extend `tests/unit/kiro-config.test.ts`: every `.kiro.hook` parses, has a known `when.type` with patterns and a valid `then.type`, and every runCommand names an npm script in package.json
+  - _Requirements: 14.3, 14.4_
+
 ## Requirement-to-test traceability
 
 Each requirement, the tests that pin it down, and the open task for any criterion not yet pinned. Unit and
@@ -116,6 +129,9 @@ CLI tests run under Vitest (`npm run test:unit`); `e2e/` tests run under Playwri
 | 9. Swappable AI director | `unit/director.test.ts` (local by default, Bedrock with a fake client and one repair round, remote); `unit/server.test.ts`; every test uses fake clients (9.4) | none |
 | 10. Seamless loops and share links | `unit/loop.test.ts`; `cli/score.test.ts` (loops); `e2e/share-loop.spec.ts` | 37 (10.1), 38 (10.2) |
 | 11. A cursed datasheet look | `e2e/app.spec.ts` (flicker on, and off under reduced motion: 11.1, 11.2) | 11.3 to 11.6 are checked by visual review |
+| 12. Kiro workspace counts stay true | `unit/kiro-counts.test.ts` (counts from `.kiro` against the sentence in each document) | none |
+| 13. Phone first screen | `e2e/phone-fold.spec.ts` (no overlap, tap reaches Jump, above the fold at 375x667); `e2e/mobile.spec.ts` (the pinned button appears when the transport is out of view) | none |
+| 14. Kiro IDE hooks | `unit/kiro-config.test.ts` (every `.kiro.hook` parses, known trigger, npm scripts exist) | none |
 
 Tasks 26 and 34 were re-checked against the current suite and stay open: `unit/operator.test.ts` covers
 feedback levels 0, 2 and 5 but not 0 through 7 or the clamp at 7, and `cli/score.test.ts` runs `--quiet` and

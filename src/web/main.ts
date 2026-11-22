@@ -885,9 +885,25 @@ function placeDirection(): void {
 }
 placeDirection();
 narrow.addEventListener('change', placeDirection);
-new IntersectionObserver(([entry]) => {
-  els.writeCta.hidden = entry.isIntersecting;
-}).observe(els.direction);
+// The button shows only while the transport is out of view (it would cover Jump to the scare otherwise) and
+// the form is not already on screen.
+let transportInView = true;
+let directionInView = false;
+const syncWriteCta = (): void => {
+  els.writeCta.hidden = transportInView || directionInView;
+};
+{
+  const watcher = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.target === els.transport) transportInView = entry.isIntersecting;
+      else directionInView = entry.isIntersecting;
+    }
+    syncWriteCta();
+  });
+  watcher.observe(els.transport);
+  watcher.observe(els.direction);
+}
+syncWriteCta();
 els.writeCta.addEventListener('click', (e) => {
   e.preventDefault();
   els.direction.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
