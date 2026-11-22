@@ -34,6 +34,7 @@ export const PATCH_IDS = [
   'screech',
   'ritual-drum',
   'choir-organ',
+  'theremin-lead',
 ] as const;
 
 export type PatchId = (typeof PATCH_IDS)[number];
@@ -199,6 +200,23 @@ export const PATCHES: Record<PatchId, Patch> = {
       op(4, 0.07, env(1.5, 2, 0.5, 0, 2), 6),
     ],
     lfo: { rateHz: 4.8, vibratoCents: 11, tremolo: 0.06 },
+    gain: 0.45,
+  },
+  'theremin-lead': {
+    id: 'theremin-lead',
+    name: 'Theremin Lead',
+    blurb: 'A near-pure sine that wavers on a wide, slow vibrato, with a detuned twin. A hand shaking in the air.',
+    algorithm: 4,
+    feedback: 1,
+    ops: [
+      // Pair one: a faint same-pitch modulator warms the first carrier, which sits a few cents flat.
+      op(1, 0.03, env(0.35, 0.8, 0.92, 0, 0.7)),
+      op(1, 0.8, env(0.3, 0.8, 0.92, 0, 0.7), -4),
+      // Pair two: a faint octave modulator gives the twin carrier a thin edge; it sits a few cents sharp.
+      op(2, 0.025, env(0.4, 0.8, 0.9, 0, 0.8)),
+      op(1, 0.18, env(0.38, 0.8, 0.9, 0, 0.8), 4),
+    ],
+    lfo: { rateHz: 3.6, vibratoCents: 40, tremolo: 0.05 },
     gain: 0.45,
   },
 };

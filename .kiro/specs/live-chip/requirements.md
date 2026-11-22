@@ -22,7 +22,7 @@ synthesis respond to my hands, not just a finished file.
 2. a. WHEN the user presses a key, on-screen or A to K on the computer keyboard, THE SYSTEM SHALL start a
    voice using the selected patch.
    b. WHEN the user releases a held key THE SYSTEM SHALL release that voice.
-3. a. THE SYSTEM SHALL let the user choose any of the ten patches.
+3. a. THE SYSTEM SHALL let the user choose any of the eleven patches.
    b. WHEN the user presses Z or X THE SYSTEM SHALL shift the keyboard down or up one octave.
    c. WHEN the user activates an octave button THE SYSTEM SHALL shift the keyboard by one octave in that
    direction.

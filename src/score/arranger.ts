@@ -59,6 +59,7 @@ const PATCH_OCTAVE: Record<PatchId, number> = {
   screech: 5,
   'ritual-drum': 2,
   'choir-organ': 3,
+  'theremin-lead': 5,
 };
 
 const r3 = (x: number) => Math.round(x * 1000) / 1000;

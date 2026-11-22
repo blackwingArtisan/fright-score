@@ -52,7 +52,7 @@ on the unchanged pipeline, so the sessions can run in either order.
   - _Requirements: 7.2a, 7.2c, 7.3, 4.2, 4.3, 4.4_
 - [x] 20. Test `score_cue` over stdio: same seed twice gives the same `sha256`, another seed gives another, the hash equals `runCli`'s file for the same arguments, `stingLandingSec` matches the requested time, nothing is written without `writeWavTo`, a written file hashes to the reported value and is refused for an existing file, an outside path and a name without `.wav`, and a bad argument gives `isError` while the server keeps answering
   - _Requirements: 7.2b, 5.4, 5.5, 5.6, 5.7, 5.8_
-- [x] 21. Test `list_patches` over stdio: ten patches in `PATCH_IDS` order with the five fields
+- [x] 21. Test `list_patches` over stdio: every patch in `PATCH_IDS` order with the five fields
   - _Requirements: 6.1, 7.2a_
 - [x] 22. README: a section "Use it from an agent (MCP)" with the registration, both tools, the `score_cue` arguments and a sample result; update the adapter table row for the Bedrock director; say the model writes the plan and the FS-666 makes the sound, and that the MCP server uses the local director
   - _Requirements: 8.1, 8.2, 8.3_

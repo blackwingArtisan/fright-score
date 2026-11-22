@@ -23,7 +23,7 @@ With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue aroun
 5. Kiro: 5 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
    See [Built with Kiro](#built-with-kiro).
 
-**Kiro by the numbers:** 13 logged Kiro calls, 147.87 credits, 6,652 lines written by Kiro with 0 lines fixed, and
+**Kiro by the numbers:** 14 logged Kiro calls, 152.57 credits, 6,838 lines written by Kiro with 0 lines fixed, and
 Fright Score's own MCP server called from a Kiro session. Every call is in the [Kiro log](KIRO-LOG.md#summary).
 
 To run it locally instead: `npm install && npm run dev`, then open http://localhost:3120.
@@ -212,7 +212,7 @@ cues; at $0.05 a cue that is about $240 a jam. The bet is the growth of agent-bu
   envelope rates fitted to the chip's rate table), the score is arranged for six FM channels (the sting always
   gets all six), and the result is a VGM 1.50 file with sample-accurate timing and loop points for loops.
 - **Play the chip live:** a keyboard (on screen, or A to K) drives the FS-666 in real time in an
-  AudioWorklet on the audio thread. Pick any of the ten patches and watch its operators and envelopes
+  AudioWorklet on the audio thread. Pick any of the eleven patches and watch its operators and envelopes
   respond as you play. It runs the same operator code as the renderer, sample for sample.
 - **Levels that fit the mood:** every cue is measured for integrated loudness (ITU-R BS.1770) and trimmed to
   its mood's ceiling, from -14 LUFS for a chase to -18 LUFS for a lullaby, under a -3 dBTP true peak.
@@ -287,7 +287,7 @@ Register it in `.kiro/settings/mcp.json`, next to any other servers:
 
 The server has four tools, one prompt and one resource:
 
-- `list_patches` takes no arguments and returns the ten FS-666 instruments (`id`, `name`, `blurb`, `algorithm`,
+- `list_patches` takes no arguments and returns the eleven FS-666 instruments (`id`, `name`, `blurb`, `algorithm`,
   `feedback`) in library order.
 - `score_cue` renders a cue and returns the plan, the second each sting lands, and the SHA-256 of the WAV.
 - `score_level` renders a whole game level: one seamless loop per room and one sting per event (see below).
@@ -456,7 +456,7 @@ The optional `/api/compose` function in `functions/` needs AWS credentials as Pa
 | Specs | [`.kiro/specs/fright-score-core/`](.kiro/specs/fright-score-core), [`.kiro/specs/live-chip/`](.kiro/specs/live-chip), [`.kiro/specs/director-tools/`](.kiro/specs/director-tools), [`.kiro/specs/door-scene/`](.kiro/specs/door-scene), [`.kiro/specs/agent-scoring/`](.kiro/specs/agent-scoring) | EARS requirements, a design and a task plan for the director, arranger, engine, WAV, CLI, web app and loudness; the real-time AudioWorklet keyboard; the Bedrock tool call and MCP server; the browser door scene; and scoring a whole game level from an agent. Kiro wrote the last three and built them. |
 | Steering | [`.kiro/steering/`](.kiro/steering) | Product, tech and structure rules Kiro loads for every task: determinism by seed, the adapter rule, units in names, the folder map. `engine-dsp.md` loads only when engine or live-chip files are in context (hot-loop and determinism rules); `export-formats.md` is pulled in by hand for WAV `smpl` and VGM work. |
 | Hooks | [`.kiro/hooks/`](.kiro/hooks) | `test-on-save` runs the unit tests when engine, score, director, WAV or live-chip code is saved. `determinism-guard` blocks unseeded randomness (`Math.random`, `Date.now`) in engine and composer code. `spec-task-sync` is an agent hook that checks off finished tasks and asks for a green suite before the agent stops. `render-bench` is run on demand and times the demo render after an engine change. |
-| Custom agent | [`.kiro/agents/fs666-sound-designer.json`](.kiro/agents/fs666-sound-designer.json) | A patch-design agent: loads the tech, engine and export steering plus the patch bank, may write only engine code and unit tests, and may run only the typecheck, tests, determinism check, benchmark and CLI. A unit test keeps every hook, steering file and agent resource pointing at files and scripts that exist. |
+| Custom agent | [`.kiro/agents/fs666-sound-designer.json`](.kiro/agents/fs666-sound-designer.json) | A patch-design agent: loads the tech, engine and export steering plus the patch bank, and its permission rules allow writes only to engine code and unit tests and commands only for the typecheck, tests, determinism check, benchmark and CLI. In session 12 it designed the `theremin-lead` patch with its tests. Its limit probes went through, because this repo's headless runner trusts `fs_write` and `run_command` for every session; the log records it. A unit test keeps every hook, steering file and agent resource pointing at files and scripts that exist. |
 | Spec built by Kiro, MCP | [`.kiro/specs/director-tools/`](.kiro/specs/director-tools), [`scripts/mcp/`](scripts/mcp), [`KIRO-LOG.md`](KIRO-LOG.md), pass 3 | Kiro wrote the spec and built all 24 tasks in three sessions (18.24 credits): the Bedrock director's forced `score_cue` tool call and the stdio MCP server with `score_cue` and `list_patches`, 41 new tests, and 99% of the feature's lines. It used the aws-docs and context7 MCP servers while designing, then called its own server from a new session. |
 | Kiro scored the video soundtrack | [`KIRO-LOG.md`](KIRO-LOG.md), session 10 | Kiro called `score_level` on [`examples/godot/level.json`](examples/godot/level.json) (hashes equal to the committed manifest) and scored the demo video's soundtrack with `score_cue`, then checked each sting with `verify_cue`. See [Scored for the video soundtrack](#scored-for-the-video-soundtrack). |
 | Agent run with sub-agents | [`KIRO-LOG.md`](KIRO-LOG.md), pass 2 | Kiro CLI audited both specs against the code with two sub-agents, rewrote every acceptance criterion in strict EARS form, added 27 tasks for behaviors no test pinned down, built the candlelit theme and its reduced-motion test, and validated the hooks against the v1 schema (29.38 credits). |

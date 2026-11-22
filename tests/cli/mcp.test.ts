@@ -198,7 +198,7 @@ describe('list_patches over stdio', () => {
   it('returns every patch in PATCH_IDS order with id, name, blurb, algorithm and feedback (Req 6.1, 6.2, 7.2a)', async () => {
     const reply = await client.call('list_patches');
     const patches = reply.result!.structuredContent.patches as Record<string, unknown>[];
-    expect(patches).toHaveLength(10);
+    expect(patches).toHaveLength(11);
     expect(patches.map((p) => p.id)).toEqual([...PATCH_IDS]);
     for (const p of patches) {
       expect(Object.keys(p).sort()).toEqual(['algorithm', 'blurb', 'feedback', 'id', 'name']);

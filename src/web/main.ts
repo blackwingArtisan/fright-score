@@ -746,6 +746,7 @@ const PATCH_BASE: Record<PatchId, number> = {
   screech: 60,
   'ritual-drum': 36,
   'choir-organ': 48,
+  'theremin-lead': 60,
 };
 const DEFAULT_LIVE_PATCH: PatchId = 'choir-organ';
 let liveBase = PATCH_BASE[DEFAULT_LIVE_PATCH];

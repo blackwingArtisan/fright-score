@@ -82,6 +82,11 @@ describe('YM2612 register mapping', () => {
     // A slow pad attacks slowly, a percussive bell instantly.
     expect(ymPatch(PATCHES['wraith-pad']).ops[1].ar).toBeLessThan(15);
     expect(ymPatch(PATCHES['glass-bell']).ops[1].ar).toBe(31);
+    // The theremin lead is in the library, maps with a vibrato depth step, and attacks softly.
+    expect(PATCH_IDS).toContain('theremin-lead');
+    const theremin = ymPatch(PATCHES['theremin-lead']);
+    expect(theremin.fms).toBe(6);
+    expect(theremin.ops[1].ar).toBeLessThan(15);
   });
 });
 

@@ -14,7 +14,7 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 - [x] 7. FM engine: sine table, envelope, operator with feedback, eight algorithms, voice with LFO and glide
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
-- [x] 8. Patch library of ten instruments tuned for horror
+- [x] 8. Patch library of ten instruments tuned for horror (an eleventh, `theremin-lead`, was added by the custom agent in Kiro session 12)
   - _Requirements: 5.3_
 - [x] 9. Renderer with polyphony limits, voice stealing, reverb and visualizer frames
   - _Requirements: 5.6, 6.6, 8.3_
