@@ -1,5 +1,7 @@
 # Fright Score
 
+**Live: [fright-score.pages.dev](https://fright-score.pages.dev/)** (runs entirely in your browser with the free local director; the optional Bedrock director is not deployed there).
+
 **Horror music for your game jam, tonight: a director writes the score, a haunted 1990s FM synth chip
 performs it, and the scare lands on the exact second you ask for.**
 
@@ -23,8 +25,8 @@ muxed with the exact WAV the CLI renders (the hit lands 6.5 s in).
 
 ## Judges: 60 seconds
 
-1. Run it (`npm install && npm run dev`, then open http://localhost:3120). The demo cue is already on the
-   board.
+1. Open [fright-score.pages.dev](https://fright-score.pages.dev/) (or run it: `npm install && npm run dev`, then
+   open http://localhost:3120). The demo cue is already on the board.
 2. Turn the sound on and press **Jump to the scare**: six seconds of riser, 0.6 s of silence, then the sting,
    with the blood flash, on 1:10.
 3. Press **Download for Sega Genesis** and open the `.vgm` in any VGM player: the same cue as real YM2612
