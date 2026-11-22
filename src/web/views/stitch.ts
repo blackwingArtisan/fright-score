@@ -1,6 +1,7 @@
 import { describeWrite, parseVgm, VGM_SAMPLE_RATE, type VgmResult, type VgmWrite } from '../../export/vgm';
 import type { Score } from '../../score/schema';
 import { formatTime } from '../../score/theory';
+import { GHOST_FLICKER_STEPS_MS, GHOST_STILL_MS, ghostAnnouncement, ghostHex, ghostMessage } from './ghost';
 
 /** Register writes shown at once, ending at the playhead. */
 const VISIBLE_WRITES = 10;
@@ -15,14 +16,59 @@ export class StitchView {
   private sections: { startSec: number; endSec: number }[] = [];
   private shownIndex = -2;
   private shownSection = -2;
+  /** The hidden message while it shows: one word per row, on the newest rows. */
+  private ghost: readonly string[] | undefined;
+  private ghostTimers: ReturnType<typeof setTimeout>[] = [];
 
   constructor(
     private readonly planEl: HTMLElement,
     private readonly listEl: HTMLOListElement,
     private readonly countEl: HTMLElement,
+    /** A polite live region that announces the hidden message once; the rows themselves stay hidden. */
+    private readonly announceEl?: HTMLElement,
   ) {}
 
+  /**
+   * Possess the newest register-write rows: for a moment they spell a message taken from the cue's seed.
+   * It flickers in a fixed rhythm, or holds still when `reducedMotion` is set. Returns false when there
+   * are no rows to possess yet.
+   */
+  haunt(seed: number, reducedMotion: boolean): boolean {
+    if (this.shownIndex < 0 || this.writes.length === 0) return false;
+    this.endHaunt();
+    const words = ghostMessage(seed);
+    if (this.announceEl) {
+      this.announceEl.textContent = '';
+      this.announceEl.textContent = ghostAnnouncement(seed);
+    }
+    const show = (visible: boolean) => {
+      this.ghost = visible ? words : undefined;
+      this.renderWrites(this.shownIndex);
+    };
+    if (reducedMotion) {
+      show(true);
+      this.ghostTimers.push(setTimeout(() => show(false), GHOST_STILL_MS));
+      return true;
+    }
+    let at = 0;
+    GHOST_FLICKER_STEPS_MS.forEach((ms, i) => {
+      const visible = i % 2 === 0;
+      this.ghostTimers.push(setTimeout(() => show(visible), at));
+      at += ms;
+    });
+    this.ghostTimers.push(setTimeout(() => show(false), at));
+    return true;
+  }
+
+  private endHaunt(): void {
+    for (const t of this.ghostTimers) clearTimeout(t);
+    this.ghostTimers = [];
+    this.ghost = undefined;
+  }
+
   set(score: Score | undefined, vgm: VgmResult | undefined): void {
+    this.endHaunt();
+    if (this.announceEl) this.announceEl.textContent = '';
     this.writes = vgm ? parseVgm(vgm.bytes).writes : [];
     this.sections = score?.plan.sections ?? [];
     this.shownIndex = -2;
@@ -94,8 +140,26 @@ export class StitchView {
       }
       rows.push(li);
     }
+    this.possess(rows);
     this.listEl.replaceChildren(...rows);
     this.listEl.dataset.index = String(index);
+  }
+
+  /** Rewrite the newest rows as the hidden message and take them out of the accessibility tree. */
+  private possess(rows: HTMLLIElement[]): void {
+    const words = this.ghost;
+    if (!words) return;
+    const count = Math.min(words.length, rows.length);
+    for (let i = 0; i < count; i++) {
+      const row = rows[rows.length - count + i];
+      const cells = row.children;
+      cells[1].textContent = '??';
+      cells[2].textContent = words[i];
+      cells[3].textContent = ghostHex(words[i]);
+      row.className = 'stitch__write stitch__write--ghost';
+      row.setAttribute('aria-hidden', 'true');
+      row.dataset.ghost = words[i];
+    }
   }
 
   private renderPlan(score: Score | undefined): void {

@@ -468,6 +468,16 @@ function gd3(title: string, notes: string): Uint8Array {
   return out;
 }
 
+/** Label that introduces the scene text in the GD3 notes field. */
+export const GHOST_NOTE_LABEL = 'Ghost note: ';
+
+/** The GD3 notes field: seed and origin, then the scene the cue was written for (when it has one) as a ghost note. */
+export function gd3Notes(score: Score): string {
+  const base = `Seed ${score.seed}. Arranged for the YM2612 from a Fright Score cue.`;
+  const scene = score.plan.scene?.trim();
+  return scene ? `${base} ${GHOST_NOTE_LABEL}${scene}` : base;
+}
+
 const HEADER_BYTES = 0x40;
 
 /** Render a score as a VGM file for the YM2612. Same score, same bytes. */
@@ -505,7 +515,7 @@ export function scoreToVgm(score: Score): VgmResult {
   if (stats.totalSamples > now) wait(stats.totalSamples - now);
   data.push(0x66);
 
-  const tag = gd3(score.plan.title, `Seed ${score.seed}. Arranged for the YM2612 from a Fright Score cue.`);
+  const tag = gd3(score.plan.title, gd3Notes(score));
   const total = HEADER_BYTES + data.length + tag.length;
   const out = new Uint8Array(total);
   const view = new DataView(out.buffer);
@@ -547,6 +557,8 @@ export interface ParsedVgm {
   /** Sum of every wait command, which must equal `totalSamples`. */
   waitedSamples: number;
   title: string;
+  /** The GD3 notes field: seed, origin and, for a cue written from a scene, the ghost note. */
+  notes: string;
 }
 
 /** Read a VGM file written by `scoreToVgm` (YM2612 writes, waits and the end marker). */
@@ -585,13 +597,20 @@ export function parseVgm(bytes: Uint8Array): ParsedVgm {
   }
   const gd3Rel = view.getUint32(0x14, true);
   let title = '';
+  let notes = '';
   if (gd3Rel) {
-    const g = 0x14 + gd3Rel + 12;
-    for (let k = g; k + 1 < bytes.length; k += 2) {
+    // Eleven NUL-terminated UTF-16 fields; the title is the first and the notes the last.
+    const fields: string[] = [];
+    let field = '';
+    for (let k = 0x14 + gd3Rel + 12; k + 1 < bytes.length && fields.length < GD3_FIELDS; k += 2) {
       const c = view.getUint16(k, true);
-      if (c === 0) break;
-      title += String.fromCharCode(c);
+      if (c === 0) {
+        fields.push(field);
+        field = '';
+      } else field += String.fromCharCode(c);
     }
+    title = fields[0] ?? '';
+    notes = fields[GD3_FIELDS - 1] ?? '';
   }
   return {
     version,
@@ -602,6 +621,7 @@ export function parseVgm(bytes: Uint8Array): ParsedVgm {
     writes,
     waitedSamples: at,
     title,
+    notes,
   };
 }
 

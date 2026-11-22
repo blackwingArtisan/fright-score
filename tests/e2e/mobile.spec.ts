@@ -40,3 +40,17 @@ test('on a phone the form sits right after the transport, and a pinned button ju
   await expect(page.getByLabel('Describe the scene')).toBeInViewport();
   await expect(cta).toBeHidden();
 });
+
+test('on a phone the Listen overlay is small, sits at the lower left, and fades once the render passes it', async ({ page }) => {
+  await page.goto('/');
+  const listen = page.getByRole('button', { name: /Listen\. The scare lands at 1:10/ });
+  await expect(listen).toBeVisible({ timeout: 10_000 });
+  const timeline = (await page.locator('#timeline').boundingBox())!;
+  const box = (await listen.boundingBox())!;
+  expect(box.x - timeline.x).toBeLessThan(16);
+  expect(box.y + box.height).toBeGreaterThan(timeline.y + timeline.height * 0.7);
+  expect(box.height).toBeLessThanOrEqual(48);
+  expect(box.width).toBeLessThan(timeline.width * 0.75);
+  await expect(page.locator('#listen')).toHaveClass(/listen--passed/, { timeout: 60_000 });
+  await expect.poll(() => page.locator('#listen').evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
+});

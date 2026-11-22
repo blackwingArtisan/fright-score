@@ -3,7 +3,7 @@
 > **Who wrote this spec.** The first version was written by hand by the developer on 2026-11-16, from the
 > prompt Kiro could not complete (both calls were throttled; see KIRO-LOG.md). Kiro reviewed it against the
 > code in pass 2 on 2026-11-19 and rewrote every acceptance criterion in strict EARS form, and Kiro added
-> Requirements 12 to 14 in session 7 on 2026-11-22.
+> Requirements 12 to 14 in session 7 and Requirements 15 and 16 in session 10, both on 2026-11-22.
 
 ## Introduction
 
@@ -291,4 +291,61 @@ hooks to run there, so that a broken engine edit is caught in either tool.
    `when.type` with non-empty patterns and a `then.type` of askAgent or runCommand.
 4. WHEN the test suite runs THE SYSTEM SHALL check that every runCommand names an npm script that exists in
    package.json.
+
+## Requirement 15: Demo render and form polish
+
+**User story:** As a visitor in the first seconds of the page, I want the controls to stay usable while the demo
+renders and the form to tell me everything that is wrong at once, so that I never wait on a disabled button or
+fix errors one press at a time.
+
+### Acceptance criteria
+
+1. WHILE a render is running THE SYSTEM SHALL draw the "Rendering on the FS-666 NN%" label against the top
+   right corner of the timeline canvas, whatever the position of the render sweep.
+2. WHEN the viewport is narrower than 520 px THE SYSTEM SHALL draw the Listen overlay smaller than on wider
+   screens and anchor it to the lower left of the timeline.
+3. WHEN the viewport is narrower than 520 px and the render sweep has passed both the playhead and the Listen
+   overlay THE SYSTEM SHALL fade the overlay out and stop it taking taps.
+4. THE SYSTEM SHALL align the fields of each `.field-row` to the top of the row, so that an error under one
+   field does not move its neighbor.
+5. a. WHEN Summon the score is pressed THE SYSTEM SHALL check the length and the sting times and show the error
+   for every invalid field at once.
+   b. IF any field is invalid THEN THE SYSTEM SHALL focus the first invalid field, say so in the status line,
+   and leave a render that is already running untouched.
+   c. WHILE a field error is showing THE SYSTEM SHALL keep the error in the status line instead of render
+   progress, and restore the status once every error is fixed.
+6. WHILE the demo's exact render is running THE SYSTEM SHALL keep Download WAV, Download for Sega Genesis and
+   Summon the score enabled.
+   a. WHEN Download WAV is pressed during that render THE SYSTEM SHALL queue the download, say so in the status
+   line, and deliver the file when the render lands.
+   b. WHEN Download for Sega Genesis is pressed during that render THE SYSTEM SHALL download the demo's
+   pre-rendered Genesis file, which holds the same bytes the CLI writes.
+   c. WHEN Summon the score is pressed during that render with a valid form THE SYSTEM SHALL stop the render,
+   drop a queued download and start the new request.
+7. THE SYSTEM SHALL show the muted hint "Sound on, best with headphones" beside the chip specification, on
+   every screen width.
+8. THE SYSTEM SHALL keep every element id, accessible name and tested string unchanged, except the
+   first-load assertion that Download WAV is disabled during the demo render, which 6 replaces with enabled.
+
+## Requirement 16: The possessed chip
+
+**User story:** As a visitor who watches the stitch panel when a scare lands, I want a small hidden surprise in
+the register writes, so that the machine feels haunted without any change to the sound.
+
+### Acceptance criteria
+
+1. WHEN the playhead crosses a sting and register-write rows are showing THE SYSTEM SHALL briefly rewrite
+   the newest three rows of the stitch panel into a three-word message, one word per row with its ASCII bytes.
+2. THE SYSTEM SHALL spell the message from the cue's seed alone, so that the same seed always gives the same
+   words.
+3. THE SYSTEM SHALL flicker the message in a fixed rhythm of 0.71 s, and WHILE the visitor prefers reduced
+   motion SHALL hold it still for 1.5 s instead.
+4. THE SYSTEM SHALL mark the rewritten rows `aria-hidden` and announce the message once, politely, through one
+   live region.
+5. THE SYSTEM SHALL write the scene text of a cue made from a scene into the notes field of the Genesis
+   export's GD3 tag as "Ghost note: <scene>", after the seed, and write no ghost note for a cue made from a mood
+   alone.
+6. THE SYSTEM SHALL leave every WAV byte unchanged: the demo's sha256 stays
+   `04352a45a32f7981b0647aefd434970bbe2d28b40e218bdcc935b8ec213c5c23`, and `samples/cellar-dread-genesis.vgm`
+   is the CLI's export of the demo with the ghost note, pinned by sha256.
 

@@ -5,6 +5,14 @@ import { COLORS, FONT_GOTHIC, FONT_SILK, fitCanvas } from './canvas';
 const HEIGHT = 260;
 const SECTION_H = 40;
 const RULER_H = 20;
+const LABEL_MARGIN = 8;
+const LABEL_H = 24;
+
+/** The render label's box: pinned to the top right corner of the canvas, whatever the sweep position. */
+export function progressLabelBox(canvasWidth: number, labelWidth: number): { x: number; y: number; w: number; h: number } {
+  const w = Math.min(labelWidth, Math.max(0, canvasWidth - 2 * LABEL_MARGIN));
+  return { x: canvasWidth - LABEL_MARGIN - w, y: LABEL_MARGIN, w, h: LABEL_H };
+}
 
 /** Draws sections, intensity, every note, the cues and the playhead. */
 export class TimelineView {
@@ -49,7 +57,10 @@ export class TimelineView {
     ctx.drawImage(this.staticLayer, 0, 0, width, HEIGHT);
     if (this.progress !== undefined) {
       this.drawProgress(ctx, width, this.progress);
-    } else if (this.score) {
+    } else {
+      delete this.canvas.dataset.progressLabel;
+    }
+    if (this.progress === undefined && this.score) {
       const x = (playheadSec / this.score.durationSec) * width;
       ctx.fillStyle = scare ? 'rgb(224 52 63 / 0.22)' : 'rgb(236 230 210 / 0.12)';
       ctx.fillRect(0, SECTION_H, x, HEIGHT - SECTION_H - RULER_H);
@@ -85,15 +96,20 @@ export class TimelineView {
     ctx.stroke();
     const label = `Rendering on the FS-666  ${Math.round(fraction * 100)}%`;
     ctx.font = `bold 12px ${FONT_SILK}`;
-    const w = ctx.measureText(label).width + 16;
-    const lx = Math.min(width - w - 6, Math.max(6, x + 8));
+    const box = progressLabelBox(width, ctx.measureText(label).width + 16);
     ctx.fillStyle = COLORS.maskDeep;
-    ctx.fillRect(lx, HEIGHT / 2 - 13, w, 24);
+    ctx.fillRect(box.x, box.y, box.w, box.h);
     ctx.strokeStyle = COLORS.copperDim;
     ctx.lineWidth = 1;
-    ctx.strokeRect(lx + 0.5, HEIGHT / 2 - 12.5, w - 1, 23);
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
     ctx.fillStyle = COLORS.silk;
-    ctx.fillText(label, lx + 8, HEIGHT / 2 + 4);
+    ctx.fillText(label, box.x + 8, box.y + 16);
+    // Where the label sits, in CSS pixels, so a test can check it without reading pixels.
+    const data = this.canvas.dataset;
+    data.progressLabel = 'top-right';
+    data.progressLabelX = box.x.toFixed(1);
+    data.progressLabelY = box.y.toFixed(1);
+    data.progressLabelW = box.w.toFixed(1);
   }
 
   private renderStatic(width: number): HTMLCanvasElement {

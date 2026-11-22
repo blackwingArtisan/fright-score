@@ -23,7 +23,7 @@ With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue aroun
 5. Kiro: 5 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
    See [Built with Kiro](#built-with-kiro).
 
-**Kiro by the numbers:** 11 logged Kiro calls, 120.73 credits, 5,532 lines written by Kiro with 0 lines fixed, and
+**Kiro by the numbers:** 12 logged Kiro calls, 143.29 credits, 6,275 lines written by Kiro with 0 lines fixed, and
 Fright Score's own MCP server called from a Kiro session. Every call is in the [Kiro log](KIRO-LOG.md#summary).
 
 To run it locally instead: `npm install && npm run dev`, then open http://localhost:3120.
@@ -453,14 +453,29 @@ The optional `/api/compose` function in `functions/` needs AWS credentials as Pa
 
 | Kiro feature | Files | What it does here |
 |---|---|---|
-| Specs | [`.kiro/specs/fright-score-core/`](.kiro/specs/fright-score-core), [`.kiro/specs/live-chip/`](.kiro/specs/live-chip) | EARS requirements, a design and a task plan for the director, arranger, engine, WAV, CLI, web app and loudness, and for the real-time AudioWorklet keyboard and the first-load demo cue. |
+| Specs | [`.kiro/specs/fright-score-core/`](.kiro/specs/fright-score-core), [`.kiro/specs/live-chip/`](.kiro/specs/live-chip), [`.kiro/specs/director-tools/`](.kiro/specs/director-tools), [`.kiro/specs/door-scene/`](.kiro/specs/door-scene), [`.kiro/specs/agent-scoring/`](.kiro/specs/agent-scoring) | EARS requirements, a design and a task plan for the director, arranger, engine, WAV, CLI, web app and loudness; the real-time AudioWorklet keyboard; the Bedrock tool call and MCP server; the browser door scene; and scoring a whole game level from an agent. Kiro wrote the last three and built them. |
 | Steering | [`.kiro/steering/`](.kiro/steering) | Product, tech and structure rules Kiro loads for every task: determinism by seed, the adapter rule, units in names, the folder map. `engine-dsp.md` loads only when engine or live-chip files are in context (hot-loop and determinism rules); `export-formats.md` is pulled in by hand for WAV `smpl` and VGM work. |
 | Hooks | [`.kiro/hooks/`](.kiro/hooks) | `test-on-save` runs the unit tests when engine, score, director, WAV or live-chip code is saved. `determinism-guard` blocks unseeded randomness (`Math.random`, `Date.now`) in engine and composer code. `spec-task-sync` is an agent hook that checks off finished tasks and asks for a green suite before the agent stops. `render-bench` is run on demand and times the demo render after an engine change. |
 | Custom agent | [`.kiro/agents/fs666-sound-designer.json`](.kiro/agents/fs666-sound-designer.json) | A patch-design agent: loads the tech, engine and export steering plus the patch bank, may write only engine code and unit tests, and may run only the typecheck, tests, determinism check, benchmark and CLI. A unit test keeps every hook, steering file and agent resource pointing at files and scripts that exist. |
 | Spec built by Kiro, MCP | [`.kiro/specs/director-tools/`](.kiro/specs/director-tools), [`scripts/mcp/`](scripts/mcp), [`KIRO-LOG.md`](KIRO-LOG.md), pass 3 | Kiro wrote the spec and built all 24 tasks in three sessions (18.24 credits): the Bedrock director's forced `score_cue` tool call and the stdio MCP server with `score_cue` and `list_patches`, 41 new tests, and 99% of the feature's lines. It used the aws-docs and context7 MCP servers while designing, then called its own server from a new session. |
+| Kiro scored the video soundtrack | [`KIRO-LOG.md`](KIRO-LOG.md), session 10 | Kiro called `score_level` on [`examples/godot/level.json`](examples/godot/level.json) (hashes equal to the committed manifest) and scored the demo video's soundtrack with `score_cue`, then checked each sting with `verify_cue`. See [Scored for the video soundtrack](#scored-for-the-video-soundtrack). |
 | Agent run with sub-agents | [`KIRO-LOG.md`](KIRO-LOG.md), pass 2 | Kiro CLI audited both specs against the code with two sub-agents, rewrote every acceptance criterion in strict EARS form, added 27 tasks for behaviors no test pinned down, built the candlelit theme and its reduced-motion test, and validated the hooks against the v1 schema (29.38 credits). |
 
 [`KIRO-LOG.md`](KIRO-LOG.md) records every Kiro call, its prompt, what it produced and the credits it used.
+
+### Scored for the video soundtrack
+
+Kiro scored both cues of the demo video's soundtrack through Fright Score's MCP server, then measured the cold
+open's sting with `verify_cue` (7.001 s against 7 s). Anyone can re-render them byte for byte with the same
+request and seed:
+
+| Cue | Request | Seed | Title | Sting | sha256 |
+|---|---|---|---|---|---|
+| Cold open | `{"scene": "A cellar door creaks open in the dark, 8 seconds, sting at 0:07"}` | 13 | The Rotten Door | 7 s | `45a15a259877477101d9019dff9576041daea960b2adc669c1b176815d3b88e2` |
+| Bed | `{"mood": "dread", "durationSec": 165}` | 666 | Requiem for the Lantern | none | `f7dc0c42efcf69105b4fb59449b573e94221d7b14889d30f14d5015ea946afc6` |
+
+End card text: "This video's soundtrack was written by Kiro through Fright Score's MCP server and performed by a 1988-style
+sound chip. Re-render it byte for byte."
 
 ## License
 

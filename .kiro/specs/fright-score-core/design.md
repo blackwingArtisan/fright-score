@@ -135,3 +135,24 @@ director code is touched, no new dependencies are added, and no image file excee
 - Constraints: no fixed widths are added; the 360 px no-horizontal-scroll guarantee (Req 8.7) is preserved
   because every addition is a background layer, a color, or a thin strip in padding — none affect layout
   box width.
+
+## Demo render polish and the possessed chip (Requirements 15 and 16)
+
+- The render label is placed by `progressLabelBox(width, labelWidth)` in `timeline.ts` (8 px from the top and the
+  right edge) and its box is published as `data-progress-label-x/y/w` on the canvas while a render runs.
+- The Listen overlay's phone rules sit in the existing 520 px media block. `main.ts` adds `.listen--passed` when
+  the render fraction exceeds the playhead fraction and the button's right edge; it stays until the next summon.
+- `summon()` validates both fields before it touches the running render. Progress and landing messages go through
+  `setProgressStatus`, which yields to a visible field error; `restingStatus()` restores the status once the
+  errors clear.
+- During the demo render `summonCue(..., { demo: true })` leaves Summon enabled and enables Download WAV at once.
+  A WAV click sets `wavQueued`; the landing code downloads the file. The Genesis button waits only for
+  `prepareDemoGenesis`, which fetches `samples/cellar-dread-genesis.vgm` (and arranges the VGM itself if the fetch
+  fails). A new summon clears both.
+- `ghost.ts` picks one of eight three-word messages with `createRng(seed).fork('ghost')`. `StitchView.haunt()`
+  rewrites the newest rows on a fixed timer sequence (90, 60, 90, 50, 120, 40, 260 ms), or holds still for
+  1.5 s under reduced motion. The rows get `aria-hidden` and `data-ghost`; `#ghost-announce` is the one polite
+  live region.
+- `gd3Notes()` in `vgm.ts` adds "Ghost note: <scene>" to the GD3 notes field. Only the VGM changes; the render and
+  WAV code are untouched.
+

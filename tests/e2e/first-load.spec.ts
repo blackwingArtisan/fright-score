@@ -8,7 +8,8 @@ test.describe('instant first load', () => {
     await expect(listen).toBeVisible({ timeout: 3_000 });
     // The exact render is still running in the background.
     await expect(page.locator('#status')).toHaveAttribute('data-state', 'preview');
-    await expect(page.getByRole('button', { name: 'Download WAV' })).toBeDisabled();
+    // Requirement 15: Download WAV stays enabled during the exact render; a click queues the download.
+    await expect(page.getByRole('button', { name: 'Download WAV' })).toBeEnabled();
     await listen.click();
     await expect(page.locator('#status')).toHaveAttribute('data-state', 'playing');
     await expect

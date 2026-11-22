@@ -111,6 +111,29 @@ and heading accessible names, and the Playwright-asserted strings are unchanged.
 - [x] 45. Extend `tests/unit/kiro-config.test.ts`: every `.kiro.hook` parses, has a known `when.type` with patterns and a valid `then.type`, and every runCommand names an npm script in package.json
   - _Requirements: 14.3, 14.4_
 
+## Pass 4 — Demo render polish and the possessed chip
+
+- [x] 46. Pin the "Rendering on the FS-666 NN%" label to the top right of the timeline canvas (`progressLabelBox`) and publish its box in `data-progress-label*` attributes
+  - _Requirements: 15.1_
+- [x] 47. Below 520 px make the Listen overlay smaller and anchor it lower left, and fade it (`.listen--passed`) once the render sweep passes the playhead and the button
+  - _Requirements: 15.2, 15.3_
+- [x] 48. Add `align-items: start` to `.field-row`
+  - _Requirements: 15.4_
+- [x] 49. Make `summon()` validate every field, show all errors, focus the first, leave a running render alone, and keep the error in the status line until fixed
+  - _Requirements: 15.5_
+- [x] 50. Keep Download WAV (queued until the render lands), Download for Sega Genesis (the pre-rendered demo file) and Summon enabled during the demo render
+  - _Requirements: 15.6, 15.8_
+- [x] 51. Add the muted "Sound on, best with headphones" hint beside the spec box
+  - _Requirements: 15.7_
+- [x] 52. Add `tests/e2e/form-polish.spec.ts` and a phone case in `tests/e2e/mobile.spec.ts`; change the first-load assertion on Download WAV to enabled
+  - _Requirements: 15.1 to 15.8_
+- [x] 53. Add `src/web/views/ghost.ts` and `StitchView.haunt()`: the seeded three-word message, the flicker rhythm, the still version under reduced motion, `aria-hidden` rows and one polite announcement
+  - _Requirements: 16.1, 16.2, 16.3, 16.4_
+- [x] 54. Write the scene into the GD3 notes as a ghost note (`gd3Notes`, `parseVgm().notes`), regenerate `samples/cellar-dread-genesis.vgm` with the `scripts/make-samples.sh` command, and pin its sha256
+  - _Requirements: 16.5, 16.6_
+- [x] 55. Add `tests/unit/ghost.test.ts` and `tests/e2e/possessed-chip.spec.ts`
+  - _Requirements: 16.1 to 16.6_
+
 ## Requirement-to-test traceability
 
 Each requirement, the tests that pin it down, and the open task for any criterion not yet pinned. Unit and
@@ -132,6 +155,8 @@ CLI tests run under Vitest (`npm run test:unit`); `e2e/` tests run under Playwri
 | 12. Kiro workspace counts stay true | `unit/kiro-counts.test.ts` (counts from `.kiro` against the sentence in each document) | none |
 | 13. Phone first screen | `e2e/phone-fold.spec.ts` (no overlap, tap reaches Jump, above the fold at 375x667); `e2e/mobile.spec.ts` (the pinned button appears when the transport is out of view) | none |
 | 14. Kiro IDE hooks | `unit/kiro-config.test.ts` (every `.kiro.hook` parses, known trigger, npm scripts exist) | none |
+| 15. Demo render and form polish | `e2e/form-polish.spec.ts` (all errors at once, buttons enabled and the queued WAV during the demo render, Summon restarts it, label position, hint); `e2e/mobile.spec.ts` (Listen overlay small, lower left, fades); `unit/ghost.test.ts` (`progressLabelBox`); `e2e/first-load.spec.ts` (Download WAV enabled, 15.8) | none |
+| 16. The possessed chip | `unit/ghost.test.ts` (message from the seed, GD3 ghost note, pinned VGM sha256, WAV hash unchanged); `e2e/possessed-chip.spec.ts` (flicker, `aria-hidden` rows, one announcement, still under reduced motion); `cli/samples.test.ts` (the sample is the CLI's export) | none |
 
 Tasks 26 and 34 were re-checked against the current suite and stay open: `unit/operator.test.ts` covers
 feedback levels 0, 2 and 5 but not 0 through 7 or the clamp at 7, and `cli/score.test.ts` runs `--quiet` and

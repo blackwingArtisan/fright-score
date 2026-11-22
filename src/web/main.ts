@@ -11,6 +11,7 @@ import { parseTimePhrase, readScene } from '../score/scene';
 import { MOODS, type Mood, type Score } from '../score/schema';
 import { MODE_LABELS, formatTime, midiToName } from '../score/theory';
 import demoPreviewUrl from '../../samples/cellar-dread-sting-at-1m10s.mp3?url';
+import demoGenesisUrl from '../../samples/cellar-dread-genesis.vgm?url';
 import { DEMO_SCENE, DEMO_SEED, DEMO_WAV_SHA256, sha256Hex, shortHash } from './demo';
 import { createWebDirector } from './director';
 import { LiveChip } from './live/live-chip';
@@ -92,7 +93,7 @@ const chip = new ChipView(els.chip);
 const scope = new ScopeView(els.scope);
 const live = new LiveChip(() => player.audio());
 const liveView = new LiveView(els.liveOps, live);
-const stitch = new StitchView($('stitch-plan'), $<HTMLOListElement>('stitch-writes'), $('stitch-count'));
+const stitch = new StitchView($('stitch-plan'), $<HTMLOListElement>('stitch-writes'), $('stitch-count'), $('ghost-announce'));
 
 const createWorker = () => new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' });
 let worker = createWorker();
@@ -119,6 +120,10 @@ let clockDurationSec = 0;
 let renderId = 0;
 let pending: { reject: (error: Error) => void } | undefined;
 let hasPlayed = false;
+/** True when Download WAV was pressed while the demo's exact render was still running: it downloads on landing. */
+let wavQueued = false;
+/** The demo cue's pre-rendered Genesis file, ready to download before the exact render lands. */
+let demoGenesis: { score: Score; bytes: Uint8Array } | undefined;
 
 type State = 'idle' | 'composing' | 'rendering' | 'preview' | 'ready' | 'playing' | 'error';
 
@@ -126,6 +131,28 @@ function setStatus(state: State, text: string): void {
   els.status.dataset.state = state;
   els.status.textContent = text;
 }
+
+/** True while a field shows an error; the form's message then keeps the status line until the field is fixed. */
+function formErrorShown(): boolean {
+  return !document.getElementById('seconds-error')!.hidden || !document.getElementById('stings-error')!.hidden;
+}
+
+/** Update the status line for progress, unless it is showing a form error. */
+function setProgressStatus(state: State, text: string): void {
+  if (!formErrorShown()) setStatus(state, text);
+}
+
+/** The status line once the form errors are fixed: what the page was doing before the error. */
+function restingStatus(): void {
+  if (els.status.dataset.state !== 'error' || formErrorShown()) return;
+  if (current) setStatus(player.playing ? 'playing' : 'ready', player.playing ? 'Playing' : 'Ready');
+  else if (previewing) setStatus('preview', 'Preview ready: press Listen');
+  else if (pending) setStatus('rendering', 'Rendering');
+  else setStatus('idle', 'Idle');
+}
+
+/** A short note for the status line while a download waits for the render. */
+const queuedNote = (): string => (wavQueued ? '. WAV download queued' : '');
 
 /* Mood selector, including Auto (read from the scene). */
 function buildMoods(): void {
@@ -351,8 +378,9 @@ function render(score: Score): Promise<RenderedAudio> {
       if (msg.type === 'progress') {
         els.progress.style.width = `${Math.round(msg.fraction * 100)}%`;
         timeline.setProgress(msg.fraction);
-        if (!previewing) setStatus('rendering', `Rendering ${Math.round(msg.fraction * 100)}%`);
-        else if (!player.playing) setStatus('preview', `Preview ready. Exact render ${Math.round(msg.fraction * 100)}%`);
+        if (!previewing) setProgressStatus('rendering', `Rendering ${Math.round(msg.fraction * 100)}%${queuedNote()}`);
+        else if (!player.playing) setProgressStatus('preview', `Preview ready. Exact render ${Math.round(msg.fraction * 100)}%${queuedNote()}`);
+        fadeListen(msg.fraction);
         return;
       }
       w.removeEventListener('message', onMessage);
@@ -372,26 +400,31 @@ let summonToken = 0;
 
 async function summon(event: Event): Promise<void> {
   event.preventDefault();
-  const token = ++summonToken;
-  cancelRender();
   const seed = Math.max(0, Math.floor(Number(els.seed.value) || 0)) >>> 0;
   els.seed.value = String(seed);
   const seconds = els.seconds.value.trim() ? Number(els.seconds.value) : undefined;
   fieldError(els.seconds, undefined);
   fieldError(els.stings, undefined);
+  // Check every field and show every error at once, so one press of Summon tells the whole story.
+  const invalid: HTMLInputElement[] = [];
   if (seconds !== undefined && (!Number.isFinite(seconds) || seconds < 5 || seconds > 300)) {
     fieldError(els.seconds, 'Use 5 to 300 seconds.');
-    setStatus('error', 'Length must be 5 to 300 seconds');
-    els.seconds.focus();
-    return;
+    invalid.push(els.seconds);
   }
   const bad = badStingTokens(els.stings.value);
   if (bad.length > 0) {
     fieldError(els.stings, `"${bad[0].slice(0, 12)}" is not a time. Use 1:10 or 70, separated by commas.`);
-    setStatus('error', 'Check the sting times');
-    els.stings.focus();
+    invalid.push(els.stings);
+  }
+  if (invalid.length > 0) {
+    const both = invalid.length > 1;
+    setStatus('error', both ? 'Check the length and the sting times' : invalid[0] === els.seconds ? 'Length must be 5 to 300 seconds' : 'Check the sting times');
+    invalid[0].focus();
+    // A render that is already running carries on: a bad form must not cancel it.
     return;
   }
+  const token = ++summonToken;
+  cancelRender();
   const scene = els.scene.value.trim();
   const mood = selectedMood();
   const stingAtSec = parseStings(els.stings.value) ?? (scene ? readScene(scene).stingAtSec : undefined);
@@ -416,13 +449,20 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
   clockDurationSec = 0;
   els.proof.textContent = '';
   delete els.proof.dataset.sha256;
+  wavQueued = false;
+  delete els.exportWav.dataset.queued;
+  demoGenesis = undefined;
+  els.listen.classList.remove('listen--passed');
   lastPos = 0;
   els.play.textContent = 'Play';
   closeExportMenu();
   chip.set(undefined, undefined);
   stitch.set(undefined, undefined);
   setReady(false);
-  els.summon.disabled = true;
+  // The demo's exact render takes several seconds. Meanwhile Download WAV queues its download, Download for
+  // Sega Genesis uses the pre-rendered demo file, and Summon stays pressable: a new request replaces the render.
+  if (demo) els.exportWav.disabled = false;
+  els.summon.disabled = !demo;
   els.progress.style.width = '0%';
   try {
     setStatus('composing', 'Composing');
@@ -437,7 +477,10 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
     chip.set(score, undefined);
     stitch.set(score, undefined);
     setStatus('rendering', 'Rendering 0%');
-    if (demo) void startPreview(score, token);
+    if (demo) {
+      void startPreview(score, token);
+      void prepareDemoGenesis(score, token);
+    }
     const rendered = await render(score);
     if (token !== summonToken) return;
     // If the demo preview is playing, carry on from the same spot in the exact render.
@@ -456,8 +499,13 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
     els.stats.textContent = `${s.noteCount} notes on ${score.tracks.length} channels, up to ${s.maxVoices} voices at once. True peak ${s.truePeakDb.toFixed(1)} dBTP, ${s.loudnessLufs.toFixed(1)} LUFS. Rendered in ${(s.renderMs / 1000).toFixed(1)} s in your browser.`;
     els.progress.style.width = '100%';
     setReady(true);
-    if (wasPlaying) setStatus('playing', 'Playing');
-    else setStatus('ready', demo ? 'Ready: press Play' : 'Ready');
+    const deliverWav = wavQueued;
+    wavQueued = false;
+    delete els.exportWav.dataset.queued;
+    if (!demo) els.listen.classList.remove('listen--passed');
+    if (wasPlaying) setProgressStatus('playing', deliverWav ? 'Playing. WAV download started' : 'Playing');
+    else setProgressStatus('ready', `${demo ? 'Ready: press Play' : 'Ready'}${deliverWav ? '. WAV download started' : ''}`);
+    if (deliverWav) downloadWav(current);
     void showProof(rendered.wav, demo, token);
     els.play.classList.toggle('btn--beckon', !hasPlayed);
     lastRequest = request;
@@ -470,6 +518,45 @@ async function summonCue(request: CueRequestLike, token: number, { demo }: { dem
   } finally {
     if (token === summonToken) els.summon.disabled = false;
   }
+}
+
+/** Download the WAV of a rendered cue. */
+function downloadWav(rendered: Rendered): void {
+  const kind = rendered.score.plan.loop ? '-loop' : '';
+  download(rendered.wav, 'audio/wav', `fright-score-${slug(rendered.score.plan.title)}${kind}-seed${rendered.score.seed}.wav`);
+}
+
+/** Download the Genesis file of a cue. */
+function downloadVgm(score: Score, bytes: Uint8Array): void {
+  download(bytes, 'audio/x-vgm', `fright-score-${slug(score.plan.title)}-seed${score.seed}.vgm`);
+}
+
+/**
+ * Fetch the demo's pre-rendered Genesis file (the same bytes the CLI writes) so Download for Sega Genesis
+ * works while the exact render runs. If the file cannot be fetched, arrange it here: same score, same bytes.
+ */
+async function prepareDemoGenesis(score: Score, token: number): Promise<void> {
+  let bytes: Uint8Array | undefined;
+  try {
+    const response = await fetch(demoGenesisUrl);
+    if (response.ok) bytes = new Uint8Array(await response.arrayBuffer());
+  } catch {
+    // Fall back to arranging it below.
+  }
+  if (token !== summonToken || current) return;
+  demoGenesis = { score, bytes: bytes ?? scoreToVgm(score).bytes };
+  els.exportVgm.disabled = false;
+}
+
+/** Fade the phone's Listen overlay once the render sweep has passed both the playhead and the button. */
+function fadeListen(renderFraction: number): void {
+  if (els.listen.hidden || els.listen.classList.contains('listen--passed')) return;
+  const width = els.timeline.clientWidth;
+  const duration = playable?.durationSec ?? clockDurationSec;
+  if (width === 0 || duration === 0) return;
+  const playheadFraction = player.position / duration;
+  const buttonEndFraction = (els.listen.offsetLeft + els.listen.offsetWidth) / width;
+  if (renderFraction > Math.max(playheadFraction, buttonEndFraction)) els.listen.classList.add('listen--passed');
 }
 
 /**
@@ -567,6 +654,8 @@ function landSting(): void {
   void els.stage.offsetWidth; // restart the animation if two stings land close together
   els.stage.classList.add('stage--sting');
   scareUntil = performance.now() + STING_FLASH_MS;
+  // The possessed chip: the newest register-write rows spell a message from the cue's seed.
+  if (playable) stitch.haunt(playable.seed, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   clearTimeout(scareTimer);
   scareTimer = setTimeout(() => {
     els.stage.classList.remove('stage--sting');
@@ -781,8 +870,14 @@ buildMoods();
 buildExamples();
 els.directorName.textContent = `Director: ${director.label}`;
 els.scene.addEventListener('input', updateHeard);
-els.seconds.addEventListener('input', () => fieldError(els.seconds, undefined));
-els.stings.addEventListener('input', () => fieldError(els.stings, undefined));
+els.seconds.addEventListener('input', () => {
+  fieldError(els.seconds, undefined);
+  restingStatus();
+});
+els.stings.addEventListener('input', () => {
+  fieldError(els.stings, undefined);
+  restingStatus();
+});
 els.form.addEventListener('submit', (e) => void summon(e));
 els.reroll.addEventListener('click', () => {
   els.seed.value = String(Math.floor(Math.random() * 100_000));
@@ -835,9 +930,17 @@ els.timeline.addEventListener('keydown', (e) => {
 // Canvas text is drawn once per cue, so redraw it after the web fonts arrive.
 void document.fonts?.ready.then(() => timeline.invalidate());
 els.exportWav.addEventListener('click', () => {
-  if (!current) return;
-  const kind = current.score.plan.loop ? '-loop' : '';
-  download(current.wav, 'audio/wav', `fright-score-${slug(current.score.plan.title)}${kind}-seed${current.score.seed}.wav`);
+  if (current) {
+    downloadWav(current);
+    return;
+  }
+  // The exact render is still running: remember the request and deliver the file when it lands.
+  if (wavQueued) return;
+  wavQueued = true;
+  els.exportWav.dataset.queued = 'true';
+  if (els.status.dataset.state === 'preview' || els.status.dataset.state === 'rendering') {
+    els.status.textContent = `${els.status.textContent}${queuedNote()}`;
+  }
 });
 els.share.addEventListener('click', async () => {
   if (!lastRequest) return;
@@ -851,8 +954,8 @@ els.share.addEventListener('click', async () => {
   els.share.dataset.url = url;
 });
 els.exportVgm.addEventListener('click', () => {
-  if (!current) return;
-  download(current.vgm.bytes, 'audio/x-vgm', `fright-score-${slug(current.score.plan.title)}-seed${current.score.seed}.vgm`);
+  if (current) downloadVgm(current.score, current.vgm.bytes);
+  else if (demoGenesis) downloadVgm(demoGenesis.score, demoGenesis.bytes);
 });
 els.exportMenu.querySelector('summary')!.addEventListener('click', (e) => {
   if (!current) e.preventDefault();

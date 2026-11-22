@@ -26,7 +26,8 @@ the developer changed afterwards to get Kiro's work green.
 | 2026-11-22 | 8 | Built the door scene (view, timing helper, 9 Playwright and 5 Vitest tests); wrote the `agent-scoring` spec | 12 min 6 s | 21.68 | 1,361 | 0 | [session 8](docs/kiro-sessions/session-8-door-scene-agent-scoring-spec.md) |
 | 2026-11-22 | 9 | Started the `agent-scoring` build: `score_level`, `verify_cue`, the onset detector, the prompt and resource modules and the tests that spawn the server, with 2 context7 MCP calls; stopped by a service throttling error before ticking any task | 9 min 48 s | 21.49 | 1,239 | 0 | [session 9](docs/kiro-sessions/session-9-agent-scoring-build.md) |
 | 2026-11-22 | 9b | Finished the `agent-scoring` build: checked session 9's work, added the prompt and resource tests, the steering line, the Godot level example notes and the README MCP section; all 28 tasks ticked | 9 min 36 s | 14.80 | 226 | 0 | [session 9b](docs/kiro-sessions/session-9b-agent-scoring-finish.md) |
-| | **Total** | | | **120.73** | **5,532** | **0** | |
+| 2026-11-22 | 10 | Called its own MCP tools (`score_level`, 3 `verify_cue`, 2 `score_cue`) to score the example level and the video soundtrack; built Requirement 15 (timeline label, phone overlay, all field errors at once, buttons live during the demo render) and Requirement 16 (the possessed-chip easter egg and a GD3 ghost note) | 23 min 12 s | 22.56 | 743 | 0 | [session 10](docs/kiro-sessions/session-10-mcp-use-overlays-egg.md) |
+| | **Total** | | | **143.29** | **6,275** | **0** | |
 
 Credits are read with `kiro-cli /usage` before and after each session, so other use of the account between
 sessions is not counted.
@@ -110,6 +111,24 @@ has the time, credits and lines.
 - **Session 9b.** A new session finished the build: it reran the tests on session 9's files, added 8 tests for the
   prompt and the resource, documented the tools, and ticked all 28 tasks. The golden cue still returns the README hash,
   `verify_cue` measures its sting at 24 s within 50 ms, and nothing under `src/` changed.
+
+- **Session 10.** Kiro called six tools on its own MCP server: `score_level` on `examples/godot/level.json` (every
+  hash equal to the committed manifest, both stings measured at 1.000 s), and `score_cue` plus `verify_cue` for the
+  demo video's soundtrack (listed below). It then added Requirements 15 and 16 to `fright-score-core` and built them:
+  the render label in the top right of the timeline, a smaller phone Listen overlay that fades, every field error at
+  once, Download and Summon kept live during the demo render, a headphones hint, and the possessed chip (register
+  rows flicker into a seed-chosen message when a sting lands; the VGM's GD3 notes carry the scene as a ghost note).
+  The demo WAV hash is unchanged; the developer re-rendered the README golden cue afterwards and it still matches.
+  Kiro changed one existing assertion, because Requirement 15.6 changes it: Download WAV is now enabled during the
+  demo render.
+
+  **Scored for the video soundtrack** (request, seed, sha256):
+  - Cold open: `{"scene": "A cellar door creaks open in the dark, 8 seconds, sting at 0:07"}`, seed 13, "The Rotten
+    Door", sting at 7 s (verify_cue measured 7.001 s), `45a15a259877477101d9019dff9576041daea960b2adc669c1b176815d3b88e2`.
+  - Bed: `{"mood": "dread", "durationSec": 165}`, seed 666, "Requiem for the Lantern",
+    `f7dc0c42efcf69105b4fb59449b573e94221d7b14889d30f14d5015ea946afc6`.
+  - End card: "This video's soundtrack was written by Kiro through Fright Score's MCP server and performed by a
+    1988-style sound chip. Re-render it byte for byte."
 
 ## How Kiro is used in this repo
 
