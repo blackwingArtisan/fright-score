@@ -51,7 +51,7 @@ Godot example changes; the scene only plays the two files the Godot example alre
   - _Requirements: 2.3_
 - [x] 20. Run `npm run typecheck`, `npm run test:unit` and `E2E_PORT=4201 npm run test:e2e`; update the README with a short "Land the scare on an event" paragraph that says the files are rendered, not synthesized live
   - [x] Typecheck, unit and end-to-end suites green (the scene's own copy already says the files are rendered)
-  - [ ] README paragraph: left for the owner, because this session was told not to edit README.md
+  - [x] README paragraph: written by the developer after the session, since the session was told not to edit README.md ("In a game: the scare lands on the event")
   - _Requirements: 4.5, 7.4_
 
 ## Requirement-to-test table

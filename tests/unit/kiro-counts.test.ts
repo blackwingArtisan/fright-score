@@ -78,3 +78,43 @@ describe('the Kiro workspace counts stay true', () => {
     expect(named, `${file} names the steering inclusion modes (${named.join(', ')}), but .kiro/steering uses (${actual.inclusionModes.join(', ')})`).toEqual(actual.inclusionModes);
   });
 });
+
+/** The "Kiro by the numbers" totals that README.md and the Devpost write-up quote from the KIRO-LOG summary. */
+const TOTALS = /(\d+) logged Kiro calls, ([\d.]+) credits, ([\d,]+) lines written by Kiro with (\d+) lines? fixed/;
+
+const num = (cell: string): number => Number(cell.replace(/[*,]/g, '').trim());
+
+/** The rows of the KIRO-LOG summary table, and its total row. */
+function summaryTable() {
+  const text = readFileSync(join(root, 'KIRO-LOG.md'), 'utf8');
+  const section = text.slice(text.indexOf('## Summary'), text.indexOf('\n## ', text.indexOf('## Summary') + 1));
+  const rows = section.split('\n').filter((l) => /^\| \d{4}-\d{2}-\d{2} \|/.test(l)).map((l) => l.split('|').slice(1, -1));
+  const total = section.split('\n').find((l) => l.includes('**Total**'))!.split('|').slice(1, -1);
+  return { rows, total: { credits: num(total[4]), kiroLines: num(total[5]), fixLines: num(total[6]) } };
+}
+
+describe('the Kiro totals stay true', () => {
+  const { rows, total } = summaryTable();
+
+  it('the KIRO-LOG total row is the sum of its session rows', () => {
+    const credits = rows.reduce((sum, r) => sum + (Number.isFinite(num(r[4])) ? num(r[4]) : 0), 0);
+    const kiroLines = rows.reduce((sum, r) => sum + num(r[5]), 0);
+    const fixLines = rows.reduce((sum, r) => sum + (Number.isFinite(num(r[6])) ? num(r[6]) : 0), 0);
+    expect(credits.toFixed(2), 'credits').toBe(total.credits.toFixed(2));
+    expect(kiroLines, 'Kiro lines').toBe(total.kiroLines);
+    expect(fixLines, 'fix lines').toBe(total.fixLines);
+  });
+
+  it.each(['README.md', 'docs/writeups/devpost.md'].filter((f) => existsSync(join(root, f))))(
+    '%s quotes the KIRO-LOG totals',
+    (file) => {
+      const match = TOTALS.exec(readFileSync(join(root, file), 'utf8'));
+      expect(match, `${file}: the "N logged Kiro calls, N credits, N lines written by Kiro" line is missing`).not.toBeNull();
+      const [, calls, credits, kiroLines, fixLines] = match!;
+      expect(Number(calls), `${file} says ${calls} calls, the KIRO-LOG summary has ${rows.length}`).toBe(rows.length);
+      expect(Number(credits), `${file} credits`).toBe(total.credits);
+      expect(num(kiroLines), `${file} Kiro lines`).toBe(total.kiroLines);
+      expect(Number(fixLines), `${file} fix lines`).toBe(total.fixLines);
+    },
+  );
+});
