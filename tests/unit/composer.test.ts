@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { composePlan, reconcilePlan } from '../../src/score/composer';
+import { readScene } from '../../src/score/scene';
 import { MOODS } from '../../src/score/schema';
 import { MODES } from '../../src/score/theory';
 
@@ -58,5 +59,53 @@ describe('local director (composer)', () => {
     expect(fixed.durationSec).toBe(30);
     expect(fixed.sections.at(-1)!.endSec).toBe(30);
     expect(fixed.cues.filter((c) => c.kind === 'sting').map((c) => c.atSec)).toEqual([20]);
+  });
+  // Requirement 1.4: explicit values beat the scene's.
+  it('prefers an explicit mood, length and sting times over the ones read from the scene', () => {
+    const scene = 'a chase through the corridor, 120 seconds, sting at 0:20';
+    const read = readScene(scene);
+    expect(read.mood).toBe('chase');
+    expect(read.durationSec).toBe(120);
+    expect(read.stingAtSec).toEqual([20]);
+
+    const plan = composePlan({ seed: 5, scene, mood: 'lullaby', durationSec: 40, stingAtSec: [30] });
+    expect(plan.mood).toBe('lullaby');
+    expect(plan.durationSec).toBe(40);
+    expect(plan.cues.filter((c) => c.kind === 'sting').map((c) => c.atSec)).toEqual([30]);
+
+    // Each field is overridden on its own: an explicit mood leaves the scene's length and sting alone.
+    const moodOnly = composePlan({ seed: 5, scene, mood: 'ritual' });
+    expect(moodOnly.mood).toBe('ritual');
+    expect(moodOnly.durationSec).toBe(120);
+    expect(moodOnly.cues.filter((c) => c.kind === 'sting').map((c) => c.atSec)).toEqual([20]);
+  });
+
+  // Requirement 1.6: no mood anywhere means dread.
+  it.each([
+    ['a scene with no mood words', { scene: 'an ordinary afternoon with nothing in particular' }],
+    ['no scene at all', {}],
+  ])('falls back to dread for %s', (_label, extra) => {
+    if ('scene' in extra) expect(readScene(extra.scene).mood).toBeUndefined();
+    const plan = composePlan({ seed: 9, durationSec: 20, ...extra });
+    expect(plan.mood).toBe('dread');
+    expect(plan.tempoBpm).toBeLessThan(70);
+  });
+
+  // Requirement 1.5: a jump scare without a time lands near 80% of the cue, on a bar line.
+  it.each([
+    [30, 3],
+    [60, 4],
+    [90, 11],
+    [120, 8],
+  ])('puts the unscheduled jump scare near 80%% of a %i s cue, on a bar line (seed %i)', (durationSec, seed) => {
+    const plan = composePlan({ seed, mood: 'dread', scene: `a jump scare, ${durationSec} seconds` });
+    const stings = plan.cues.filter((c) => c.kind === 'sting');
+    expect(stings).toHaveLength(1);
+    const barSec = (60 / plan.tempoBpm) * plan.beatsPerBar;
+    const at = stings[0].atSec;
+    // Snapping to the nearest bar moves it by at most half a bar from 80%.
+    expect(Math.abs(at - durationSec * 0.8)).toBeLessThanOrEqual(barSec / 2 + 0.01);
+    const bars = at / barSec;
+    expect(Math.abs(bars - Math.round(bars)) * barSec).toBeLessThan(0.01);
   });
 });

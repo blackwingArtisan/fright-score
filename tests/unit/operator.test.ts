@@ -67,4 +67,39 @@ describe('FM operator', () => {
     expect(h3(0)).toBeLessThan(0.001);
     expect(h3(5)).toBeGreaterThan(h3(2));
   });
+
+  // Requirement 5.2: eight feedback levels, 0 through 7, and anything above is held at 7.
+  describe('self-feedback levels', () => {
+    const f = 441;
+    const tone = (level: number) => render(new Operator(params(), f, level, SR), SR / 2);
+    /** Energy in harmonics 2 to 8, relative to the fundamental. */
+    const harmonicRatio = (x: Float64Array) => {
+      let h = 0;
+      for (let k = 2; k <= 8; k++) h += binMagnitude(x, k * f) ** 2;
+      return Math.sqrt(h) / binMagnitude(x, f);
+    };
+    const same = (a: Float64Array, b: Float64Array) => a.every((v, i) => v === b[i]);
+
+    it('level 0 is a pure sine and every higher level changes the waveform', () => {
+      expect(harmonicRatio(tone(0))).toBeLessThan(0.001);
+      for (let level = 1; level <= 7; level++) {
+        expect(same(tone(level), tone(level - 1)), `level ${level} equals level ${level - 1}`).toBe(false);
+        expect(harmonicRatio(tone(level)), `level ${level}`).toBeGreaterThan(0.001);
+      }
+    });
+
+    it('gets brighter from level 1 to level 5 and stays brighter than a plain sine at 7', () => {
+      const ratios = [0, 1, 2, 3, 4, 5, 6, 7].map((l) => harmonicRatio(tone(l)));
+      for (let level = 1; level <= 5; level++) expect(ratios[level], `level ${level}`).toBeGreaterThan(ratios[level - 1]);
+      expect(ratios[7]).toBeGreaterThan(ratios[1]);
+    });
+
+    it('clamps above 7 to level 7 and below 0 to level 0, and rounds fractions to the nearest level', () => {
+      const seven = tone(7);
+      for (const level of [8, 12, 100]) expect(same(tone(level), seven), `level ${level}`).toBe(true);
+      const zero = tone(0);
+      for (const level of [-1, -50, 0.4]) expect(same(tone(level), zero), `level ${level}`).toBe(true);
+      expect(same(tone(6.6), seven)).toBe(true);
+    });
+  });
 });

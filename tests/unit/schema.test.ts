@@ -30,4 +30,16 @@ describe('score plan schema', () => {
     expect(ScorePlanSchema.safeParse({ ...valid, durationSec: 2 }).success).toBe(false);
     expect(ScorePlanSchema.safeParse({ ...valid, durationSec: 301 }).success).toBe(false);
   });
+
+  it.each([
+    ['ends at the moment it starts', 10, 10],
+    ['ends before it starts', 12, 8],
+  ])('rejects a section that %s, naming the section', (_label, startSec, endSec) => {
+    const second = { ...valid.sections[0], name: 'Broken', startSec, endSec };
+    const bad = { ...valid, sections: [valid.sections[0], second] };
+    expect(ScorePlanSchema.safeParse(bad).success).toBe(false);
+    // The error path points at the second section (index 1), not the whole plan.
+    expect(() => parseScorePlan(bad)).toThrow(/sections\.1: section ends before it starts/);
+    expect(() => parseScorePlan(bad)).not.toThrow(/sections\.0/);
+  });
 });

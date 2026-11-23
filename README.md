@@ -23,7 +23,7 @@ With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue aroun
 5. Kiro: 5 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
    See [Built with Kiro](#built-with-kiro).
 
-**Kiro by the numbers:** 14 logged Kiro calls, 152.57 credits, 6,838 lines written by Kiro with 0 lines fixed, and
+**Kiro by the numbers:** 15 logged Kiro calls, 180.74 credits, 8,070 lines written by Kiro with 0 lines fixed, and
 Fright Score's own MCP server called from a Kiro session. Every call is in the [Kiro log](KIRO-LOG.md#summary).
 
 To run it locally instead: `npm install && npm run dev`, then open http://localhost:3120.

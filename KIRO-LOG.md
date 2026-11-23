@@ -29,7 +29,8 @@ the developer changed afterwards to get Kiro's work green.
 | 2026-11-22 | 10 | Called its own MCP tools (`score_level`, 3 `verify_cue`, 2 `score_cue`) to score the example level and the video soundtrack; built Requirement 15 (timeline label, phone overlay, all field errors at once, buttons live during the demo render) and Requirement 16 (the possessed-chip easter egg and a GD3 ghost note) | 23 min 12 s | 22.56 | 743 | 0 | [session 10](docs/kiro-sessions/session-10-mcp-use-overlays-egg.md) |
 | 2026-11-22 | 11 | Built Requirement 17, dread at rest: a 50 bpm heartbeat on the idle chip pads, a pulsing sting marker tagged from the cue, a copper trace on the masthead and a darker mask, all static under reduced motion (7 Vitest and 7 Playwright tests) | 8 min 48 s | 4.58 | 377 | 0 | [session 11](docs/kiro-sessions/session-11-dread-at-rest.md) |
 | 2026-11-22 | 12 | The custom agent `fs666-sound-designer` added the `theremin-lead` patch (algorithm 4, two detuned sine carriers, ±40-cent vibrato at 3.6 Hz) with 1 new test file and a YM2612 mapping check; no existing render changed | 10 min 42 s | 4.70 | 186 | 0 | [session 12](docs/kiro-sessions/session-12-theremin-custom-agent.md) |
-| | **Total** | | | **152.57** | **6,838** | **0** | |
+| 2026-11-22 | 13 | Closed the 26 open test tasks (fright-score-core 20 to 38, live-chip 10 to 17): 79 new Vitest and 11 new Playwright tests, no code change needed; stopped at the 25-minute cap during its last full run | 25 min 6 s | 28.17 | 1232 | 0 | [session 13](docs/kiro-sessions/session-13-close-test-tasks.md) |
+| | **Total** | | | **180.74** | **8,070** | **0** | |
 
 Credits are read with `kiro-cli /usage` before and after each session, so other use of the account between
 sessions is not counted.
@@ -148,8 +149,14 @@ has the time, credits and lines.
   agent's allow rules. The developer updated the docs that still said ten patches.
 
 - **Checks for pass 4**, from a fresh clone before each push: typecheck clean, the determinism check, Vitest
-  204 to 295 tests and Playwright 30 to 56. A timing test that raced under heavy machine load was rerun alone
+  204 to 374 tests and Playwright 30 to 67. A timing test that raced under heavy machine load was rerun alone
   and passed each time.
+
+- **Session 13.** Kiro wrote the tests for the 26 open tasks in `fright-score-core` (20 to 38) and `live-chip`
+  (10 to 17), checked several of them by breaking the behavior and restoring it, and ticked both task lists, so
+  every spec in the repo is now complete. No code change was needed. The runner's 25-minute cap stopped the session
+  during its last full-suite run; the developer ran the suite afterwards: Vitest 295 to 374 tests, Playwright 56 to
+  67, all passing.
 
 ## How Kiro is used in this repo
 

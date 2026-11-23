@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PATCHES, PATCH_IDS, getPatch } from '../../src/engine/patches';
+import { PATCHES, PATCH_IDS, getPatch, type Patch, type PatchLfo } from '../../src/engine/patches';
 import { Voice, midiToHz } from '../../src/engine/voice';
 
 function rms(v: Voice, n: number): number {
@@ -59,5 +59,78 @@ describe('voice', () => {
       return crossings;
     };
     expect(count(-12)).toBeLessThan(count(0) * 0.6);
+  });
+
+  // Requirement 5.4: the patch LFO drives vibrato (pitch) and tremolo (loudness).
+  describe('patch LFO', () => {
+    const SR = 44_100;
+    const flat = { attackSec: 0, decaySec: 0.001, sustain: 1, sustainDecaySec: 0, releaseSec: 0.1 };
+    const mute = { ratio: 1, detuneCents: 0, level: 0, env: flat };
+    /** One steady sine carrier, so any change in pitch or loudness comes from the LFO alone. */
+    const steadyPatch = (lfo: PatchLfo): Patch => ({
+      ...PATCHES['music-box'],
+      algorithm: 7,
+      feedback: 0,
+      ops: [{ ratio: 1, detuneCents: 0, level: 1, env: flat }, mute, mute, mute],
+      lfo,
+      gain: 1,
+    });
+    const render = (lfo: PatchLfo, seconds = 1): Float64Array => {
+      const v = new Voice(steadyPatch(lfo), { midi: 69, velocity: 1 }, SR);
+      const out = new Float64Array(Math.round(seconds * SR));
+      for (let i = 0; i < out.length; i++) out[i] = v.tick();
+      return out;
+    };
+    /** Frequency in Hz measured between each pair of upward zero crossings. */
+    const crossingFrequencies = (x: Float64Array): number[] => {
+      const at: number[] = [];
+      for (let i = 1; i < x.length; i++) {
+        if (x[i - 1] < 0 && x[i] >= 0) at.push(i - x[i] / (x[i] - x[i - 1]));
+      }
+      return at.slice(1).map((t, i) => SR / (t - at[i]));
+    };
+    /** Peak level in each block of 256 samples, skipping the first block. */
+    const blockPeaks = (x: Float64Array): number[] => {
+      const peaks: number[] = [];
+      for (let start = 256; start + 256 <= x.length; start += 256) {
+        let p = 0;
+        for (let i = start; i < start + 256; i++) p = Math.max(p, Math.abs(x[i]));
+        peaks.push(p);
+      }
+      return peaks;
+    };
+    const spread = (xs: number[]) => Math.max(...xs) / Math.min(...xs);
+
+    it('vibrato sweeps the pitch around the note by the patch depth', () => {
+      const freqs = crossingFrequencies(render({ rateHz: 4, vibratoCents: 100, tremolo: 0 }));
+      expect(Math.max(...freqs)).toBeGreaterThan(440 * 2 ** (80 / 1200));
+      expect(Math.min(...freqs)).toBeLessThan(440 * 2 ** (-80 / 1200));
+      expect(Math.max(...freqs)).toBeLessThan(440 * 2 ** (110 / 1200));
+      // Vibrato leaves the loudness alone.
+      expect(spread(blockPeaks(render({ rateHz: 4, vibratoCents: 100, tremolo: 0 })))).toBeLessThan(1.02);
+    });
+
+    it('tremolo swells the loudness by the patch depth and leaves the pitch alone', () => {
+      const wave = render({ rateHz: 4, vibratoCents: 0, tremolo: 0.6 });
+      const peaks = blockPeaks(wave);
+      expect(Math.min(...peaks) / Math.max(...peaks)).toBeCloseTo(0.4, 1);
+      expect(spread(crossingFrequencies(wave))).toBeLessThan(1.001);
+    });
+
+    it('a patch with no LFO depth holds steady pitch and level', () => {
+      const wave = render({ rateHz: 4, vibratoCents: 0, tremolo: 0 });
+      expect(spread(crossingFrequencies(wave))).toBeLessThan(1.001);
+      expect(spread(blockPeaks(wave))).toBeLessThan(1.02);
+    });
+
+    it('a faster LFO rate gives more pitch cycles per second', () => {
+      const turns = (rateHz: number) => {
+        const f = crossingFrequencies(render({ rateHz, vibratoCents: 100, tremolo: 0 }));
+        let crosses = 0;
+        for (let i = 1; i < f.length; i++) if (f[i - 1] < 440 && f[i] >= 440) crosses++;
+        return crosses;
+      };
+      expect(turns(8)).toBeGreaterThan(turns(2) * 2);
+    });
   });
 });

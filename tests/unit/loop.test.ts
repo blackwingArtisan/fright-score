@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_MASTER, master } from '../../src/engine/master';
 import { renderScore } from '../../src/engine/render';
 import { arrange } from '../../src/score/arranger';
 import { composePlan, reconcilePlan, snapLoopLength } from '../../src/score/composer';
+import { MOOD_PROFILES } from '../../src/score/moods';
+import { MOODS } from '../../src/score/schema';
 import { encodeWav, parseWav } from '../../src/wav/wav';
 
 const plan = composePlan({ seed: 4, mood: 'chase', durationSec: 12, loop: true });
@@ -46,5 +49,81 @@ describe('seamless loops', () => {
     const info = parseWav(encodeWav(r, { ditherSeed: 1, loop: true }));
     expect(info.loop).toEqual({ startFrame: 0, endFrame: info.frameCount - 1 });
     expect(parseWav(encodeWav(r, { ditherSeed: 1 })).loop).toBeUndefined();
+  });
+});
+
+describe('steady intensity across a loop (Requirement 10.1b)', () => {
+  const build = 'it builds and builds and keeps getting worse, 24 seconds';
+
+  it.each(MOODS.flatMap((mood) => [4, 9].map((seed) => ({ mood, seed }))))(
+    'keeps every section of a $mood loop (seed $seed) near the mood\'s steady level, even when the scene asks for a build',
+    ({ mood, seed }) => {
+      const loop = composePlan({ seed, mood, scene: build, loop: true });
+      const steady = MOOD_PROFILES[mood].steadyIntensity;
+      const levels = loop.sections.map((s) => s.intensity);
+      expect(levels.length).toBeGreaterThanOrEqual(2);
+      expect(Math.max(...levels) - Math.min(...levels)).toBeLessThanOrEqual(0.25);
+      for (const level of levels) expect(Math.abs(level - steady)).toBeLessThanOrEqual(0.15);
+      // No aftermath drop: the last section is not a quiet tail.
+      expect(levels.at(-1)!).toBeGreaterThan(steady - 0.15);
+
+      // The same scene without a loop does build, so the steadiness comes from the loop request.
+      const open = composePlan({ seed, mood, scene: build });
+      const openLevels = open.sections.map((s) => s.intensity);
+      expect(Math.max(...openLevels) - Math.min(...openLevels)).toBeGreaterThan(0.5);
+    },
+  );
+
+  it('renders a loop at one level from start to end, where the same scene as a build gets louder', () => {
+    const quarterLevelsDb = (loop: boolean) => {
+      const p = composePlan({ seed: 4, mood: 'dread', scene: build, loop });
+      const r = renderScore(arrange(p, 4));
+      const n = r.left.length;
+      return [0, 1, 2, 3].map((q) => {
+        let e = 0;
+        const from = Math.floor((q * n) / 4);
+        const to = Math.floor(((q + 1) * n) / 4);
+        for (let i = from; i < to; i++) e += r.left[i] ** 2 + r.right[i] ** 2;
+        return 10 * Math.log10(e / (2 * (to - from)));
+      });
+    };
+    const spreadDb = (xs: number[]) => Math.max(...xs) - Math.min(...xs);
+    expect(spreadDb(quarterLevelsDb(true))).toBeLessThan(2.5);
+    expect(spreadDb(quarterLevelsDb(false))).toBeGreaterThan(3);
+  });
+});
+
+describe('output filters warmed with the loop end (Requirement 10.2c)', () => {
+  const SR = 44_100;
+  // A tone with whole cycles in the buffer, so the end of the loop flows straight into its start.
+  const tone = (n: number) => Float32Array.from({ length: n }, (_, i) => 0.8 * Math.sin((2 * Math.PI * 60 * i) / SR + 0.5) + 0.3 * Math.sin((2 * Math.PI * 1500 * i) / SR));
+  const options = { ...DEFAULT_MASTER, fadeInSec: 0, fadeOutSec: 0, lowpassHz: 800 };
+
+  function run(circular: boolean) {
+    const n = SR; // 60 Hz and 1500 Hz both fit whole cycles in one second
+    const left = tone(n);
+    const right = tone(n);
+    master(left, right, { ...options, circular });
+    let interior = 0;
+    for (let i = 1; i < n; i++) interior = Math.max(interior, Math.abs(left[i] - left[i - 1]));
+    return { wrap: Math.abs(left[0] - left[n - 1]), interior, left };
+  }
+
+  it('makes the wrap point as smooth as any other point in the loop', () => {
+    const { wrap, interior } = run(true);
+    expect(wrap).toBeLessThanOrEqual(interior);
+  });
+
+  it('would click at the wrap point if the filters started cold', () => {
+    const cold = run(false);
+    const warm = run(true);
+    expect(cold.wrap).toBeGreaterThan(cold.interior * 1.2);
+    expect(cold.wrap).toBeGreaterThan(warm.wrap * 3);
+  });
+
+  it('keeps the true peak at the ceiling', () => {
+    const left = tone(SR);
+    const peak = master(left, tone(SR), { ...options, circular: true });
+    expect(peak).toBeCloseTo(10 ** (DEFAULT_MASTER.ceilingDb / 20), 6);
   });
 });

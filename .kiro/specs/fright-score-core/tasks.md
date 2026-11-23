@@ -39,53 +39,72 @@
 - [x] 19. BS.1770 integrated loudness and per-mood loudness ceilings in the renderer; LUFS in CLI and web stats
   - _Requirements: 6.7_
 
-## Pass 2 — spec review gaps (unchecked)
+## Pass 2 — spec review gaps (closed)
 
 The criteria above were tightened into strict EARS form, one testable behavior per criterion (multi-behavior
 criteria were split with sub-letters so existing task references stay valid; new criteria were appended at
 the end of a requirement). Every task 1-19 keeps its [x]: each has both code and an exercising test. The
-tasks below close the gaps the review found between the spec and the code — behaviors that are implemented
-(or now specified) but not yet pinned by a test, plus the two spec-completeness gaps (1.9 hit cue, 7.4
+tasks below closed the gaps the review found between the spec and the code — behaviors that are implemented
+(or now specified) but were not yet pinned by a test, plus the two spec-completeness gaps (1.9 hit cue, 7.4
 quiet/help flags) whose criteria were added above. Each carries its requirement numbers.
 
-- [ ] 20. Add a composer/scene test that explicit mood, length and sting times override the values read from the scene
+- [x] 20. Add a composer/scene test that explicit mood, length and sting times override the values read from the scene
   - _Requirements: 1.4_
-- [ ] 21. Add a composer test that a keyword-less, mood-less scene yields a plan with mood "dread"
+  - Covered by `unit/composer.test.ts`, "prefers an explicit mood, length and sting times over the ones read from the scene".
+- [x] 21. Add a composer test that a keyword-less, mood-less scene yields a plan with mood "dread"
   - _Requirements: 1.6_
-- [ ] 22. Add a composer test asserting the jump-scare sting lands near 80% of the cue and is snapped to a bar line
+  - Covered by `unit/composer.test.ts`, "falls back to dread" (a scene with no mood words, and no scene at all).
+- [x] 22. Add a composer test asserting the jump-scare sting lands near 80% of the cue and is snapped to a bar line
   - _Requirements: 1.5_
-- [ ] 23. Add a schema test that a section whose endSec is at or before its startSec is rejected naming the section
+  - Covered by `unit/composer.test.ts`, the jump-scare cases at 30, 60, 90 and 120 s: within half a bar of 80% and on a bar line.
+- [x] 23. Add a schema test that a section whose endSec is at or before its startSec is rejected naming the section
   - _Requirements: 2.2_
-- [ ] 24. Add an arranger test asserting the stinger is a tritone brass cluster and that the boom falls in pitch
+  - Covered by `unit/schema.test.ts`, a section that ends at or before its start is rejected with the path `sections.1`.
+- [x] 24. Add an arranger test asserting the stinger is a tritone brass cluster and that the boom falls in pitch
   - _Requirements: 3.2_
-- [ ] 25. Add an arranger test that the heartbeat pulse and bass accelerate toward double time during a riser
+  - Covered by `unit/arranger.test.ts`, "builds the sting as a tritone brass cluster and a boom that falls in pitch".
+- [x] 25. Add an arranger test that the heartbeat pulse and bass accelerate toward double time during a riser
   - _Requirements: 3.5_
-- [ ] 26. Add an operator test covering self-feedback levels 0 through 7 and the clamp at 7
+  - Covered by `unit/arranger.test.ts`, "during a riser": the heartbeat and the bass close in on double time and not past it.
+- [x] 26. Add an operator test covering self-feedback levels 0 through 7 and the clamp at 7
   - _Requirements: 5.2_
-- [ ] 27. Add a voice test that a patch LFO applies vibrato and tremolo
+  - Covered by `unit/operator.test.ts`, "self-feedback levels": levels 0 to 7 each differ, and 8 and above equal 7, below 0 equals 0.
+- [x] 27. Add a voice test that a patch LFO applies vibrato and tremolo
   - _Requirements: 5.4_
-- [ ] 28. Add a renderer test asserting the per-track polyphony limit and that the oldest released voice is stolen first
+  - Covered by `unit/voice.test.ts`, "patch LFO": vibrato moves the pitch by the patch depth, tremolo moves the level, neither moves the other.
+- [x] 28. Add a renderer test asserting the per-track polyphony limit and that the oldest released voice is stolen first
   - _Requirements: 5.6_
-- [ ] 29. Add a render test that the fade-out does not start before a late sting has landed
+  - Covered by `unit/render.test.ts`, "voice limits per track": the limit holds per track, and the oldest released voice is stolen before the oldest voice.
+- [x] 29. Add a render test that the fade-out does not start before a late sting has landed
   - _Requirements: 6.4_
-- [ ] 30. Add unit tests for the stereo reverb send, the DC blocker and the output low-pass
+  - Covered by `unit/render.test.ts`, "fade-out and a late sting": the fade is shortened and starts after the sting has sounded.
+- [x] 30. Add unit tests for the stereo reverb send, the DC blocker and the output low-pass
   - _Requirements: 6.6_
-- [ ] 31. Add a render test that the frame count is exactly durationSec × 44,100 for a non-integer-frame duration (guard the Math.ceil rounding)
+  - Covered by `unit/reverb.test.ts` (the send), `unit/master.test.ts` ("DC blocker", "output low-pass").
+- [x] 31. Add a render test that the frame count is exactly durationSec × 44,100 for a non-integer-frame duration (guard the Math.ceil rounding)
   - _Requirements: 6.2_
-- [ ] 32. Add a CLI test asserting the score command prints the render stats line (note count, voices, dBTP, LUFS)
+  - Covered by `unit/render.test.ts`, "exact length": 7.333, 12.34567 and 9.999 s give `ceil(durationSec x 44,100)` frames.
+- [x] 32. Add a CLI test asserting the score command prints the render stats line (note count, voices, dBTP, LUFS)
   - _Requirements: 7.1_
-- [ ] 33. Add a CLI test asserting the process exits non-zero on invalid arguments
+  - Covered by `cli/score.test.ts`, "render stats": note count (equal to the score JSON's), voices, dBTP and LUFS, in order after the plan.
+- [x] 33. Add a CLI test asserting the process exits non-zero on invalid arguments
   - _Requirements: 7.3_
-- [ ] 34. Add a CLI test asserting --quiet prints only the output path and --help prints the usage text
+  - Covered by `cli/score.test.ts`, "invalid arguments exit non-zero", through the real npm script: exit code, `fright-score:` message, no file written.
+- [x] 34. Add a CLI test asserting --quiet prints only the output path and --help prints the usage text
   - _Requirements: 7.4_
-- [ ] 35. Add an e2e assertion that rendering progress is shown to the user
+  - Covered by `cli/score.test.ts`, "--quiet and --help": stdout is exactly the path under `--quiet`; `--help` prints every flag and renders nothing.
+- [x] 35. Add an e2e assertion that rendering progress is shown to the user
   - _Requirements: 8.1_
-- [ ] 36. Add an e2e test that clicking the timeline moves the playhead there
+  - Covered by `e2e/render-progress.spec.ts`: the status line, the bar and the timeline label all advance during a 60 s render.
+- [x] 36. Add an e2e test that clicking the timeline moves the playhead there
   - _Requirements: 8.4_
-- [ ] 37. Add a loop test asserting intensity stays steady across the whole loop
+  - Covered by `e2e/timeline.spec.ts`: a click moves the playhead while paused and while playing, and clamps at both edges.
+- [x] 37. Add a loop test asserting intensity stays steady across the whole loop
   - _Requirements: 10.1_
-- [ ] 38. Add a loop test asserting the output filters are warmed with the loop's end so the wrap point is seamless
+  - Covered by `unit/loop.test.ts`, "steady intensity across a loop": every mood's loop stays within 0.15 of its steady level even for a "builds" scene, and a rendered dread loop holds its level within 2.5 dB from start to end.
+- [x] 38. Add a loop test asserting the output filters are warmed with the loop's end so the wrap point is seamless
   - _Requirements: 10.2_
+  - Covered by `unit/loop.test.ts`, "output filters warmed with the loop end": the wrap step is no bigger than the steps inside the loop, and a cold start clicks.
 
 ## Pass 2 — cursed datasheet look
 
@@ -149,16 +168,16 @@ CLI tests run under Vitest (`npm run test:unit`); `e2e/` tests run under Playwri
 
 | Requirement | Tests | Open tasks |
 |---|---|---|
-| 1. Direct a cue from a scene or a mood | `unit/scene.test.ts` (canonical brief, cue time is not the length, several cues and hits, jump scare without a time, no mood); `unit/composer.test.ts` (length and sting honored, jump scare near the end); `e2e/app.spec.ts` (what the director heard, 1.8) | 20 (1.4), 21 (1.6), 22 (1.5) |
-| 2. Validate every plan | `unit/schema.test.ts`; `unit/composer.test.ts` (reconcilePlan); `unit/director.test.ts` (the pipeline enforces stings) | 23 (2.2) |
-| 3. Arrange the plan into notes | `unit/arranger.test.ts` (schema-valid, notes inside the cue, silence window, exact sting, drone returns) | 24 (3.2), 25 (3.5) |
+| 1. Direct a cue from a scene or a mood | `unit/scene.test.ts` (canonical brief, cue time is not the length, several cues and hits, jump scare without a time, no mood); `unit/composer.test.ts` (length and sting honored, jump scare near the end; explicit values beat the scene, 1.4; dread fallback, 1.6; jump scare near 80% on a bar line, 1.5); `e2e/app.spec.ts` (what the director heard, 1.8) | none |
+| 2. Validate every plan | `unit/schema.test.ts` (including a section that ends at or before its start, named by path, 2.2); `unit/composer.test.ts` (reconcilePlan); `unit/director.test.ts` (the pipeline enforces stings) | none |
+| 3. Arrange the plan into notes | `unit/arranger.test.ts` (schema-valid, notes inside the cue, silence window, exact sting, drone returns; tritone brass cluster and falling boom, 3.2; heartbeat and bass accelerate in a riser, 3.5) | none |
 | 4. Determinism by seed | `unit/render.test.ts`, `unit/wav.test.ts`, `unit/arranger.test.ts`, `unit/composer.test.ts`, `unit/rng.test.ts`; `e2e/app.spec.ts` (browser equals CLI byte for byte, 4.3); `e2e/share-loop.spec.ts`; `npm run check:determinism` (4.4) | none |
-| 5. Emulate a four-operator FM chip | `unit/sine.test.ts`, `unit/operator.test.ts`, `unit/algorithms.test.ts`, `unit/envelope.test.ts`, `unit/voice.test.ts` | 26 (5.2), 27 (5.4), 28 (5.6) |
-| 6. Solid audio output | `unit/render.test.ts` (length, -3 dBTP, fades, sting within 50 ms), `unit/master.test.ts`, `unit/wav.test.ts`, `unit/loudness.test.ts` (BS.1770, mood ceilings) | 29 (6.4), 30 (6.6), 31 (6.2) |
-| 7. Command-line renderer | `cli/score.test.ts` (end to end through npm, same bytes by seed, JSON, bad arguments, help, loops, VGM); `cli/samples.test.ts` | 32 (7.1), 33 (7.3), 34 (7.4) |
-| 8. Browser app with a chip view | `e2e/app.spec.ts`, `e2e/a11y.spec.ts`, `e2e/sting.spec.ts`, `e2e/layout.spec.ts`, `e2e/mobile.spec.ts` (8.7) | 35 (8.1), 36 (8.4) |
+| 5. Emulate a four-operator FM chip | `unit/sine.test.ts`, `unit/operator.test.ts` (feedback levels 0 to 7 and the clamp, 5.2), `unit/algorithms.test.ts`, `unit/envelope.test.ts`, `unit/voice.test.ts` (patch LFO, 5.4); `unit/render.test.ts` (per-track voice limit and stealing order, 5.6) | none |
+| 6. Solid audio output | `unit/render.test.ts` (length, -3 dBTP, fades, sting within 50 ms; exact frame count, 6.2; fade-out waits for a late sting, 6.4), `unit/master.test.ts` (including the DC blocker and the low-pass, 6.6), `unit/reverb.test.ts` (6.6), `unit/wav.test.ts`, `unit/loudness.test.ts` (BS.1770, mood ceilings) | none |
+| 7. Command-line renderer | `cli/score.test.ts` (end to end through npm, same bytes by seed, JSON, bad arguments, help, loops, VGM; the stats line, 7.1b; exit code and message for each bad argument, 7.3; `--quiet` prints only the path and `--help` prints the usage, 7.4); `cli/samples.test.ts` | none |
+| 8. Browser app with a chip view | `e2e/app.spec.ts`, `e2e/a11y.spec.ts`, `e2e/sting.spec.ts`, `e2e/layout.spec.ts`, `e2e/mobile.spec.ts` (8.7), `e2e/render-progress.spec.ts` (8.1), `e2e/timeline.spec.ts` (8.4) | none |
 | 9. Swappable AI director | `unit/director.test.ts` (local by default, Bedrock with a fake client and one repair round, remote); `unit/server.test.ts`; every test uses fake clients (9.4) | none |
-| 10. Seamless loops and share links | `unit/loop.test.ts`; `cli/score.test.ts` (loops); `e2e/share-loop.spec.ts` | 37 (10.1), 38 (10.2) |
+| 10. Seamless loops and share links | `unit/loop.test.ts` (whole bars; steady intensity, 10.1b; no fades and a smooth wrap; filters warmed with the loop's end, 10.2c); `cli/score.test.ts` (loops); `e2e/share-loop.spec.ts` | none |
 | 11. A cursed datasheet look | `e2e/app.spec.ts` (flicker on, and off under reduced motion: 11.1, 11.2) | 11.3 to 11.6 are checked by visual review |
 | 12. Kiro workspace counts stay true | `unit/kiro-counts.test.ts` (counts from `.kiro` against the sentence in each document) | none |
 | 13. Phone first screen | `e2e/phone-fold.spec.ts` (no overlap, tap reaches Jump, above the fold at 375x667); `e2e/mobile.spec.ts` (the pinned button appears when the transport is out of view) | none |
@@ -166,7 +185,3 @@ CLI tests run under Vitest (`npm run test:unit`); `e2e/` tests run under Playwri
 | 15. Demo render and form polish | `e2e/form-polish.spec.ts` (all errors at once, buttons enabled and the queued WAV during the demo render, Summon restarts it, label position, hint); `e2e/mobile.spec.ts` (Listen overlay small, lower left, fades); `unit/ghost.test.ts` (`progressLabelBox`); `e2e/first-load.spec.ts` (Download WAV enabled, 15.8) | none |
 | 16. The possessed chip | `unit/ghost.test.ts` (message from the seed, GD3 ghost note, pinned VGM sha256, WAV hash unchanged); `e2e/possessed-chip.spec.ts` (flicker, `aria-hidden` rows, one announcement, still under reduced motion); `cli/samples.test.ts` (the sample is the CLI's export) | none |
 | 17. Dread at rest | `unit/dread.test.ts` (50 bpm, beat shape, still level, drone share, the demo's tag from the cue); `e2e/dread-at-rest.spec.ts` (heartbeat and trace animate, static under reduced motion, tag reads the cue, `--mask` darker at rest, no horizontal scroll at 360, 390 and 1360 px) | none |
-
-Tasks 26 and 34 were re-checked against the current suite and stay open: `unit/operator.test.ts` covers
-feedback levels 0, 2 and 5 but not 0 through 7 or the clamp at 7, and `cli/score.test.ts` runs `--quiet` and
-`--help` without asserting what `--quiet` prints.

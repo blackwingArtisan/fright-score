@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyFades,
+  dcBlock,
+  lowpass,
+  rmsOf,
   dbToGain,
   fadeInCurve,
   gainToDb,
@@ -74,5 +77,65 @@ describe('master chain', () => {
     const r = new Float32Array(100);
     expect(master(l, r)).toBe(0);
     expect(peakOf(l, r)).toBe(0);
+  });
+
+  // Requirement 6.6: the DC blocker and the output low-pass.
+  describe('DC blocker', () => {
+    const SR = 44_100;
+    const sine = (hz: number, n: number, offset = 0) => Float32Array.from({ length: n }, (_, i) => offset + 0.5 * Math.sin((2 * Math.PI * hz * i) / SR));
+
+    it('removes a constant offset and leaves the music in place', () => {
+      const x = sine(220, SR * 2, 0.3);
+      dcBlock(x);
+      const tail = x.subarray(SR); // after the blocker has settled
+      const mean = tail.reduce((a, b) => a + b, 0) / tail.length;
+      expect(Math.abs(mean)).toBeLessThan(0.005);
+      expect(rmsOf(tail)).toBeCloseTo(0.5 / Math.SQRT2, 2);
+    });
+
+    it('settles a pure step to silence', () => {
+      const x = new Float32Array(SR * 4).fill(1);
+      dcBlock(x);
+      expect(x[0]).toBe(1);
+      expect(Math.abs(x[x.length - 1])).toBeLessThan(0.01);
+    });
+
+    it('passes a low bass note almost untouched', () => {
+      const x = sine(40, SR * 2);
+      const before = rmsOf(x.subarray(SR));
+      dcBlock(x);
+      expect(rmsOf(x.subarray(SR)) / before).toBeGreaterThan(0.98);
+    });
+  });
+
+  describe('output low-pass', () => {
+    const SR = 44_100;
+    const gainAt = (hz: number, cutoffHz = 11_000) => {
+      const x = Float32Array.from({ length: SR }, (_, i) => Math.sin((2 * Math.PI * hz * i) / SR));
+      const before = rmsOf(x.subarray(SR / 2));
+      lowpass(x, cutoffHz, SR);
+      return rmsOf(x.subarray(SR / 2)) / before;
+    };
+
+    it('passes the body of the sound', () => {
+      expect(gainAt(200)).toBeGreaterThan(0.99);
+      expect(gainAt(2_000)).toBeGreaterThan(0.95);
+    });
+
+    it('cuts the top end, more the higher it goes', () => {
+      expect(gainAt(18_000)).toBeLessThan(gainAt(8_000));
+      expect(gainAt(20_000)).toBeLessThan(0.5);
+    });
+
+    it('moves the cutoff with the setting', () => {
+      expect(gainAt(5_000, 1_000)).toBeLessThan(0.15);
+      expect(gainAt(5_000, 11_000)).toBeGreaterThan(0.8);
+    });
+
+    it('keeps a constant level unchanged once settled', () => {
+      const x = new Float32Array(2000).fill(0.4);
+      lowpass(x, 11_000, SR);
+      expect(x[x.length - 1]).toBeCloseTo(0.4, 5);
+    });
   });
 });
