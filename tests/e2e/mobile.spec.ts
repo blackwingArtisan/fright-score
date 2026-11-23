@@ -54,3 +54,16 @@ test('on a phone the Listen overlay is small, sits at the lower left, and fades 
   await expect(page.locator('#listen')).toHaveClass(/listen--passed/, { timeout: 60_000 });
   await expect.poll(() => page.locator('#listen').evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
 });
+
+test('on a phone the chip panel is a closed details, and opening it shows the ghost envelopes', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  const panel = page.locator('details#chip-panel');
+  await expect(panel).toHaveJSProperty('open', false);
+  await expect(page.locator('#chip')).toBeHidden();
+  await page.locator('#chip-summary').click();
+  await expect(page.locator('#chip')).toBeVisible();
+  await expect(page.locator('#chip')).toHaveAttribute('data-ghost-lanes', '4');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});

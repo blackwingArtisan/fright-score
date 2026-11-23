@@ -751,6 +751,36 @@ canvas {
 #chip {
   min-height: 120px;
 }
+/* The chip panel is a <details> so phones can fold it away. Wider screens keep it open with no summary. */
+.chip-summary {
+  display: none;
+}
+.chip-toggle {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: var(--step--1);
+}
+@media (max-width: 519.98px) {
+  .chip-summary {
+    display: block;
+    cursor: pointer;
+    color: var(--copper);
+    font-size: var(--step-1);
+    min-height: 44px;
+    padding: 10px 0;
+    overflow-wrap: anywhere;
+  }
+  .chip-wrap:not([open]) {
+    padding-block: 0 0;
+  }
+  .chip-wrap[open] > .chip-summary {
+    margin-bottom: 8px;
+    border-bottom: 1px dashed var(--copper-dim);
+  }
+  .chip-toggle {
+    min-height: 44px;
+  }
+}
 #scope {
   height: 72px;
   margin-top: 10px;
@@ -1315,6 +1345,45 @@ canvas {
 .render-stats {
   font-size: var(--step--1);
   color: var(--tin) !important;
+}
+
+/* Drop into Godot: one card, one download. */
+.godot-card {
+  border: 1px solid var(--copper-dim);
+  border-radius: 4px;
+  padding: 14px;
+  background: linear-gradient(180deg, #121614, #0b0e0d);
+  min-width: 0;
+}
+.godot-card h3 {
+  font-size: var(--step-2);
+  color: var(--copper);
+  margin-bottom: 6px;
+}
+.godot-card p {
+  margin: 0 0 8px;
+  max-width: 76ch;
+  color: var(--silk-dim);
+}
+.godot-card__price {
+  color: var(--silk) !important;
+}
+.godot-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+.godot-card__row p {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--tin);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+  .godot-card__row .btn {
+    flex: 1 1 100%;
+  }
 }
 
 .footer {

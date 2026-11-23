@@ -5,6 +5,7 @@ import type { Score } from '../../score/schema';
 import { midiToName } from '../../score/theory';
 import { COLORS, FONT_SILK, fitCanvas } from './canvas';
 import { HEARTBEAT_BPM, beatShare, restingPulse } from './dread';
+import { COLLAPSED_LANES, LANE_DWELL_SEC, envelopeGhost, pickLanes } from './lanes';
 
 const ROW_H = 58;
 const PAD = 22;
@@ -25,13 +26,86 @@ export class ChipView {
   /** Heartbeat level of resting pads, 0..1, or undefined while the cue plays (the pads then breathe in ectoplasm). */
   private beat: number | undefined;
   private resting = true;
+  /** Channels shown while the panel is collapsed, and the playhead second they were picked at. */
+  private shown: number[] = [];
+  private shownAtSec = 0;
+  private expanded = false;
+  /** Full recorded envelope per channel (carrier level per visualizer frame), for the ghost behind the live line. */
+  private ghostLevels: Float32Array[] = [];
+  private ghostCache = new Map<string, Float32Array>();
+  private ghostPeak = 0;
+  private layout = { rowH: ROW_H, ribbonBelow: false };
   private readonly still = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : undefined;
 
-  constructor(private readonly canvas: HTMLCanvasElement) {}
+  /**
+   * `toggle` is the "Show all N" button; `onLanes` hears how many channels the panel has, so the page can say so.
+   */
+  constructor(
+    private readonly canvas: HTMLCanvasElement,
+    private readonly toggle?: HTMLButtonElement,
+    private readonly onLanes?: (laneCount: number) => void,
+  ) {
+    toggle?.addEventListener('click', () => {
+      this.expanded = !this.expanded;
+      this.shown = [];
+      this.syncToggle();
+    });
+  }
+
+  /** Number of channels (lanes) the panel has: one per track of the cue. */
+  get laneCount(): number {
+    return this.score?.tracks.length ?? 0;
+  }
 
   set(score: Score | undefined, frames: VizFrames | undefined): void {
     this.score = score;
     this.frames = frames;
+    this.shown = [];
+    this.ghostCache.clear();
+    this.ghostLevels = score && frames ? score.tracks.map((_, t) => trackLevels(score, frames, t)) : [];
+    this.ghostPeak = this.ghostLevels.reduce((peak, levels) => levels.reduce((p, v) => Math.max(p, v), peak), 0);
+    this.syncToggle();
+    this.onLanes?.(this.laneCount);
+  }
+
+  private get collapsible(): boolean {
+    return this.laneCount > COLLAPSED_LANES;
+  }
+
+  private syncToggle(): void {
+    const button = this.toggle;
+    if (!button) return;
+    button.hidden = !this.collapsible;
+    button.textContent = `Show all ${this.laneCount} ${this.expanded ? '\u25B4' : '\u25BE'}`;
+    button.setAttribute('aria-expanded', String(this.expanded));
+    // The glyph is decoration: the name stays "Show all N" and aria-expanded carries the state.
+    button.setAttribute('aria-label', `Show all ${this.laneCount}`);
+  }
+
+  /** Track indices drawn as rows for the playhead at `positionSec`, in track order. */
+  private lanesFor(positionSec: number, frame: number): number[] {
+    const count = this.laneCount;
+    const all = Array.from({ length: count }, (_, i) => i);
+    if (!this.collapsible || this.expanded) return all;
+    const settled = this.shown.length > 0 && positionSec >= this.shownAtSec && positionSec - this.shownAtSec < LANE_DWELL_SEC;
+    if (settled) return this.shown;
+    const frames = this.frames;
+    const sounding = all.map((t) => frames !== undefined && frames.voices[frame * count + t] > 0);
+    this.shown = pickLanes(this.shown, sounding, COLLAPSED_LANES);
+    this.shownAtSec = positionSec;
+    return this.shown;
+  }
+
+  private ghostFor(trackIndex: number, columns: number): Float32Array | undefined {
+    const levels = this.ghostLevels[trackIndex];
+    if (!levels || columns < 2) return undefined;
+    const key = `${trackIndex}:${columns}`;
+    let ghost = this.ghostCache.get(key);
+    if (!ghost) {
+      ghost = envelopeGhost(levels.length, columns, (f) => levels[f]);
+      this.ghostCache.set(key, ghost);
+    }
+    return ghost;
   }
 
   /** True while nothing plays: the resting pads then idle in a slow red heartbeat tied to the drone. */
@@ -51,24 +125,41 @@ export class ChipView {
     }
     // Resting pads breathe on a slow four-second cycle; under reduced motion they hold a steady glow.
     this.rest = this.still?.matches ? 0.6 : 0.5 + 0.4 * Math.sin((performance.now() / 4000) * Math.PI * 2);
-    const rows = this.score?.tracks.length ?? 3;
+    const frameAt = this.frames ? Math.min(this.frames.frameCount - 1, Math.max(0, Math.floor(positionSec * this.frames.frameRate))) : 0;
+    const lanes = this.score ? this.lanesFor(positionSec, frameAt) : [];
+    const rows = this.score ? lanes.length : 3;
     const idle = !this.score || !this.frames;
     // The idle caption gets its own line under the rows, so it never overlaps the last channel.
-    const height = rows * ROW_H + 6 + (idle ? 24 : 0);
+    const rowH = chipLayout(Math.max(1, this.canvas.clientWidth)).rowH;
+    const height = rows * rowH + 6 + (idle ? 24 : 0);
     const { ctx, width } = fitCanvas(this.canvas, height);
     ctx.clearRect(0, 0, width, height);
-    const { labelW, padsX, readoutX, ribbonX, ribbonW } = rowLayout(width);
+    const { labelW, padsX, readoutX, ribbonX, ribbonW, ribbonBelow } = chipLayout(width);
+    this.layout = { rowH, ribbonBelow };
 
     if (!this.score || !this.frames) {
       // While a cue renders, its channels already show the patches they will play; before any cue, blank rows.
-      for (let r = 0; r < rows; r++) this.drawRow(ctx, r, labelW, padsX, readoutX, ribbonX, ribbonW, this.score ? r : undefined, 0);
+      for (let r = 0; r < rows; r++) this.drawRow(ctx, r, labelW, padsX, readoutX, ribbonX, ribbonW, this.score ? lanes[r] : undefined, 0, 0);
+      this.publishGhost([], 0, 0);
       ctx.fillStyle = COLORS.tin;
       ctx.font = `12px ${FONT_SILK}`;
-      ctx.fillText(this.score ? 'Patches loaded. The chip wakes when the render finishes.' : 'Channels light up here when a cue plays.', 4, rows * ROW_H + 22);
+      ctx.fillText(this.score ? 'Patches loaded. The chip wakes when the render finishes.' : 'Channels light up here when a cue plays.', 4, rows * rowH + 22);
       return;
     }
-    const frame = Math.min(this.frames.frameCount - 1, Math.max(0, Math.floor(positionSec * this.frames.frameRate)));
-    this.score.tracks.forEach((_, r) => this.drawRow(ctx, r, labelW, padsX, readoutX, ribbonX, ribbonW, r, frame));
+    const cursor = this.score.durationSec > 0 ? Math.min(1, Math.max(0, positionSec / this.score.durationSec)) : 0;
+    lanes.forEach((t, r) => this.drawRow(ctx, r, labelW, padsX, readoutX, ribbonX, ribbonW, t, frameAt, cursor));
+    this.publishGhost(lanes, ribbonW, cursor);
+  }
+
+  /** The ghost envelopes are visible to tests: how many rows drew one, the loudest level, the lanes shown and the cursor. */
+  private publishGhost(lanes: number[], ribbonW: number, cursor: number): void {
+    const d = this.canvas.dataset;
+    const drawn = this.ghostLevels.length > 0 && ribbonW > 40 ? lanes.length : 0;
+    d.ghostLanes = String(drawn);
+    d.ghostPeak = this.ghostPeak.toFixed(3);
+    d.laneCount = String(this.laneCount);
+    d.lanesShown = lanes.map((t) => this.score?.tracks[t]?.id ?? '').join(',');
+    d.cursor = cursor.toFixed(4);
   }
 
   private drawRow(
@@ -81,6 +172,7 @@ export class ChipView {
     ribbonW: number,
     trackIndex: number | undefined,
     frame: number,
+    cursor: number,
   ): void {
     const track = trackIndex !== undefined ? this.score?.tracks[trackIndex] : undefined;
     const patch = track ? getPatch(track.patchId) : undefined;
@@ -92,7 +184,11 @@ export class ChipView {
     const idle = live && frames.voices[idx] === 0;
     ctx.globalAlpha = idle ? 0.5 : 1;
     drawOperatorRow(ctx, {
-      y0: row * ROW_H + 4,
+      y0: row * this.layout.rowH + 4,
+      rowH: this.layout.rowH,
+      ribbonBelow: this.layout.ribbonBelow,
+      ghost: live ? this.ghostFor(trackIndex, Math.floor(ribbonW)) : undefined,
+      cursor: live ? cursor : undefined,
       labelW,
       padsX,
       readoutX,
@@ -113,6 +209,19 @@ export class ChipView {
     });
     ctx.globalAlpha = 1;
   }
+}
+
+/** The carrier level of one track at every visualizer frame: the loudest of its carrier operators. */
+function trackLevels(score: Score, frames: VizFrames, trackIndex: number): Float32Array {
+  const carriers = getAlgorithm(getPatch(score.tracks[trackIndex].patchId).algorithm).carriers;
+  const trackCount = score.tracks.length;
+  const out = new Float32Array(frames.frameCount);
+  for (let f = 0; f < frames.frameCount; f++) {
+    let v = 0;
+    for (const c of carriers) v = Math.max(v, frames.envelopes[(f * trackCount + trackIndex) * 4 + c]);
+    out[f] = v;
+  }
+  return out;
 }
 
 export interface OperatorRowSpec {
@@ -136,6 +245,14 @@ export interface OperatorRowSpec {
   rest?: number;
   /** 0..1: the red heartbeat glow of pads at rest; when set it replaces the ectoplasm glow. */
   heartbeat?: number;
+  /** Height of the row; ROW_H unless the ribbon has a line of its own. */
+  rowH?: number;
+  /** Put the envelope ribbon on its own line under the pads (narrow canvases). */
+  ribbonBelow?: boolean;
+  /** The channel's whole recorded envelope, one value 0..1 per ribbon pixel, drawn dim behind the live line. */
+  ghost?: Float32Array;
+  /** 0..1: where the playhead sits along the ghost, drawn as a cursor. */
+  cursor?: number;
   /** Tint the row blood red (the stinger and boom channels, both role "stinger"). */
   danger?: boolean;
 }
@@ -150,6 +267,19 @@ export function rowLayout(width: number): { labelW: number; padsX: number; reado
   return { labelW, padsX, readoutX, ribbonX, ribbonW: Math.max(0, width - ribbonX - 8) };
 }
 
+/** Extra height of a row whose envelope ribbon sits on its own line, as on a phone. */
+const BELOW_EXTRA_H = 22;
+
+/**
+ * Layout of the channel view. Like `rowLayout`, but on a narrow canvas the envelope ribbon (and the ghost in it)
+ * takes a line of its own under the pads instead of vanishing, so a phone sees the same panel.
+ */
+export function chipLayout(width: number): ReturnType<typeof rowLayout> & { rowH: number; ribbonBelow: boolean } {
+  const base = rowLayout(width);
+  if (base.ribbonW > 40) return { ...base, rowH: ROW_H, ribbonBelow: false };
+  return { ...base, ribbonX: 4, ribbonW: Math.max(0, width - 8), rowH: ROW_H + BELOW_EXTRA_H, ribbonBelow: true };
+}
+
 /** Height of one channel row in CSS pixels. */
 export const CHANNEL_ROW_HEIGHT = ROW_H;
 
@@ -161,6 +291,7 @@ export const CHANNEL_ROW_HEIGHT = ROW_H;
 export function drawOperatorRow(ctx: CanvasRenderingContext2D, spec: OperatorRowSpec): void {
   const { y0, labelW, padsX, readoutX, ribbonX, ribbonW, patch, level } = spec;
   const mid = y0 + 30;
+  const rowH = spec.rowH ?? ROW_H;
   const algo = getAlgorithm(patch?.algorithm ?? 4);
 
   // Stinger and boom channels sit on a faint blood-red band.
@@ -169,15 +300,15 @@ export function drawOperatorRow(ctx: CanvasRenderingContext2D, spec: OperatorRow
     band.addColorStop(0, 'rgb(224 52 63 / 0.16)');
     band.addColorStop(1, 'rgb(224 52 63 / 0.03)');
     ctx.fillStyle = band;
-    ctx.fillRect(0, y0, ctx.canvas.width, ROW_H - 4);
+    ctx.fillRect(0, y0, ctx.canvas.width, rowH - 4);
   }
 
   // Row divider, like a silkscreen outline.
   ctx.strokeStyle = 'rgb(122 85 48 / 0.45)';
   ctx.setLineDash([3, 4]);
   ctx.beginPath();
-  ctx.moveTo(0, y0 + ROW_H - 2.5);
-  ctx.lineTo(ctx.canvas.width, y0 + ROW_H - 2.5);
+  ctx.moveTo(0, y0 + rowH - 2.5);
+  ctx.lineTo(ctx.canvas.width, y0 + rowH - 2.5);
   ctx.stroke();
   ctx.setLineDash([]);
 
@@ -305,11 +436,35 @@ export function drawOperatorRow(ctx: CanvasRenderingContext2D, spec: OperatorRow
 
   // Envelope history ribbon (carrier level over the last three seconds).
   if (ribbonW > 40) {
-    const top = y0 + 10;
-    const h = ROW_H - 22;
+    const top = spec.ribbonBelow ? y0 + ROW_H - 3 : y0 + 10;
+    const h = spec.ribbonBelow ? 16 : ROW_H - 22;
     ctx.strokeStyle = 'rgb(122 85 48 / 0.6)';
     ctx.lineWidth = 1;
     ctx.strokeRect(ribbonX + 0.5, top + 0.5, ribbonW - 1, h);
+    const ghost = spec.ghost;
+    if (ghost && ghost.length > 1) {
+      // The whole cue as a dim silhouette: the panel shows the shape of the score before anything plays.
+      const base = top + h - 2;
+      ctx.beginPath();
+      ctx.moveTo(ribbonX + 1, base);
+      for (let k = 0; k < ghost.length; k++) ctx.lineTo(ribbonX + 1 + (k / (ghost.length - 1)) * (ribbonW - 2), base - ghost[k] * (h - 4));
+      ctx.lineTo(ribbonX + ribbonW - 1, base);
+      ctx.closePath();
+      ctx.fillStyle = 'rgb(201 137 74 / 0.14)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgb(201 137 74 / 0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    if (spec.cursor !== undefined && ghost) {
+      const x = Math.round(ribbonX + 1 + spec.cursor * (ribbonW - 2)) + 0.5;
+      ctx.strokeStyle = COLORS.silkDim;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, top + h);
+      ctx.stroke();
+    }
     if (spec.readout) {
       ctx.beginPath();
       for (let k = 0; k < HISTORY_FRAMES; k++) {

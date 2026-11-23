@@ -3,8 +3,8 @@
 > **Who wrote this spec.** The first version was written by hand by the developer on 2026-11-16, from the
 > prompt Kiro could not complete (both calls were throttled; see KIRO-LOG.md). Kiro reviewed it against the
 > code in pass 2 on 2026-11-19 and rewrote every acceptance criterion in strict EARS form, and Kiro added
-> Requirements 12 to 14 in session 7, Requirements 15 and 16 in session 10 and Requirement 17 in session 11, all
-> on 2026-11-22.
+> Requirements 12 to 14 in session 7, Requirements 15 and 16 in session 10, Requirement 17 in session 11 and
+> Requirements 18 and 19 in session 14, all on 2026-11-22. Requirements 18 and 19 were added in session 12.
 
 ## Introduction
 
@@ -371,3 +371,48 @@ plays, so that the silence already belongs to the cue.
    marker at one steady glow and the masthead trace at one steady opacity, and animate none of them.
 6. THE SYSTEM SHALL keep every element id, accessible name and tested string unchanged, add no horizontal scroll
    at 360 px, 390 px or desktop width, and leave every WAV byte unchanged.
+
+## Requirement 18: Drop into Godot
+
+**User story:** As a Godot developer who has just heard a cue I like, I want one download that holds the add-on, a
+loop and a sting, so that I can use the cue in my game without any other setup.
+
+### Acceptance criteria
+
+1. WHEN a cue has rendered THE SYSTEM SHALL enable one button, "Download Godot pack (.zip)", in a card headed
+   "Drop into Godot", and WHILE no cue has rendered SHALL keep it disabled.
+2. WHEN the visitor presses the button THE SYSTEM SHALL download one zip that holds the files of
+   `examples/godot/addons/fright_score/` (imported with Vite `?raw`), the current cue as a seamless loop WAV with loop
+   points, a sting WAV with its hit at 1.0 s and quiet before it, and `README.txt`.
+3. THE SYSTEM SHALL render both WAVs with the existing render worker (`render.worker.ts`) and the local director,
+   seeded from the cue's seed, so that the same cue always gives the same zip, byte for byte.
+4. THE SYSTEM SHALL write `README.txt` with a two-line setup and the line "A stock site charges about $18-48 for this.
+   Yours, royalty-free."
+5. THE SYSTEM SHALL write the zip with a store-only writer in `src/export/zip.ts` that gives every entry a correct
+   CRC-32 and a fixed timestamp.
+6. THE SYSTEM SHALL report progress and failure in a polite status line inside the card, and leave the cue's own
+   render, status line and WAV bytes alone.
+7. THE SYSTEM SHALL keep every element id, accessible name and tested string unchanged, add no horizontal scroll at
+   360 px, 390 px or desktop width, behave the same under reduced motion, and leave every WAV byte unchanged (the demo's
+   sha256 stays `04352a45a32f7981b0647aefd434970bbe2d28b40e218bdcc935b8ec213c5c23`).
+
+## Requirement 19: The chip panel at rest
+
+**User story:** As a visitor who has not pressed Listen yet, I want the chip panel to show the shape of the cue, so
+that the panel is never dead and I can see where the playhead is.
+
+### Acceptance criteria
+
+1. WHEN a cue has rendered THE SYSTEM SHALL draw, in each shown lane, the lane's full recorded envelope as a dim ghost
+   behind the live envelope line, before any playback, and SHALL draw the playhead as a cursor on it.
+2. THE SYSTEM SHALL collapse the panel to the 4 instruments sounding at the playhead, keep a sounding lane in its row
+   against newcomers, fill up to 4 rows when fewer sound, and change a row no more often than every 0.5 s of playhead
+   time.
+3. WHEN the cue has more than 4 lanes THE SYSTEM SHALL show a button "Show all N", where N is the number of lanes the
+   panel has, with `aria-expanded`, that shows every lane and hides them again.
+4. WHILE the viewport is below 520 px THE SYSTEM SHALL put the chip panel in a `<details>` element, closed by default,
+   and keep it open at 520 px and wider with its summary hidden.
+5. WHILE the canvas is too narrow for a side ribbon THE SYSTEM SHALL draw the ribbon, with its ghost and cursor, on its
+   own line under the pads.
+6. THE SYSTEM SHALL draw the same ghost under reduced motion, keep every element id, accessible name and tested string
+   unchanged, add no horizontal scroll at 360 px, 390 px or desktop width, and leave every WAV byte unchanged.

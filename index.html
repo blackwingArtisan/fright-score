@@ -129,10 +129,12 @@
           <span>Try it: press A to K to perform on the chip yourself</span>
         </button>
 
-        <div class="chip-wrap">
+        <details id="chip-panel" class="chip-wrap" open>
+          <summary id="chip-summary" class="chip-summary">The chip, channel by channel</summary>
           <div class="chip-label">
             <h3 class="chip-package"><svg class="chip-package__skull" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5c-4.7 0-8 3.2-8 7.6 0 2.5 1.1 4.3 2.7 5.4v2.7c0 .8.6 1.3 1.3 1.3h.9v1.4c0 .5.4.9.9.9s.9-.4.9-.9v-1.4h.9v1.4c0 .5.4.9.9.9s.9-.4.9-.9v-1.4h.9v1.4c0 .5.4.9.9.9s.9-.4.9-.9v-1.4h.9c.7 0 1.3-.5 1.3-1.3v-2.7c1.6-1.1 2.7-2.9 2.7-5.4 0-4.4-3.3-7.6-8-7.6Zm-3.4 11.2a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2Zm3.4 2.6-1.1-1.9h2.2L12 16.3Zm3.4-2.6a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2Z"/></svg><span>FS-666 channels</span></h3>
             <p>One row per instrument, glowing as the cue plays.</p>
+            <button type="button" id="chip-toggle" class="btn btn--ghost chip-toggle" aria-controls="chip" aria-expanded="false" hidden>Show all</button>
             <details class="hint">
               <summary>How to read it</summary>
               <p>Square pads are modulators, round pads are carriers, and copper traces show the algorithm that wires them. Pads glow with the envelope levels the renderer recorded for every frame of the cue, so you can watch the machine breathe.</p>
@@ -140,7 +142,7 @@
           </div>
           <canvas id="chip" aria-label="Live view of the FM chip operators and envelopes"></canvas>
           <canvas id="scope" height="72" aria-label="Output waveform"></canvas>
-        </div>
+        </details>
 
         <div class="inside" role="group" aria-labelledby="inside-title">
         <p id="inside-title" class="inside__title"><span>Inside the chip</span></p>
@@ -193,6 +195,16 @@
           <h3 id="notes-title">Director's notes</h3>
           <p id="director-notes">The director waits in the dark. It will explain the key, the tempo, and where the scares land.</p>
           <p id="render-stats" class="render-stats"></p>
+        </section>
+
+        <section id="godot-card" class="godot-card" aria-labelledby="godot-title">
+          <h3 id="godot-title">Drop into Godot</h3>
+          <p class="godot-card__lede">One zip for a Godot 4 project: the add-on, this cue as a seamless loop, a short sting that lands on a game event, and a README with the two-line setup.</p>
+          <p class="godot-card__price">A stock site charges about $18-48 for this. Yours, royalty-free.</p>
+          <div class="godot-card__row">
+            <button type="button" id="export-godot" class="btn btn--primary" disabled>Download Godot pack (.zip)</button>
+            <p id="godot-status" class="godot-card__status" role="status" aria-live="polite">Available once a cue has rendered.</p>
+          </div>
         </section>
         </div>
       </section>

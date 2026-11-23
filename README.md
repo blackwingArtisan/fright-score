@@ -23,7 +23,7 @@ With sound: [`docs/sting.mp4`](docs/sting.mp4), 12 seconds of the demo cue aroun
 5. Kiro: 5 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
    See [Built with Kiro](#built-with-kiro).
 
-**Kiro by the numbers:** 15 logged Kiro calls, 180.74 credits, 8,070 lines written by Kiro with 0 lines fixed, and
+**Kiro by the numbers:** 16 logged Kiro calls, 194.32 credits, 9,204 lines written by Kiro with 0 lines fixed, and
 Fright Score's own MCP server called from a Kiro session. Every call is in the [Kiro log](KIRO-LOG.md#summary).
 
 To run it locally instead: `npm install && npm run dev`, then open http://localhost:3120.
@@ -75,6 +75,9 @@ the same two WAVs the Godot example uses (a test checks the bytes match); only t
 In Godot, the [add-on](examples/godot) does the same: `$Door.opened.connect($Cue.scare)`. The hallway loop cuts to silence, the sting file starts at
 the top of its 0.6 s pre-silence, and the hit lands 0.6 s after the door opens. A headless Godot check
 measures it: the hit lands 0.598 s after the event, within one frame.
+
+After any cue renders, **Download Godot pack (.zip)** hands over everything in one file: the add-on, the cue as a
+seamless loop, a sting with its hit at 1.0 s, and a README with the two-line setup.
 
 ## Hear it
 

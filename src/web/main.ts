@@ -3,7 +3,9 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import './styles.css';
 import { PATCHES, PATCH_IDS, type PatchId } from '../engine/patches';
+import { buildGodotZip, godotLoopRequest, godotStingScore, godotZipName } from '../export/godot';
 import { scoreToVgm, type VgmResult } from '../export/vgm';
+import { LocalDirector } from '../director/local';
 import type { RenderStats, VizFrames } from '../engine/render';
 import { MOOD_PROFILES } from '../score/moods';
 import { scoreFromRequest } from '../score/pipeline';
@@ -58,6 +60,8 @@ const els = {
   exportWav: $<HTMLButtonElement>('export-wav'),
   exportJson: $<HTMLButtonElement>('export-json'),
   exportVgm: $<HTMLButtonElement>('export-vgm'),
+  exportGodot: $<HTMLButtonElement>('export-godot'),
+  godotStatus: $<HTMLParagraphElement>('godot-status'),
   chip: $<HTMLCanvasElement>('chip'),
   scope: $<HTMLCanvasElement>('scope'),
   notes: $<HTMLParagraphElement>('director-notes'),
@@ -89,7 +93,11 @@ const DEMO_REQUEST = { seed: DEMO_SEED, scene: DEMO_SCENE } as const;
 const director = createWebDirector(import.meta.env.VITE_FRIGHT_DIRECTOR);
 const player = new Player();
 const timeline = new TimelineView(els.timeline);
-const chip = new ChipView(els.chip);
+const chipPanel = $<HTMLDetailsElement>('chip-panel');
+const chipSummary = $<HTMLElement>('chip-summary');
+const chip = new ChipView(els.chip, $<HTMLButtonElement>('chip-toggle'), (laneCount) => {
+  chipSummary.textContent = laneCount > 0 ? `The chip, channel by channel (${laneCount} instruments)` : 'The chip, channel by channel';
+});
 const scope = new ScopeView(els.scope);
 const live = new LiveChip(() => player.audio());
 const liveView = new LiveView(els.liveOps, live);
@@ -122,6 +130,8 @@ let pending: { reject: (error: Error) => void } | undefined;
 let hasPlayed = false;
 /** True when Download WAV was pressed while the demo's exact render was still running: it downloads on landing. */
 let wavQueued = false;
+/** True while the Godot pack renders its two files. */
+let godotBusy = false;
 /** The demo cue's pre-rendered Genesis file, ready to download before the exact render lands. */
 let demoGenesis: { score: Score; bytes: Uint8Array } | undefined;
 
@@ -296,6 +306,8 @@ function setReady(enabled: boolean): void {
   els.exportWav.disabled = !enabled;
   els.exportJson.disabled = !enabled;
   els.exportVgm.disabled = !enabled;
+  els.exportGodot.disabled = !enabled || godotBusy;
+  if (!godotBusy) els.godotStatus.textContent = enabled ? 'Ready. Renders a loop and a sting, then zips them.' : 'Available once a cue has rendered.';
   els.share.disabled = !enabled;
   els.exportMenu.classList.toggle('is-disabled', !enabled);
   if (!enabled) closeExportMenu();
@@ -715,7 +727,8 @@ function frame(): void {
   updateDread(pos);
   timeline.draw(pos, performance.now() < scareUntil);
   chip.draw(pos);
-  scope.draw(player.analyser, player.playing || live.latest.voices > 0);
+  // A closed chip panel (phones) has no size to draw the scope into.
+  if (chipPanel.open) scope.draw(player.analyser, player.playing || live.latest.voices > 0);
   if (performance.now() - stitchAt > 66) {
     stitchAt = performance.now();
     stitch.draw(pos);
@@ -970,6 +983,51 @@ els.exportVgm.addEventListener('click', () => {
   if (current) downloadVgm(current.score, current.vgm.bytes);
   else if (demoGenesis) downloadVgm(demoGenesis.score, demoGenesis.bytes);
 });
+/** Renders one score with the render worker and returns its WAV bytes. A fresh worker keeps the cue's own render alone. */
+function renderWavOnce(score: Score): Promise<Uint8Array> {
+  const w = createWorker();
+  return new Promise((resolve, reject) => {
+    w.onmessage = (event: MessageEvent<WorkerMessage>) => {
+      const msg = event.data;
+      if (msg.type === 'progress') return;
+      w.terminate();
+      if (msg.type === 'error') reject(new Error(msg.message));
+      else resolve(msg.wav);
+    };
+    w.onerror = () => {
+      w.terminate();
+      reject(new Error('The render worker failed'));
+    };
+    const request: RenderRequestMessage = { type: 'render', id: 0, score };
+    w.postMessage(request);
+  });
+}
+
+els.exportGodot.addEventListener('click', async () => {
+  if (!current || godotBusy) return;
+  const { score } = current;
+  godotBusy = true;
+  els.exportGodot.disabled = true;
+  els.exportGodot.setAttribute('aria-busy', 'true');
+  try {
+    // The pack's two files come from the local director, so it works offline and the same cue gives the same zip.
+    const local = new LocalDirector();
+    els.godotStatus.textContent = 'Rendering the loop';
+    const loopRequest = godotLoopRequest(score);
+    const loopScore = await scoreFromRequest(local, loopRequest);
+    const loopWav = await renderWavOnce(loopScore);
+    els.godotStatus.textContent = 'Rendering the sting';
+    const stingWav = await renderWavOnce(await godotStingScore(local, score));
+    download(buildGodotZip({ score, loopWav, stingWav, loopSec: loopScore.durationSec }), 'application/zip', godotZipName(score));
+    els.godotStatus.textContent = 'Godot pack downloaded.';
+  } catch (error) {
+    els.godotStatus.textContent = `The Godot pack failed: ${(error as Error).message.slice(0, 100)}`;
+  } finally {
+    godotBusy = false;
+    els.exportGodot.removeAttribute('aria-busy');
+    els.exportGodot.disabled = !current;
+  }
+});
 els.exportMenu.querySelector('summary')!.addEventListener('click', (e) => {
   if (!current) e.preventDefault();
 });
@@ -992,6 +1050,13 @@ document.addEventListener('keydown', (e) => {
     void togglePlay();
   }
 });
+/* Phones (below 520 px): the chip panel is a <details>, closed until the visitor opens it. Wider screens keep it open. */
+const phone = window.matchMedia('(max-width: 519.98px)');
+function placeChipPanel(): void {
+  chipPanel.open = !phone.matches;
+}
+placeChipPanel();
+phone.addEventListener('change', placeChipPanel);
 /* Phones: put the form right after the transport, and pin a "Write your scene" button until it is in view. */
 const narrow = window.matchMedia('(max-width: 900px)');
 function placeDirection(): void {

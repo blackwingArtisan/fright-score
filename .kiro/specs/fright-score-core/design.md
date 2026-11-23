@@ -156,3 +156,19 @@ director code is touched, no new dependencies are added, and no image file excee
 - `gd3Notes()` in `vgm.ts` adds "Ghost note: <scene>" to the GD3 notes field. Only the VGM changes; the render and
   WAV code are untouched.
 
+## Drop into Godot and the chip panel at rest (Requirements 18 and 19)
+
+- `src/export/zip.ts` writes method-0 entries with a UTF-8 name flag and the DOS date 1980-01-01, so the bytes depend only on
+  the files. `readZip` walks the central directory and checks every CRC-32; the tests and Playwright use it.
+- `src/export/godot.ts` imports the five add-on files with `?raw`. The loop request is the cue's mood and a seed derived from the
+  cue seed (`godotFileSeed`), 8 to 16 s, `loop: true`. The sting score follows the `score_level` rule: a 5 s cue with the hit at 1 s
+  and a silence cue before it, matching the add-on's defaults (`sting_hit_sec` 1.0, `pre_silence_sec` 0.6). The page renders both
+  in a fresh instance of `render.worker.ts`, so the cue's own render is untouched, and uses the local director so the pack works offline.
+- `ChipView` precomputes each lane's carrier level per frame, reduces it to one value per ribbon pixel (`envelopeGhost`) and draws it
+  dim under the live line with a cursor at `position / duration`. Collapsed, it shows `pickLanes` of the lanes with voices at the
+  playhead frame, re-picked at most every 0.5 s of playhead time. The canvas publishes `data-ghost-lanes`, `data-ghost-peak`,
+  `data-lane-count`, `data-lanes-shown` and `data-cursor`.
+- Below 520 px the ribbon would not fit beside the pads, so `chipLayout` gives the row 22 px more height and puts the ribbon under the
+  pads. The live keyboard row keeps `rowLayout`.
+- `#chip-panel` is always a `<details class="chip-wrap">`. `main.ts` sets `open` from `(max-width: 519.98px)`; the summary is hidden by CSS
+  at 520 px and wider. The chip keeps drawing while closed, so its `data-` attributes stay current; only the scope waits for it to open.

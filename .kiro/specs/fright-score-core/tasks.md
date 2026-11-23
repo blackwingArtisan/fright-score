@@ -161,6 +161,25 @@ and heading accessible names, and the Playwright-asserted strings are unchanged.
 - [x] 59. Add `tests/e2e/dread-at-rest.spec.ts`: animated by default, static under reduced motion, the tag reads the cue, the mask lifts on play, no horizontal scroll at 360, 390 and 1360 px
   - _Requirements: 17.1 to 17.6_
 
+## Pass 5 — Drop into Godot and the chip panel at rest
+
+- [x] 60. Add `src/export/zip.ts`: a store-only zip writer with CRC-32 and a fixed timestamp, and a reader that checks every CRC-32
+  - _Requirements: 18.5_
+- [x] 61. Add `src/export/godot.ts`: the add-on files (`?raw`), seeded loop and sting requests, the sting score, README.txt and `buildGodotZip`
+  - _Requirements: 18.2, 18.3, 18.4_
+- [x] 62. Add the "Drop into Godot" card to `index.html` and `main.ts`: the button renders both WAVs in a fresh render worker, zips and downloads them, with a status line
+  - _Requirements: 18.1, 18.3, 18.6_
+- [x] 63. Add `tests/unit/zip.test.ts`, `tests/unit/godot.test.ts` and `tests/e2e/godot-pack.spec.ts` (zip contents, same bytes twice, no overflow at 360, 390 and 1360 px, both motion settings)
+  - _Requirements: 18.1 to 18.7_
+- [x] 64. Add `src/web/views/lanes.ts` (`pickLanes`, `envelopeGhost`) and `tests/unit/lanes.test.ts`
+  - _Requirements: 19.1, 19.2_
+- [x] 65. Draw the ghost envelope and the playhead cursor in `drawOperatorRow`, collapse `ChipView` to 4 lanes with the "Show all N" toggle, and put the ribbon on its own line on narrow canvases (`chipLayout`)
+  - _Requirements: 19.1, 19.2, 19.3, 19.5_
+- [x] 66. Make the chip panel a `<details id="chip-panel">`, closed below 520 px and open (summary hidden) from 520 px
+  - _Requirements: 19.4_
+- [x] 67. Add `tests/e2e/chip-at-rest.spec.ts` and a phone case in `tests/e2e/mobile.spec.ts`
+  - _Requirements: 19.1 to 19.6_
+
 ## Requirement-to-test traceability
 
 Each requirement, the tests that pin it down, and the open task for any criterion not yet pinned. Unit and
@@ -185,3 +204,5 @@ CLI tests run under Vitest (`npm run test:unit`); `e2e/` tests run under Playwri
 | 15. Demo render and form polish | `e2e/form-polish.spec.ts` (all errors at once, buttons enabled and the queued WAV during the demo render, Summon restarts it, label position, hint); `e2e/mobile.spec.ts` (Listen overlay small, lower left, fades); `unit/ghost.test.ts` (`progressLabelBox`); `e2e/first-load.spec.ts` (Download WAV enabled, 15.8) | none |
 | 16. The possessed chip | `unit/ghost.test.ts` (message from the seed, GD3 ghost note, pinned VGM sha256, WAV hash unchanged); `e2e/possessed-chip.spec.ts` (flicker, `aria-hidden` rows, one announcement, still under reduced motion); `cli/samples.test.ts` (the sample is the CLI's export) | none |
 | 17. Dread at rest | `unit/dread.test.ts` (50 bpm, beat shape, still level, drone share, the demo's tag from the cue); `e2e/dread-at-rest.spec.ts` (heartbeat and trace animate, static under reduced motion, tag reads the cue, `--mask` darker at rest, no horizontal scroll at 360, 390 and 1360 px) | none |
+| 18. Drop into Godot | `unit/zip.test.ts` (CRC-32 check values, parse back, stored data, same bytes, corruption, bad paths); `unit/godot.test.ts` (seeds, hit at 1.0 s with silence before, zip contents, add-on equals the repository files, loop points, same zip twice, README lines); `e2e/godot-pack.spec.ts` (download holds add-on, both WAVs and README.txt; same zip twice; no overflow at 360, 390 and 1360 px, both motion settings) | none |
+| 19. The chip panel at rest | `unit/lanes.test.ts` (lane choice, envelope ghost); `e2e/chip-at-rest.spec.ts` (ghost drawn before playback, cursor follows a seek, "Show all N" shows and hides lanes, details closed below 520 px and open from 520 px, no overflow, reduced motion); `e2e/mobile.spec.ts` (phone details) | none |

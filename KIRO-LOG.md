@@ -30,7 +30,8 @@ the developer changed afterwards to get Kiro's work green.
 | 2026-11-22 | 11 | Built Requirement 17, dread at rest: a 50 bpm heartbeat on the idle chip pads, a pulsing sting marker tagged from the cue, a copper trace on the masthead and a darker mask, all static under reduced motion (7 Vitest and 7 Playwright tests) | 8 min 48 s | 4.58 | 377 | 0 | [session 11](docs/kiro-sessions/session-11-dread-at-rest.md) |
 | 2026-11-22 | 12 | The custom agent `fs666-sound-designer` added the `theremin-lead` patch (algorithm 4, two detuned sine carriers, ±40-cent vibrato at 3.6 Hz) with 1 new test file and a YM2612 mapping check; no existing render changed | 10 min 42 s | 4.70 | 186 | 0 | [session 12](docs/kiro-sessions/session-12-theremin-custom-agent.md) |
 | 2026-11-22 | 13 | Closed the 26 open test tasks (fright-score-core 20 to 38, live-chip 10 to 17): 79 new Vitest and 11 new Playwright tests, no code change needed; stopped at the 25-minute cap during its last full run | 25 min 6 s | 28.17 | 1232 | 0 | [session 13](docs/kiro-sessions/session-13-close-test-tasks.md) |
-| | **Total** | | | **180.74** | **8,070** | **0** | |
+| 2026-11-22 | 14 | Built Requirement 18, a "Drop into Godot" zip (the add-on, a loop WAV, a sting WAV and a README, through a new store-only zip writer with CRC-32 checks), and Requirement 19, the chip panel at rest (ghost envelopes, the 4 sounding lanes with a Show all toggle, a closed `<details>` on phones); stopped at the 25-minute cap | 25 min 48 s | 13.58 | 1134 | 0 | [session 14](docs/kiro-sessions/session-14-godot-zip-chip-rest.md) |
+| | **Total** | | | **194.32** | **9,204** | **0** | |
 
 Credits are read with `kiro-cli /usage` before and after each session, so other use of the account between
 sessions is not counted.
@@ -41,7 +42,7 @@ sessions is not counted.
 |---|---|---|---|
 | Steering, always | `.kiro/steering/product.md`, `tech.md`, `structure.md` | The developer | Loaded in every transcript; Kiro checked them in pass 2 |
 | Steering, fileMatch and manual | `.kiro/steering/engine-dsp.md`, `export-formats.md` | The developer | `tests/unit/kiro-config.test.ts` checks the patterns point at real folders |
-| Spec `fright-score-core` | `.kiro/specs/fright-score-core/` | The developer first; Kiro rewrote the criteria in pass 2 and added Requirements 12 to 17 in sessions 7, 10 and 11 | Pass 2 and sessions 7, 10 and 11 |
+| Spec `fright-score-core` | `.kiro/specs/fright-score-core/` | The developer first; Kiro rewrote the criteria in pass 2 and added Requirements 12 to 19 in sessions 7, 10, 11 and 14 | Pass 2 and sessions 7, 10, 11 and 14 |
 | Spec `live-chip` | `.kiro/specs/live-chip/` | The developer first; Kiro rewrote the criteria in pass 2 | Pass 2 |
 | Spec `director-tools` | `.kiro/specs/director-tools/` | Kiro, sessions 3 to 5 | Sessions 3 to 5 |
 | Spec `door-scene` | `.kiro/specs/door-scene/` | Kiro, spec in session 7, built in session 8 | Sessions 7 and 8 |
@@ -149,7 +150,7 @@ has the time, credits and lines.
   agent's allow rules. The developer updated the docs that still said ten patches.
 
 - **Checks for pass 4**, from a fresh clone before each push: typecheck clean, the determinism check, Vitest
-  204 to 374 tests and Playwright 30 to 67. A timing test that raced under heavy machine load was rerun alone
+  204 to 394 tests and Playwright 30 to 85. A timing test that raced under heavy machine load was rerun alone
   and passed each time.
 
 - **Session 13.** Kiro wrote the tests for the 26 open tasks in `fright-score-core` (20 to 38) and `live-chip`
@@ -157,6 +158,15 @@ has the time, credits and lines.
   every spec in the repo is now complete. No code change was needed. The runner's 25-minute cap stopped the session
   during its last full-suite run; the developer ran the suite afterwards: Vitest 295 to 374 tests, Playwright 56 to
   67, all passing.
+
+- **Session 14.** Kiro added Requirements 18 and 19 to `fright-score-core` and built both. "Drop into Godot"
+  downloads one zip with the Godot add-on, the current cue as a seamless loop WAV, a 5 s sting WAV with its hit at
+  1.0 s, and a README with the two-line setup, written by a new store-only zip writer (`src/export/zip.ts`) whose
+  tests parse the result back and check every CRC-32. The chip panel now draws each lane's full envelope as a dim
+  ghost before anything plays, shows the 4 lanes sounding at the playhead with a "Show all" toggle, and folds into
+  a closed `<details>` on phones. The runner's 25-minute cap stopped the session while it reran browser tests under
+  heavy machine load; the developer ran the suite afterwards, and everything passed (two load-sensitive tests on a
+  serial rerun).
 
 ## How Kiro is used in this repo
 
