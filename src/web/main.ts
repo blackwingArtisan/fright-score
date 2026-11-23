@@ -588,7 +588,7 @@ async function startPreview(score: Score, token: number): Promise<void> {
     previewing = true;
     setPlayable(score);
     els.play.classList.toggle('btn--beckon', !hasPlayed);
-    setStatus('preview', 'Preview ready: press Listen');
+    setProgressStatus('preview', 'Preview ready: press Listen');
   } catch {
     // No preview: the live render still lands in a few seconds.
   }

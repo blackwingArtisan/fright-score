@@ -49,7 +49,7 @@ Bedrock Runtime client, Vitest and Playwright. Hosted on Cloudflare Pages.
 
 Kiro is in the workspace and in the build log: 5 specs, 5 steering files (always, fileMatch, manual), 4 kiro-cli hooks, 3 IDE hooks, 1 custom agent, 3 MCP servers including its own.
 
-**Kiro by the numbers:** 16 logged Kiro calls, 194.32 credits, 9,204 lines written by Kiro with 0 lines fixed.
+**Kiro by the numbers:** 16 logged Kiro calls, 194.32 credits, 9,204 lines written by Kiro with 1 line fixed.
 Every call, its prompt, its credits and the lines it wrote are in
 [KIRO-LOG.md](https://github.com/blackwingArtisan/fright-score/blob/main/KIRO-LOG.md), with a transcript excerpt
 for each session in `docs/kiro-sessions/`.

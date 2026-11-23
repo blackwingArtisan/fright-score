@@ -26,12 +26,12 @@ the developer changed afterwards to get Kiro's work green.
 | 2026-11-22 | 8 | Built the door scene (view, timing helper, 9 Playwright and 5 Vitest tests); wrote the `agent-scoring` spec | 12 min 6 s | 21.68 | 1,361 | 0 | [session 8](docs/kiro-sessions/session-8-door-scene-agent-scoring-spec.md) |
 | 2026-11-22 | 9 | Started the `agent-scoring` build: `score_level`, `verify_cue`, the onset detector, the prompt and resource modules and the tests that spawn the server, with 2 context7 MCP calls; stopped by a service throttling error before ticking any task | 9 min 48 s | 21.49 | 1,239 | 0 | [session 9](docs/kiro-sessions/session-9-agent-scoring-build.md) |
 | 2026-11-22 | 9b | Finished the `agent-scoring` build: checked session 9's work, added the prompt and resource tests, the steering line, the Godot level example notes and the README MCP section; all 28 tasks ticked | 9 min 36 s | 14.80 | 226 | 0 | [session 9b](docs/kiro-sessions/session-9b-agent-scoring-finish.md) |
-| 2026-11-22 | 10 | Called its own MCP tools (`score_level`, 3 `verify_cue`, 2 `score_cue`) to score the example level and the video soundtrack; built Requirement 15 (timeline label, phone overlay, all field errors at once, buttons live during the demo render) and Requirement 16 (the possessed-chip easter egg and a GD3 ghost note) | 23 min 12 s | 22.56 | 743 | 0 | [session 10](docs/kiro-sessions/session-10-mcp-use-overlays-egg.md) |
+| 2026-11-22 | 10 | Called its own MCP tools (`score_level`, 3 `verify_cue`, 2 `score_cue`) to score the example level and the video soundtrack; built Requirement 15 (timeline label, phone overlay, all field errors at once, buttons live during the demo render) and Requirement 16 (the possessed-chip easter egg and a GD3 ghost note) | 23 min 12 s | 22.56 | 743 | 1 | [session 10](docs/kiro-sessions/session-10-mcp-use-overlays-egg.md) |
 | 2026-11-22 | 11 | Built Requirement 17, dread at rest: a 50 bpm heartbeat on the idle chip pads, a pulsing sting marker tagged from the cue, a copper trace on the masthead and a darker mask, all static under reduced motion (7 Vitest and 7 Playwright tests) | 8 min 48 s | 4.58 | 377 | 0 | [session 11](docs/kiro-sessions/session-11-dread-at-rest.md) |
 | 2026-11-22 | 12 | The custom agent `fs666-sound-designer` added the `theremin-lead` patch (algorithm 4, two detuned sine carriers, ±40-cent vibrato at 3.6 Hz) with 1 new test file and a YM2612 mapping check; no existing render changed | 10 min 42 s | 4.70 | 186 | 0 | [session 12](docs/kiro-sessions/session-12-theremin-custom-agent.md) |
 | 2026-11-22 | 13 | Closed the 26 open test tasks (fright-score-core 20 to 38, live-chip 10 to 17): 79 new Vitest and 11 new Playwright tests, no code change needed; stopped at the 25-minute cap during its last full run | 25 min 6 s | 28.17 | 1232 | 0 | [session 13](docs/kiro-sessions/session-13-close-test-tasks.md) |
 | 2026-11-22 | 14 | Built Requirement 18, a "Drop into Godot" zip (the add-on, a loop WAV, a sting WAV and a README, through a new store-only zip writer with CRC-32 checks), and Requirement 19, the chip panel at rest (ghost envelopes, the 4 sounding lanes with a Show all toggle, a closed `<details>` on phones); stopped at the 25-minute cap | 25 min 48 s | 13.58 | 1134 | 0 | [session 14](docs/kiro-sessions/session-14-godot-zip-chip-rest.md) |
-| | **Total** | | | **194.32** | **9,204** | **0** | |
+| | **Total** | | | **194.32** | **9,204** | **1** | |
 
 Credits are read with `kiro-cli /usage` before and after each session, so other use of the account between
 sessions is not counted.
@@ -167,6 +167,11 @@ has the time, credits and lines.
   a closed `<details>` on phones. The runner's 25-minute cap stopped the session while it reran browser tests under
   heavy machine load; the developer ran the suite afterwards, and everything passed (two load-sensitive tests on a
   serial rerun).
+
+- **The one line the developer fixed.** A fresh-clone run of session 14's commit showed a race in the
+  Requirement 15 code from session 10: when the demo preview finished decoding after a bad Summon, it replaced
+  the form error in the status line. `src/web/main.ts` now sets that status through the same helper that keeps
+  form errors in place (one line); the form-polish and first-load tests then passed 18 of 18 repeated runs.
 
 ## How Kiro is used in this repo
 
