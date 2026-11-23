@@ -21,16 +21,18 @@ function watchGhost(page: Page, ms: number): Promise<{ appeared: boolean; gaps: 
   return page.evaluate(
     (span) =>
       new Promise<{ appeared: boolean; gaps: number }>((resolve) => {
+        let begun = 0;
         let started = 0;
         let gaps = 0;
         let was = false;
         const tick = (now: number) => {
+          if (!begun) begun = now;
           const here = document.querySelectorAll('#stitch-writes li[data-ghost]').length > 0;
           if (here && !started) started = now;
           if (started && was && !here) gaps++;
           was = here;
           if (started && now - started > span) resolve({ appeared: true, gaps });
-          else if (!started && now > 20_000) resolve({ appeared: false, gaps });
+          else if (!started && now - begun > 20_000) resolve({ appeared: false, gaps });
           else requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);

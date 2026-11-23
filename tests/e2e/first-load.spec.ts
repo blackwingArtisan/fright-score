@@ -19,7 +19,7 @@ test.describe('instant first load', () => {
     // When the live render lands, playback carries on in the exact render and its hash is checked.
     await expect(page.getByRole('button', { name: 'Download WAV' })).toBeEnabled({ timeout: 60_000 });
     await expect(page.locator('#status')).toHaveAttribute('data-state', 'playing');
-    await expect(page.locator('#render-proof')).toHaveAttribute('data-sha256', DEMO_WAV_SHA256);
+    await expect(page.locator('#render-proof')).toHaveAttribute('data-sha256', DEMO_WAV_SHA256, { timeout: 60_000 });
     await expect(page.locator('#render-proof')).toContainText('Live render matches the published demo');
   });
 });

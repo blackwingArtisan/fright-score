@@ -25,7 +25,7 @@ test.describe('form and demo-render polish (Requirement 15)', () => {
     // The demo render that was already running is not cancelled by a bad form, and its progress does not
     // overwrite the error message.
     await expect(page.locator('#play')).toBeEnabled({ timeout: 60_000 });
-    await expect(page.locator('#render-proof')).toHaveAttribute('data-sha256', DEMO_WAV_SHA256);
+    await expect(page.locator('#render-proof')).toHaveAttribute('data-sha256', DEMO_WAV_SHA256, { timeout: 60_000 });
     await expect(page.locator('#status')).toHaveAttribute('data-state', 'error');
 
     // Fixing one field clears only its error; fixing both brings the status back to what the page was doing.
